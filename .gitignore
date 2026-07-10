@@ -23,6 +23,10 @@
 # misc
 .DS_Store
 *.pem
+*.swp
+
+# editor/tool-local config
+.claude/
 
 # debug
 npm-debug.log*
