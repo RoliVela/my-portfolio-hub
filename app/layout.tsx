@@ -14,13 +14,13 @@ const geistMono = Geist_Mono({
 
 const vt323 = VT323({
   variable: "--font-vt323",
-  weight: "400",
   subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
-  title: "Roli's Room",
-  description: "A cozy Lo-Fi pixel art hub.",
+  title: "Roli's Portfolio Hub",
+  description: "A cozy, gamified portfolio hub for Roli.",
 };
 
 export default function RootLayout({

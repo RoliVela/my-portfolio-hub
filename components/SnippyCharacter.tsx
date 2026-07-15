@@ -1,40 +1,66 @@
 'use client';
 
+import { RoomObject } from '@/lib/roomData';
+
 interface SnippyCharacterProps {
-  position: { x: number; y: number; width: number; height: number };
-  onClick: () => void;
+  data: RoomObject;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
-// Placeholder sprite (per user's own room-flow sketch: scissors with big
-// round eyes). Swap for a real pixel-art asset in public/assets once ready.
-export default function SnippyCharacter({ position, onClick }: SnippyCharacterProps) {
+export default function SnippyCharacter({ data, onClick }: SnippyCharacterProps) {
   return (
     <button
       type="button"
       onClick={onClick}
-      title="Snippy"
-      className="group absolute z-20 flex items-center justify-center rounded-full transition-transform duration-150 hover:scale-110"
+      className="absolute z-20 cursor-pointer transition-transform duration-200 hover:scale-105 focus:outline-none"
       style={{
-        left: `${position.x}%`,
-        top: `${position.y}%`,
-        width: `${position.width}%`,
-        height: `${position.height}%`,
+        left: `${data.position.x}%`,
+        top: `${data.position.y}%`,
+        width: `${data.position.width}%`,
+        height: `${data.position.height}%`,
       }}
+      aria-label={data.assetName}
+      title={data.assetName}
     >
-      <svg
-        viewBox="0 0 100 100"
-        className="h-full w-full drop-shadow-[0_0_6px_rgba(255,255,255,0.25)] transition-all duration-150 group-hover:drop-shadow-[0_0_10px_rgba(255,224,102,0.85)]"
-        aria-hidden="true"
-      >
-        <circle cx="35" cy="38" r="16" fill="#f5eaff" stroke="#e8c2ff" strokeWidth="3" />
-        <circle cx="65" cy="38" r="16" fill="#f5eaff" stroke="#e8c2ff" strokeWidth="3" />
-        <circle cx="35" cy="38" r="5.5" fill="#2a1a4a" />
-        <circle cx="65" cy="38" r="5.5" fill="#2a1a4a" />
-        <path d="M50 50 L22 88" stroke="#e8c2ff" strokeWidth="6" strokeLinecap="round" />
-        <path d="M50 50 L78 88" stroke="#e8c2ff" strokeWidth="6" strokeLinecap="round" />
-        <circle cx="18" cy="90" r="8" fill="none" stroke="#e8c2ff" strokeWidth="5" />
-        <circle cx="82" cy="90" r="8" fill="none" stroke="#e8c2ff" strokeWidth="5" />
-      </svg>
+      {data.imageSrc ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={data.imageSrc}
+            alt=""
+            className="h-full w-full object-contain drop-shadow-lg pixel-art"
+          />
+        </>
+      ) : (
+        <svg
+          viewBox="0 0 100 100"
+          className="h-full w-full drop-shadow-lg"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          {/* Scissors body */}
+          <path
+            d="M30 70 L70 30"
+            stroke="#C0C0C0"
+            strokeWidth="8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M30 30 L70 70"
+            stroke="#C0C0C0"
+            strokeWidth="8"
+            strokeLinecap="round"
+          />
+          {/* Finger holes */}
+          <circle cx="22" cy="22" r="10" stroke="#A0A0A0" strokeWidth="4" fill="none" />
+          <circle cx="78" cy="78" r="10" stroke="#A0A0A0" strokeWidth="4" fill="none" />
+          {/* Big round eyes */}
+          <circle cx="55" cy="45" r="12" fill="white" stroke="#333" strokeWidth="2" />
+          <circle cx="45" cy="55" r="12" fill="white" stroke="#333" strokeWidth="2" />
+          <circle cx="55" cy="45" r="4" fill="#111" />
+          <circle cx="45" cy="55" r="4" fill="#111" />
+        </svg>
+      )}
     </button>
   );
 }
