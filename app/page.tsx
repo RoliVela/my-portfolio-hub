@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { roomObjects, RoomObject, DialogueEntry } from '@/lib/roomData';
+import { getAssetPath } from '@/lib/assets';
 import DialogueBox from '@/components/DialogueBox';
 import SnippyCharacter from '@/components/SnippyCharacter';
 
@@ -95,7 +96,7 @@ export default function Home() {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/assets/room_background_pixel_art_202607101242.png"
+          src={getAssetPath('/assets/room_background_pixel_art_202607101242.png')}
           alt="Cozy Lo-Fi Pixel Art Room Background"
           className="h-full w-full object-cover"
         />
@@ -108,7 +109,7 @@ export default function Home() {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/assets/white-monster.png"
+          src={getAssetPath('/assets/white-monster.png')}
           alt=""
           className="h-full w-full object-contain pixel-art drop-shadow-lg"
         />
@@ -149,7 +150,7 @@ export default function Home() {
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={obj.imageSrc}
+                    src={getAssetPath(obj.imageSrc)}
                     alt=""
                     className="h-full w-full object-contain pixel-art drop-shadow-lg"
                   />

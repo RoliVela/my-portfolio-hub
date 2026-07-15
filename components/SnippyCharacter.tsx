@@ -1,6 +1,7 @@
 'use client';
 
 import { RoomObject } from '@/lib/roomData';
+import { getAssetPath } from '@/lib/assets';
 
 interface SnippyCharacterProps {
   data: RoomObject;
@@ -26,7 +27,7 @@ export default function SnippyCharacter({ data, onClick }: SnippyCharacterProps)
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={data.imageSrc}
+            src={getAssetPath(data.imageSrc)}
             alt=""
             className="h-full w-full object-contain drop-shadow-lg pixel-art"
           />
