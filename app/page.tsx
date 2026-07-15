@@ -77,7 +77,10 @@ export default function Home() {
     const lines = roomObjects.map(
       (obj) => `    // ${obj.id} - ${obj.assetName}\n    position: { x: ${obj.position.x}, y: ${obj.position.y}, width: ${obj.position.width}, height: ${obj.position.height} },`
     );
-    navigator.clipboard.writeText(lines.join('\n'));
+    const text = lines.join('\n');
+    navigator.clipboard.writeText(text);
+    // eslint-disable-next-line no-console
+    console.log('REPOSITION_DATA_START\n' + text + '\nREPOSITION_DATA_END');
     setCopied(true);
     if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
