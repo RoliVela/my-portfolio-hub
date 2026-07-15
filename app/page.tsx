@@ -25,7 +25,11 @@ export default function Home() {
   const [activeObject, setActiveObject] = useState<RoomObject | null>(
     () => initialRoomObjects.find((obj) => obj.id === 'OBJ_01') ?? null
   );
-  const [clickCoords, setClickCoords] = useState<{ x: number; y: number } | null>(null);
+  const mouseXRef = useRef<HTMLSpanElement | null>(null);
+  const mouseYRef = useRef<HTMLSpanElement | null>(null);
+  const clickXRef = useRef<HTMLSpanElement | null>(null);
+  const clickYRef = useRef<HTMLSpanElement | null>(null);
+  const clickLineRef = useRef<HTMLDivElement | null>(null);
   const [copied, setCopied] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [musicOn, setMusicOn] = useState(false);
@@ -85,7 +89,25 @@ export default function Home() {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setClickCoords({ x, y });
+    updateCoordRefs(x, y, true);
+  };
+
+  const updateCoordRefs = (x: number, y: number, isClick: boolean) => {
+    if (isClick) {
+      if (clickXRef.current) clickXRef.current.textContent = x.toFixed(2);
+      if (clickYRef.current) clickYRef.current.textContent = y.toFixed(2);
+      if (clickLineRef.current) clickLineRef.current.style.display = 'block';
+    } else {
+      if (mouseXRef.current) mouseXRef.current.textContent = x.toFixed(2);
+      if (mouseYRef.current) mouseYRef.current.textContent = y.toFixed(2);
+    }
+  };
+
+  const handleBackgroundMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    updateCoordRefs(x, y, false);
   };
 
   const updatePosition = (id: string, key: keyof RoomObject['position'], value: number) => {
@@ -159,16 +181,20 @@ export default function Home() {
         )}
       </button>
 
-      {/* Click coordinate readout */}
-      {clickCoords && (
+      {/* Coordinate readout (reposition mode only) */}
+      {repositionMode && (
         <div className="absolute top-4 right-4 z-50 rounded-lg bg-black/70 px-3 py-2 text-sm text-white">
-          X: {clickCoords.x.toFixed(2)}%, Y: {clickCoords.y.toFixed(2)}%
+          <div>Mouse: X <span ref={mouseXRef}>0.00</span>%, Y <span ref={mouseYRef}>0.00</span>%</div>
+          <div ref={clickLineRef} className="hidden text-xs text-gray-300">
+            Click: X <span ref={clickXRef}>0.00</span>%, Y <span ref={clickYRef}>0.00</span>%
+          </div>
         </div>
       )}
 
       <div
         className="absolute inset-0 z-0 h-full w-full"
         onClick={handleBackgroundClick}
+        onMouseMove={handleBackgroundMouseMove}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
