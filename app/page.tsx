@@ -44,19 +44,21 @@ export default function Home() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const audio = new Audio(getAssetPath('/assets/bg-music.mp3'));
-    audio.loop = true;
-    audio.volume = 0.4;
-    audioRef.current = audio;
+    if (!audioRef.current) return;
     return () => {
-      audio.pause();
+      audioRef.current?.pause();
       audioRef.current = null;
     };
   }, []);
 
   const toggleMusic = () => {
+    if (!audioRef.current) {
+      const audio = new Audio(getAssetPath('/assets/bg-music.mp3'));
+      audio.loop = true;
+      audio.volume = 0.4;
+      audioRef.current = audio;
+    }
     const audio = audioRef.current;
-    if (!audio) return;
     if (musicOn) {
       audio.pause();
       setMusicOn(false);
