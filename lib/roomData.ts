@@ -48,7 +48,7 @@ export const roomObjects: RoomObject[] = [
     visualFeedback: 'Launches with text dialogue upon the website loading up.',
     imageSrc: '/assets/snippy.png',
     isInitialDialogue: true,
-    position: { x: 46, y: 82, width: 10, height: 14 },
+    position: { x: 31.6, y: 67.9, width: 30, height: 24 },
   },
   {
     id: 'OBJ_02',
@@ -64,7 +64,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Local dialog bubble',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 44, y: 80, width: 6, height: 8 },
+    position: { x: 44, y: 75.5, width: 6, height: 8 },
   },
   {
     id: 'OBJ_03',
@@ -79,7 +79,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant watering animation state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 8, y: 64, width: 7, height: 12 },
+    position: { x: 15, y: -55.2, width: 7.4, height: 150 },
   },
   {
     id: 'OBJ_04',
@@ -94,7 +94,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant watering animation state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 15, y: 65, width: 5, height: 11 },
+    position: { x: 71.7, y: 45, width: 10, height: 11 },
   },
   {
     id: 'OBJ_05',
@@ -112,7 +112,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant feeding animation state. This plant is no longer available to interact with.',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 20, y: 66, width: 5, height: 9 },
+    position: { x: 27, y: 35, width: 50, height: 20 },
   },
   {
     id: 'OBJ_06',
@@ -127,7 +127,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant watering animation state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 25, y: 67, width: 5, height: 8 },
+    position: { x: 90, y: 15, width: 8, height: 20 },
   },
   {
     id: 'OBJ_07',
@@ -142,7 +142,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 48, y: 16, width: 18, height: 8 },
+    position: { x: 15, y: 11, width: 50, height: 30 },
   },
   {
     id: 'OBJ_08',
@@ -157,7 +157,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 70, y: 52, width: 6, height: 10 },
+    position: { x: 90, y: 33, width: 11, height: 45 },
   },
   {
     id: 'OBJ_09',
@@ -172,7 +172,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 42, y: 24, width: 24, height: 5 },
+    position: { x: 70, y: 24, width: 28, height: 25 },
   },
   {
     id: 'OBJ_10',
@@ -187,7 +187,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 82, y: 50, width: 5, height: 10 },
+    position: { x: -1.5, y: 50, width: 14, height: 17 },
   },
   {
     id: 'OBJ_11',
@@ -201,7 +201,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Verifies hidden string input for Free bypass',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 56, y: 54, width: 4, height: 6 },
+    position: { x: 5, y: 65, width: 8, height: 8 },
   },
   {
     id: 'OBJ_12',
@@ -219,7 +219,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Changes the window visual in the room to have the blinds closed',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 10, y: 20, width: 18, height: 26 },
+    position: { x: 41, y: 9, width: 39, height: 39 },
   },
   {
     id: 'OBJ_13',
@@ -233,7 +233,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Launches localized retro arcade overlay',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 30, y: 68, width: 9, height: 11 },
+    position: { x: 4, y: 45, width: 40, height: 32 },
   },
   {
     id: 'OBJ_14',
@@ -248,7 +248,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Pull action physics engine callback',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 64, y: 16, width: 5, height: 7 },
+    position: { x: 55, y: 47, width: 10, height: 10 },
   },
   {
     id: 'OBJ_15',
@@ -263,7 +263,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Squish animation triggering local state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 62, y: 54, width: 4, height: 4 },
+    position: { x: 67, y: 50, width: 12, height: 13 },
   },
   {
     id: 'OBJ_16',
@@ -277,7 +277,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Conditional branch overlay depending on Auth status',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 46, y: 48, width: 12, height: 14 },
+    position: { x: 75, y: 35, width: 19, height: 29 },
   },
   {
     id: 'OBJ_17',
@@ -291,7 +291,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Opens text box for the user to type in',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 66, y: 52, width: 5, height: 7 },
+    position: { x: 50, y: 57, width: 14, height: 9 },
   },
   {
     id: 'OBJ_18',
@@ -306,7 +306,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggles background audio playlist track array stream',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 34, y: 64, width: 7, height: 7 },
+    position: { x: 11, y: 81, width: 15, height: 20 },
   },
   {
     id: 'OBJ_19',
@@ -321,7 +321,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Triggers localized steam particle burst animation',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 52, y: 53, width: 3, height: 4 },
+    position: { x: 81, y: 58.5, width: 19, height: 12 },
   },
   {
     id: 'OBJ_20',
@@ -336,6 +336,6 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Opens image gallery overlay of personal and team photos',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 72, y: 22, width: 12, height: 16 },
+    position: { x: -4.5, y: 20, width: 28, height: 25 },
   },
 ];
