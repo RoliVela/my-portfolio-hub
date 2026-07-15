@@ -17,10 +17,7 @@ function getInitialState(): ObjectState {
 
 export default function Home() {
   const [roomObjects, setRoomObjects] = useState<RoomObject[]>(initialRoomObjects);
-  const [repositionMode] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return new URLSearchParams(window.location.search).has('reposition');
-  });
+  const [repositionMode, setRepositionMode] = useState(false);
   const [objectState, setObjectState] = useState<ObjectState>(getInitialState);
   const [activeObject, setActiveObject] = useState<RoomObject | null>(
     () => initialRoomObjects.find((obj) => obj.id === 'OBJ_01') ?? null
@@ -37,6 +34,13 @@ export default function Home() {
 
   const snippy = useMemo(() => roomObjects.find((obj) => obj.id === 'OBJ_01') ?? null, [roomObjects]);
   const snippyCheckIn = useMemo(() => roomObjects.find((obj) => obj.id === 'OBJ_02') ?? null, [roomObjects]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    // Read reposition query param after hydration to avoid server/client mismatch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRepositionMode(new URLSearchParams(window.location.search).has('reposition'));
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
