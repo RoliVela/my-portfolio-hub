@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { roomObjects as initialRoomObjects, RoomObject, DialogueEntry } from '@/lib/roomData';
 import { getAssetPath } from '@/lib/assets';
 import DialogueBox from '@/components/DialogueBox';
@@ -28,9 +28,34 @@ export default function Home() {
   const [clickCoords, setClickCoords] = useState<{ x: number; y: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [musicOn, setMusicOn] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const snippy = useMemo(() => roomObjects.find((obj) => obj.id === 'OBJ_01') ?? null, [roomObjects]);
   const snippyCheckIn = useMemo(() => roomObjects.find((obj) => obj.id === 'OBJ_02') ?? null, [roomObjects]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const audio = new Audio(getAssetPath('/assets/bg-music.mp3'));
+    audio.loop = true;
+    audio.volume = 0.4;
+    audioRef.current = audio;
+    return () => {
+      audio.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
+  const toggleMusic = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (musicOn) {
+      audio.pause();
+      setMusicOn(false);
+    } else {
+      audio.play().then(() => setMusicOn(true)).catch(() => setMusicOn(false));
+    }
+  };
 
   const handleObjectClick = (obj: RoomObject, e: React.MouseEvent) => {
     if (repositionMode) return;
@@ -113,8 +138,30 @@ export default function Home() {
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-black">
+      {/* Speaker / music toggle */}
+      <button
+        type="button"
+        onClick={toggleMusic}
+        aria-label={musicOn ? 'Mute background music' : 'Play background music'}
+        className="absolute top-4 left-4 z-50 rounded-full bg-black/70 p-2 text-white transition hover:bg-black/90"
+      >
+        {musicOn ? (
+          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M14 3.23v17.54c0 .8-.88 1.28-1.55.84L6.5 16.5H3.75A1.75 1.75 0 0 1 2 14.75v-5.5C2 8.25 2.78 7.5 3.75 7.5H6.5l5.95-4.61c.67-.44 1.55.04 1.55.84ZM18 9.5a.75.75 0 0 1 1.5 0v5a.75.75 0 0 1-1.5 0v-5Z" />
+            <path d="M20.25 12a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0 0 1.5h1.5a.75.75 0 0 0 .75-.75Z" />
+            <path d="M17.47 7.47a.75.75 0 0 1 1.06 0c1.95 1.95 1.95 5.11 0 7.06a.75.75 0 1 1-1.06-1.06 3.737 3.737 0 0 0 0-4.94.75.75 0 0 1 0-1.06Z" />
+          </svg>
+        ) : (
+          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M14 3.23v17.54c0 .8-.88 1.28-1.55.84L6.5 16.5H3.75A1.75 1.75 0 0 1 2 14.75v-5.5C2 8.25 2.78 7.5 3.75 7.5H6.5l5.95-4.61c.67-.44 1.55.04 1.55.84Z" />
+            <path d="M18.78 5.22a.75.75 0 0 0-1.06 1.06L19.94 8.5l-2.22 2.22a.75.75 0 1 0 1.06 1.06l2.22-2.22 2.22 2.22a.75.75 0 1 0 1.06-1.06L21.06 7.44l2.22-2.22a.75.75 0 0 0-1.06-1.06L20 6.38l-2.22-2.22Z" />
+          </svg>
+        )}
+      </button>
+
+      {/* Click coordinate readout */}
       {clickCoords && (
-        <div className="absolute top-4 left-4 z-50 rounded-lg bg-black/70 p-2 text-sm text-white">
+        <div className="absolute top-4 right-4 z-50 rounded-lg bg-black/70 px-3 py-2 text-sm text-white">
           X: {clickCoords.x.toFixed(2)}%, Y: {clickCoords.y.toFixed(2)}%
         </div>
       )}
