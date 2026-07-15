@@ -79,7 +79,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant watering animation state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 8, y: 62, width: 8, height: 14 },
+    position: { x: 8, y: 64, width: 7, height: 12 },
   },
   {
     id: 'OBJ_04',
@@ -94,7 +94,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant watering animation state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 16, y: 64, width: 6, height: 12 },
+    position: { x: 15, y: 65, width: 5, height: 11 },
   },
   {
     id: 'OBJ_05',
@@ -112,7 +112,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant feeding animation state. This plant is no longer available to interact with.',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 24, y: 68, width: 6, height: 10 },
+    position: { x: 20, y: 66, width: 5, height: 9 },
   },
   {
     id: 'OBJ_06',
@@ -127,7 +127,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant watering animation state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 30, y: 70, width: 6, height: 10 },
+    position: { x: 25, y: 67, width: 5, height: 8 },
   },
   {
     id: 'OBJ_07',
@@ -157,7 +157,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 66, y: 50, width: 7, height: 12 },
+    position: { x: 70, y: 52, width: 6, height: 10 },
   },
   {
     id: 'OBJ_09',
@@ -187,7 +187,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 76, y: 46, width: 6, height: 12 },
+    position: { x: 82, y: 50, width: 5, height: 10 },
   },
   {
     id: 'OBJ_11',
@@ -201,7 +201,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Verifies hidden string input for Free bypass',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 58, y: 55, width: 5, height: 7 },
+    position: { x: 56, y: 54, width: 4, height: 6 },
   },
   {
     id: 'OBJ_12',
@@ -233,7 +233,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Launches localized retro arcade overlay',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 22, y: 66, width: 10, height: 12 },
+    position: { x: 30, y: 68, width: 9, height: 11 },
   },
   {
     id: 'OBJ_14',
@@ -263,7 +263,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Squish animation triggering local state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 60, y: 56, width: 5, height: 5 },
+    position: { x: 62, y: 54, width: 4, height: 4 },
   },
   {
     id: 'OBJ_16',
@@ -277,7 +277,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Conditional branch overlay depending on Auth status',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 46, y: 48, width: 14, height: 16 },
+    position: { x: 46, y: 48, width: 12, height: 14 },
   },
   {
     id: 'OBJ_17',
@@ -291,7 +291,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Opens text box for the user to type in',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 68, y: 52, width: 6, height: 8 },
+    position: { x: 66, y: 52, width: 5, height: 7 },
   },
   {
     id: 'OBJ_18',
@@ -306,7 +306,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggles background audio playlist track array stream',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 28, y: 62, width: 8, height: 8 },
+    position: { x: 34, y: 64, width: 7, height: 7 },
   },
   {
     id: 'OBJ_19',
@@ -321,7 +321,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Triggers localized steam particle burst animation',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 52, y: 54, width: 4, height: 5 },
+    position: { x: 52, y: 53, width: 3, height: 4 },
   },
   {
     id: 'OBJ_20',
