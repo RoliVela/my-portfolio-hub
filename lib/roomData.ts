@@ -233,7 +233,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Launches localized retro arcade overlay',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 28, y: 68, width: 10, height: 12 },
+    position: { x: 22, y: 66, width: 10, height: 12 },
   },
   {
     id: 'OBJ_14',
@@ -248,7 +248,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Pull action physics engine callback',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 62, y: 18, width: 6, height: 8 },
+    position: { x: 64, y: 16, width: 5, height: 7 },
   },
   {
     id: 'OBJ_15',
@@ -263,7 +263,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Squish animation triggering local state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 62, y: 58, width: 5, height: 5 },
+    position: { x: 60, y: 56, width: 5, height: 5 },
   },
   {
     id: 'OBJ_16',
@@ -306,7 +306,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggles background audio playlist track array stream',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 28, y: 58, width: 9, height: 9 },
+    position: { x: 28, y: 62, width: 8, height: 8 },
   },
   {
     id: 'OBJ_19',
@@ -321,7 +321,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Triggers localized steam particle burst animation',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 52, y: 56, width: 4, height: 5 },
+    position: { x: 52, y: 54, width: 4, height: 5 },
   },
   {
     id: 'OBJ_20',
