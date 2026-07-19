@@ -68,7 +68,7 @@ export default function Home() {
   };
 
   const handleObjectClick = (obj: RoomObject, e: React.MouseEvent) => {
-    if (repositionMode) return;
+    if (repositionMode || activeObject) return;
     e.stopPropagation();
     setActiveObject(obj);
 
