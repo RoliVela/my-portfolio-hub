@@ -13,7 +13,7 @@ export default function SnippyCharacter({ data, onClick }: SnippyCharacterProps)
     <button
       type="button"
       onClick={onClick}
-      className="absolute z-20 cursor-pointer transition-transform duration-200 hover:scale-105 focus:outline-none"
+      className="absolute z-20 cursor-pointer rounded-lg transition-transform duration-200 hover:scale-105 hover:outline hover:outline-2 hover:outline-yellow-300 hover:drop-shadow-[0_0_8px_rgba(253,224,71,0.6)] focus:outline-none"
       style={{
         left: `${data.position.x}%`,
         top: `${data.position.y}%`,

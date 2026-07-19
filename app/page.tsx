@@ -225,7 +225,7 @@ export default function Home() {
       {/* Interactive Objects Layer */}
       <div className="absolute inset-0 z-10">
         {roomObjects.map((obj) => {
-          if (obj.id === 'OBJ_01') return null;
+          if (obj.id === 'OBJ_01' || obj.id === 'OBJ_02') return null;
 
           const state = objectState[obj.id] ?? {};
           const isToggled = obj.toggleKey ? Boolean(state[obj.toggleKey]) : false;
@@ -238,7 +238,7 @@ export default function Home() {
               key={obj.id}
               type="button"
               onClick={(e) => handleObjectClick(obj, e)}
-              className={`absolute cursor-pointer rounded-lg transition-all duration-200 hover:opacity-100 focus:outline-none ${
+              className={`absolute cursor-pointer rounded-lg transition-all duration-200 hover:opacity-100 focus:outline-none hover:outline hover:outline-2 hover:outline-yellow-300 hover:drop-shadow-[0_0_8px_rgba(253,224,71,0.6)] ${
                 obj.imageSrc
                   ? 'bg-transparent opacity-90 hover:opacity-100'
                   : `border-2 border-dashed ${
