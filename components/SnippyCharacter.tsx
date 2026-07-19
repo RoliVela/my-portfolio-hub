@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { RoomObject } from '@/lib/roomData';
 import { getAssetPath } from '@/lib/assets';
 
@@ -9,6 +10,8 @@ interface SnippyCharacterProps {
 }
 
 export default function SnippyCharacter({ data, onClick }: SnippyCharacterProps) {
+  const [aspectRatio, setAspectRatio] = useState<number | undefined>(undefined);
+
   return (
     <button
       type="button"
@@ -18,7 +21,8 @@ export default function SnippyCharacter({ data, onClick }: SnippyCharacterProps)
         left: `${data.position.x}%`,
         top: `${data.position.y}%`,
         width: `${data.position.width}%`,
-        height: `${data.position.height}%`,
+        height: aspectRatio ? 'auto' : `${data.position.height}%`,
+        aspectRatio,
       }}
       aria-label={data.assetName}
       title={data.assetName}
@@ -29,7 +33,13 @@ export default function SnippyCharacter({ data, onClick }: SnippyCharacterProps)
           <img
             src={getAssetPath(data.imageSrc)}
             alt=""
-            className="h-full w-full object-contain drop-shadow-lg pixel-art"
+            className="pointer-events-none h-full w-full object-contain drop-shadow-lg pixel-art"
+            onLoad={(e) => {
+              const img = e.currentTarget;
+              if (img.naturalWidth && img.naturalHeight) {
+                setAspectRatio(img.naturalWidth / img.naturalHeight);
+              }
+            }}
           />
         </>
       ) : (

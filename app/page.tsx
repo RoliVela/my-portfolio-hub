@@ -32,6 +32,21 @@ export default function Home() {
   const [musicOn, setMusicOn] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Aspect ratios keyed by object id
+  const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
+
+  // Drag / resize state
+  const [dragState, setDragState] = useState<{
+    id: string;
+    type: 'move' | 'resize';
+    startX: number;
+    startY: number;
+    initialX: number;
+    initialY: number;
+    initialW: number;
+    initialH: number;
+  } | null>(null);
+
   const snippy = useMemo(() => roomObjects.find((obj) => obj.id === 'OBJ_01') ?? null, [roomObjects]);
   const snippyCheckIn = useMemo(() => roomObjects.find((obj) => obj.id === 'OBJ_02') ?? null, [roomObjects]);
 
@@ -50,6 +65,41 @@ export default function Home() {
       audioRef.current = null;
     };
   }, []);
+
+  // Global drag / resize listeners
+  useEffect(() => {
+    if (!dragState) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      const dX = ((e.clientX - dragState.startX) / window.innerWidth) * 100;
+      const dY = ((e.clientY - dragState.startY) / window.innerHeight) * 100;
+
+      setRoomObjects((prev) =>
+        prev.map((obj) => {
+          if (obj.id !== dragState.id) return obj;
+          return {
+            ...obj,
+            position: {
+              ...obj.position,
+              x: dragState.type === 'move' ? dragState.initialX + dX : obj.position.x,
+              y: dragState.type === 'move' ? dragState.initialY + dY : obj.position.y,
+              width: dragState.type === 'resize' ? Math.max(1, dragState.initialW + dX) : obj.position.width,
+              height: dragState.type === 'resize' ? Math.max(1, dragState.initialH + dY) : obj.position.height,
+            },
+          };
+        })
+      );
+    };
+
+    const handlePointerUp = () => setDragState(null);
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [dragState]);
 
   const toggleMusic = () => {
     if (!audioRef.current) {
@@ -163,6 +213,38 @@ export default function Home() {
     return obj.dialogue.free;
   };
 
+  const handleObjectPointerDown = (obj: RoomObject, e: React.PointerEvent) => {
+    if (!repositionMode) return;
+    e.stopPropagation();
+    e.preventDefault();
+    setDragState({
+      id: obj.id,
+      type: 'move',
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: obj.position.x,
+      initialY: obj.position.y,
+      initialW: obj.position.width,
+      initialH: obj.position.height,
+    });
+  };
+
+  const handleResizePointerDown = (obj: RoomObject, e: React.PointerEvent) => {
+    if (!repositionMode) return;
+    e.stopPropagation();
+    e.preventDefault();
+    setDragState({
+      id: obj.id,
+      type: 'resize',
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: obj.position.x,
+      initialY: obj.position.y,
+      initialW: obj.position.width,
+      initialH: obj.position.height,
+    });
+  };
+
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-black">
       {/* Speaker / music toggle */}
@@ -232,26 +314,33 @@ export default function Home() {
           const activeKey = obj.altStateKey ?? obj.toggleKey;
           const showAlt = activeKey ? Boolean(state[activeKey]) : false;
           const src = showAlt && obj.imageSrcAlt ? obj.imageSrcAlt : obj.imageSrc;
+          const ratio = aspectRatios[obj.id];
 
           return (
             <button
               key={obj.id}
               type="button"
               onClick={(e) => handleObjectClick(obj, e)}
-              className={`absolute cursor-pointer rounded-lg transition-all duration-200 hover:opacity-100 focus:outline-none hover:outline hover:outline-2 hover:outline-yellow-300 hover:drop-shadow-[0_0_8px_rgba(253,224,71,0.6)] ${
-                obj.imageSrc
-                  ? 'bg-transparent opacity-90 hover:opacity-100'
-                  : `border-2 border-dashed ${
-                      isToggled
-                        ? 'border-yellow-300 bg-yellow-300/20 opacity-80'
-                        : 'border-white/30 bg-white/10 opacity-40 hover:bg-white/20'
+              onPointerDown={(e) => handleObjectPointerDown(obj, e)}
+              className={`absolute transition-all duration-200 focus:outline-none ${
+                repositionMode
+                  ? 'cursor-move border border-dashed border-white/50 bg-white/10 hover:bg-white/20'
+                  : `cursor-pointer rounded-lg hover:opacity-100 ${
+                      obj.imageSrc
+                        ? 'bg-transparent opacity-90 hover:opacity-100'
+                        : `border-2 border-dashed ${
+                            isToggled
+                              ? 'border-yellow-300 bg-yellow-300/20 opacity-80'
+                              : 'border-white/30 bg-white/10 opacity-40 hover:bg-white/20'
+                          }`
                     }`
               }`}
               style={{
                 left: `${obj.position.x}%`,
                 top: `${obj.position.y}%`,
                 width: `${obj.position.width}%`,
-                height: `${obj.position.height}%`,
+                height: obj.imageSrc && ratio ? 'auto' : `${obj.position.height}%`,
+                aspectRatio: obj.imageSrc && ratio ? ratio : undefined,
               }}
               title={obj.assetName}
               aria-label={obj.assetName}
@@ -262,7 +351,16 @@ export default function Home() {
                   <img
                     src={getAssetPath(src ?? '')}
                     alt=""
-                    className="h-full w-full object-contain pixel-art drop-shadow-lg"
+                    className="pointer-events-none h-full w-full object-contain pixel-art drop-shadow-lg"
+                    onLoad={(e) => {
+                      const img = e.currentTarget;
+                      if (img.naturalWidth && img.naturalHeight) {
+                        setAspectRatios((prev) => ({
+                          ...prev,
+                          [obj.id]: img.naturalWidth / img.naturalHeight,
+                        }));
+                      }
+                    }}
                   />
                 </>
               ) : (
@@ -270,6 +368,18 @@ export default function Home() {
                   {obj.assetName}
                   <br />({obj.id})
                 </span>
+              )}
+
+              {/* Resize handle in reposition mode */}
+              {repositionMode && (
+                <span
+                  role="button"
+                  aria-label={`Resize ${obj.assetName}`}
+                  tabIndex={0}
+                  onPointerDown={(e) => handleResizePointerDown(obj, e)}
+                  className="absolute -bottom-1 -right-1 z-20 h-3 w-3 cursor-nwse-resize rounded-sm bg-yellow-400 hover:bg-yellow-300"
+                  style={{ transform: 'translate(50%, 50%)' }}
+                />
               )}
             </button>
           );
@@ -299,16 +409,18 @@ export default function Home() {
             </button>
           </div>
           <p className="mb-4 text-xs text-gray-400">
-            Edit x/y/width/height below. Click background to see coordinates.
+            Drag objects to move. Drag the yellow corner handle to resize. Edit values below for precision.
           </p>
           {roomObjects.map((obj) => (
             <div key={obj.id} className="mb-3 rounded bg-white/10 p-2">
               <p className="mb-1 text-xs font-semibold">{obj.assetName}</p>
               <div className="grid grid-cols-2 gap-2">
                 {(['x', 'y', 'width', 'height'] as const).map((key) => (
-                  <label key={key} className="text-xs">
+                  <label key={key} className="text-xs" htmlFor={`${obj.id}-${key}`}>
                     {key}
                     <input
+                      id={`${obj.id}-${key}`}
+                      name={`${obj.id}-${key}`}
                       type="number"
                       step="0.1"
                       value={obj.position[key]}
