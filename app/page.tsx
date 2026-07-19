@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { roomObjects as initialRoomObjects, RoomObject, DialogueEntry } from '@/lib/roomData';
 import { getAssetPath } from '@/lib/assets';
+import { loadImageAlphaMap, isPixelVisible, AlphaMap } from '@/lib/hitbox';
 import DialogueBox from '@/components/DialogueBox';
 import SnippyCharacter from '@/components/SnippyCharacter';
 import ItemInteractionStage from '@/components/ItemInteractionStage';
@@ -65,6 +66,9 @@ export default function Home() {
   // Aspect ratios keyed by object id
   const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
 
+  // Pixel-alpha maps keyed by image src for pixel-perfect hit detection
+  const alphaMapsRef = useRef<Record<string, AlphaMap | null>>({});
+
   // Drag / resize state
   const [dragState, setDragState] = useState<{
     id: string;
@@ -94,6 +98,20 @@ export default function Home() {
       audioRef.current?.pause();
       audioRef.current = null;
     };
+  }, []);
+
+  // Pre-load alpha maps for all object images (including alt states) so
+  // pixel-perfect hit detection is ready before the user clicks.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    initialRoomObjects.forEach((obj) => {
+      [obj.imageSrc, obj.imageSrcAlt].forEach((src) => {
+        if (!src || alphaMapsRef.current[src]) return;
+        loadImageAlphaMap(getAssetPath(src)).then((map) => {
+          if (map) alphaMapsRef.current[src] = map;
+        });
+      });
+    });
   }, []);
 
   // Global drag / resize listeners
@@ -158,9 +176,24 @@ export default function Home() {
     });
   };
 
-  const handleObjectClick = (obj: RoomObject, e: React.MouseEvent) => {
+  const isClickOnVisiblePixel = (obj: RoomObject, e: React.MouseEvent<HTMLButtonElement>): boolean => {
+    const src = getObjectImageSrc(obj, objectState[obj.id] ?? {});
+    if (!src) return true;
+    const alphaMap = alphaMapsRef.current[src];
+    if (!alphaMap) return true;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    return isPixelVisible(alphaMap, x, y, rect.width, rect.height);
+  };
+
+  const handleObjectClick = async (obj: RoomObject, e: React.MouseEvent) => {
     if (repositionMode || inspectedObject) return;
     e.stopPropagation();
+
+    const visible = await isClickOnVisiblePixel(obj, e as React.MouseEvent<HTMLButtonElement>);
+    if (!visible) return;
 
     // Snippy (OBJ_01) and Snippy check-in (OBJ_02) keep the old bottom-dialogue behavior.
     if (obj.id === 'OBJ_01' || obj.id === 'OBJ_02') {
@@ -440,6 +473,12 @@ export default function Home() {
                           ...prev,
                           [obj.id]: img.naturalWidth / img.naturalHeight,
                         }));
+                      }
+                      const src = getObjectImageSrc(obj, objectState[obj.id] ?? {});
+                      if (src) {
+                        loadImageAlphaMap(getAssetPath(src)).then((map) => {
+                          if (map) alphaMapsRef.current[src] = map;
+                        });
                       }
                     }}
                   />
