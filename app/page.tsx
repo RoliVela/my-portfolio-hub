@@ -211,8 +211,8 @@ export default function Home() {
 
       {/* Decorative desk item (White monster) */}
       <div
-        className="pointer-events-none absolute z-10 aspect-[3/4] w-[5%]"
-        style={{ left: '60%', top: '56%' }}
+        className="pointer-events-none absolute z-10 aspect-[3/4] w-[4%]"
+        style={{ left: '58%', top: '58%' }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

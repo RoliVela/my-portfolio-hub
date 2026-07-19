@@ -83,7 +83,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant watering animation state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 15, y: -55.2, width: 7.4, height: 150 },
+    position: { x: 5, y: 15, width: 10, height: 25 },
   },
   {
     id: 'OBJ_04',
@@ -116,7 +116,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant feeding animation state. This plant is no longer available to interact with.',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 27, y: 35, width: 50, height: 20 },
+    position: { x: 27, y: 35, width: 15, height: 20 },
   },
   {
     id: 'OBJ_06',
@@ -147,7 +147,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 15, y: 11, width: 50, height: 30 },
+    position: { x: 18, y: 15, width: 18, height: 10 },
   },
   {
     id: 'OBJ_08',
@@ -163,7 +163,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 90, y: 33, width: 11, height: 45 },
+    position: { x: 90, y: 33, width: 11, height: 20 },
   },
   {
     id: 'OBJ_09',
@@ -242,7 +242,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Launches localized retro arcade overlay',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 4, y: 45, width: 40, height: 32 },
+    position: { x: 4, y: 45, width: 25, height: 30 },
   },
   {
     id: 'OBJ_14',
@@ -333,7 +333,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Triggers localized steam particle burst animation',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 81, y: 58.5, width: 19, height: 12 },
+    position: { x: 81, y: 58.5, width: 10, height: 12 },
   },
   {
     id: 'OBJ_20',
@@ -348,6 +348,6 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Opens image gallery overlay of personal and team photos',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: -4.5, y: 20, width: 28, height: 25 },
+    position: { x: -4.5, y: 20, width: 15, height: 25 },
   },
 ];
