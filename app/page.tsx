@@ -1,12 +1,39 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { roomObjects as initialRoomObjects, RoomObject, DialogueEntry } from '@/lib/roomData';
 import { getAssetPath } from '@/lib/assets';
 import DialogueBox from '@/components/DialogueBox';
 import SnippyCharacter from '@/components/SnippyCharacter';
+import ItemInteractionStage from '@/components/ItemInteractionStage';
 
 type ObjectState = Record<string, Record<string, unknown>>;
+type InspectionPhase = 'closed' | 'dialogue' | 'choice' | 'interacting';
+
+function getObjectImageSrc(obj: RoomObject, state: Record<string, unknown>) {
+  const activeKey = obj.altStateKey ?? obj.toggleKey;
+  const showAlt = activeKey ? Boolean(state[activeKey]) : false;
+  return showAlt && obj.imageSrcAlt ? obj.imageSrcAlt : obj.imageSrc;
+}
+
+function InspectedItemImage({
+  obj,
+  objectState: state,
+}: {
+  obj: RoomObject;
+  objectState: ObjectState;
+}) {
+  const src = getObjectImageSrc(obj, state[obj.id] ?? {});
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={getAssetPath(src ?? '')}
+      alt=""
+      className="pointer-events-none h-full w-full object-contain pixel-art drop-shadow-2xl"
+    />
+  );
+}
 
 function getInitialState(): ObjectState {
   return initialRoomObjects.reduce((acc, obj) => {
@@ -22,6 +49,9 @@ export default function Home() {
   const [activeObject, setActiveObject] = useState<RoomObject | null>(
     () => initialRoomObjects.find((obj) => obj.id === 'OBJ_01') ?? null
   );
+  const [inspectionPhase, setInspectionPhase] = useState<InspectionPhase>('closed');
+  const [inspectedObject, setInspectedObject] = useState<RoomObject | null>(null);
+
   const mouseXRef = useRef<HTMLSpanElement | null>(null);
   const mouseYRef = useRef<HTMLSpanElement | null>(null);
   const clickXRef = useRef<HTMLSpanElement | null>(null);
@@ -117,28 +147,61 @@ export default function Home() {
     }
   };
 
-  const handleObjectClick = (obj: RoomObject, e: React.MouseEvent) => {
-    if (repositionMode || activeObject) return;
-    e.stopPropagation();
-    setActiveObject(obj);
+  const performObjectToggle = (obj: RoomObject) => {
+    const key = obj.toggleKey;
+    if (!key) return;
+    setObjectState((prev) => {
+      const next = { ...prev, [obj.id]: { ...prev[obj.id] } };
+      const current = next[obj.id][key];
+      next[obj.id][key] = typeof current === 'boolean' ? !current : true;
+      return next;
+    });
+  };
 
+  const handleObjectClick = (obj: RoomObject, e: React.MouseEvent) => {
+    if (repositionMode || inspectedObject) return;
+    e.stopPropagation();
+
+    // Snippy (OBJ_01) and Snippy check-in (OBJ_02) keep the old bottom-dialogue behavior.
+    if (obj.id === 'OBJ_01' || obj.id === 'OBJ_02') {
+      setActiveObject(obj);
+      setObjectState((prev) => {
+        const next = { ...prev, [obj.id]: { ...prev[obj.id] } };
+        next[obj.id].isInteracted = true;
+        return next;
+      });
+      return;
+    }
+
+    // Room items: start the pick-up/inspect flow.
+    setInspectedObject(obj);
+    setInspectionPhase('dialogue');
     setObjectState((prev) => {
       const next = { ...prev, [obj.id]: { ...prev[obj.id] } };
       next[obj.id].isInteracted = true;
-
-      if (obj.toggleKey) {
-        const current = next[obj.id][obj.toggleKey];
-        next[obj.id][obj.toggleKey] = typeof current === 'boolean' ? !current : true;
-      }
-
       return next;
     });
   };
 
   const handleSnippyClick = (e: React.MouseEvent) => {
-    if (repositionMode) return;
+    if (repositionMode || inspectedObject) return;
     if (!snippyCheckIn) return;
     handleObjectClick(snippyCheckIn, e);
+  };
+
+  const handleDialogueFinished = () => {
+    setInspectionPhase('choice');
+  };
+
+  const handleInteract = () => {
+    if (!inspectedObject) return;
+    setInspectionPhase('interacting');
+    performObjectToggle(inspectedObject);
+  };
+
+  const handleExit = () => {
+    setInspectionPhase('closed');
+    setInspectedObject(null);
   };
 
   const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -245,6 +308,9 @@ export default function Home() {
     });
   };
 
+  const isInspecting = inspectedObject !== null;
+  const dimLevel = inspectionPhase === 'interacting' ? 'bg-black/80' : 'bg-black/50';
+
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-black">
       {/* Speaker / music toggle */}
@@ -304,6 +370,18 @@ export default function Home() {
         />
       </div>
 
+      {/* Dim overlay during inspection */}
+      <AnimatePresence>
+        {isInspecting && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={`fixed inset-0 z-20 ${dimLevel}`}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Interactive Objects Layer */}
       <div className="absolute inset-0 z-10">
         {roomObjects.map((obj) => {
@@ -315,10 +393,12 @@ export default function Home() {
           const showAlt = activeKey ? Boolean(state[activeKey]) : false;
           const src = showAlt && obj.imageSrcAlt ? obj.imageSrcAlt : obj.imageSrc;
           const ratio = aspectRatios[obj.id];
+          const isInspected = inspectedObject?.id === obj.id;
 
           return (
-            <button
+            <motion.button
               key={obj.id}
+              layoutId={`inspect-${obj.id}`}
               type="button"
               onClick={(e) => handleObjectClick(obj, e)}
               onPointerDown={(e) => handleObjectPointerDown(obj, e)}
@@ -341,6 +421,7 @@ export default function Home() {
                 width: `${obj.position.width}%`,
                 height: obj.imageSrc && ratio ? 'auto' : `${obj.position.height}%`,
                 aspectRatio: obj.imageSrc && ratio ? ratio : undefined,
+                opacity: isInspecting && !isInspected ? 0.3 : undefined,
               }}
               title={obj.assetName}
               aria-label={obj.assetName}
@@ -381,18 +462,91 @@ export default function Home() {
                   style={{ transform: 'translate(50%, 50%)' }}
                 />
               )}
-            </button>
+            </motion.button>
           );
         })}
 
         {snippy && <SnippyCharacter data={snippy} onClick={handleSnippyClick} />}
       </div>
 
-      {activeObject && !repositionMode && (
+      {/* Centered inspected item */}
+      <AnimatePresence>
+        {inspectedObject && (
+          <motion.div
+            layoutId={`inspect-${inspectedObject.id}`}
+            className="fixed left-1/2 top-1/2 z-30 h-auto w-[min(60vw,60vh)] -translate-x-1/2 -translate-y-1/2"
+            style={{ aspectRatio: aspectRatios[inspectedObject.id] }}
+          >
+            <InspectedItemImage obj={inspectedObject} objectState={objectState} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Snippy dialogue (bottom box) — only for OBJ_01/OBJ_02 */}
+      {activeObject && !repositionMode && !isInspecting && (
         <DialogueBox
           entries={getDialogue(activeObject)}
           onClose={() => setActiveObject(null)}
         />
+      )}
+
+      {/* Inspected item dialogue */}
+      {inspectedObject && inspectionPhase === 'dialogue' && !repositionMode && (
+        <DialogueBox
+          entries={getDialogue(inspectedObject)}
+          onClose={handleDialogueFinished}
+        />
+      )}
+
+      {/* Choice prompt after dialogue */}
+      {inspectedObject && inspectionPhase === 'choice' && !repositionMode && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-end justify-center p-4">
+          <div className="relative w-full max-w-4xl select-none rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000]">
+            <div className="absolute -top-5 left-4 rounded bg-white px-3 py-1 text-lg text-black font-vt323">
+              {inspectedObject.assetName}
+            </div>
+            <div className="flex items-center justify-center gap-4 pt-2">
+              <button
+                type="button"
+                onClick={handleInteract}
+                className="rounded border-2 border-white bg-black px-6 py-2 font-vt323 text-2xl text-white transition hover:bg-white hover:text-black"
+              >
+                Interact
+              </button>
+              <button
+                type="button"
+                onClick={handleExit}
+                className="rounded border-2 border-white bg-black px-6 py-2 font-vt323 text-2xl text-white transition hover:bg-white hover:text-black"
+              >
+                Exit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Interaction stage (extensible mini-game hook) */}
+      {inspectedObject && inspectionPhase === 'interacting' && !repositionMode && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-end justify-center p-4">
+          <div className="relative w-full max-w-4xl select-none rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000]">
+            <div className="absolute -top-5 left-4 rounded bg-white px-3 py-1 text-lg text-black font-vt323">
+              {inspectedObject.assetName}
+            </div>
+            <div className="flex flex-col items-center gap-4 pt-2">
+              <ItemInteractionStage
+                obj={inspectedObject}
+                onComplete={handleExit}
+              />
+              <button
+                type="button"
+                onClick={handleExit}
+                className="rounded border-2 border-white bg-black px-6 py-2 font-vt323 text-2xl text-white transition hover:bg-white hover:text-black"
+              >
+                Exit
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {repositionMode && (
