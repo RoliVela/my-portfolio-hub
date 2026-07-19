@@ -16,6 +16,10 @@ export interface RoomObject {
   toggleKey?: string;
   /** Optional path to a real pixel-art asset in /public/assets. */
   imageSrc?: string;
+  /** Optional alternate image shown when the alt-state condition is true. */
+  imageSrcAlt?: string;
+  /** Optional state key to check for the alternate image; defaults to toggleKey if omitted. */
+  altStateKey?: string;
   dialogue: {
     free: DialogueEntry[];
     paid: string;
@@ -135,7 +139,8 @@ export const roomObjects: RoomObject[] = [
     type: 'Click / Toggle',
     initialState: { isLit: false },
     toggleKey: 'isLit',
-    imageSrc: '/assets/neon-sign.png',
+    imageSrc: '/assets/neon-sign-off.png',
+    imageSrcAlt: '/assets/neon-sign-on.png',
     dialogue: {
       free: [{ speaker: 'Snippy', text: 'Cool sign. Really adds to the chill lofi vibe Roli was going for here.' }],
       paid: 'N/A',
@@ -150,7 +155,8 @@ export const roomObjects: RoomObject[] = [
     type: 'Click / Toggle',
     initialState: { isLit: false },
     toggleKey: 'isLit',
-    imageSrc: '/assets/desk-lamp.png',
+    imageSrc: '/assets/desk-lamp-off.png',
+    imageSrcAlt: '/assets/desk-lamp-on.png',
     dialogue: {
       free: [{ speaker: 'Snippy', text: 'It kinda looks like the Pixar lamp.' }],
       paid: 'N/A',
@@ -165,7 +171,8 @@ export const roomObjects: RoomObject[] = [
     type: 'Click / Toggle',
     initialState: { isLit: false },
     toggleKey: 'isLit',
-    imageSrc: '/assets/string-lights.png',
+    imageSrc: '/assets/string-lights-off.png',
+    imageSrcAlt: '/assets/string-lights-on.png',
     dialogue: {
       free: [{ speaker: 'Snippy', text: 'So sparkly! Roli should add some of these to his room in real life.' }],
       paid: 'N/A',
@@ -180,7 +187,8 @@ export const roomObjects: RoomObject[] = [
     type: 'Click / Toggle',
     initialState: { isLit: false },
     toggleKey: 'isLit',
-    imageSrc: '/assets/bed-lamp.png',
+    imageSrc: '/assets/bed-lamp-off.png',
+    imageSrcAlt: '/assets/bed-lamp-on.png',
     dialogue: {
       free: [{ speaker: 'Snippy', text: 'Getting sleepy already?' }],
       paid: 'N/A',
@@ -209,7 +217,8 @@ export const roomObjects: RoomObject[] = [
     type: 'Click / Toggle',
     initialState: { isOpen: true },
     toggleKey: 'isOpen',
-    imageSrc: '/assets/window-blinds.png',
+    imageSrc: '/assets/window-blinds-open.png',
+    imageSrcAlt: '/assets/window-blinds-closed.png',
     dialogue: {
       free: [
         { speaker: 'Snippy', text: 'Laredo is truly a beautiful city. I always wondered how Los Angeles took the name LA when there is a city as beautiful as this.' },
@@ -270,7 +279,9 @@ export const roomObjects: RoomObject[] = [
     assetName: 'Computer Console',
     type: 'Navigation / Interaction',
     initialState: { isUnlocked: false },
-    imageSrc: '/assets/computer.png',
+    imageSrc: '/assets/computer-locked.png',
+    imageSrcAlt: '/assets/computer-unlocked.png',
+    altStateKey: 'isUnlocked',
     dialogue: {
       free: [{ speaker: 'Snippy', text: 'Aww shucks. You haven\'t paid yet, so we have no connection to Roli\'s programs. Well, at least we have the dinosaur game to play.' }],
       paid: 'Nice! *in a hacker voice* We\'re in... Let\'s see what cool stuff we can find hidden away here.',
@@ -299,7 +310,8 @@ export const roomObjects: RoomObject[] = [
     type: 'Click / Audio Toggle',
     initialState: { isPlaying: false },
     toggleKey: 'isPlaying',
-    imageSrc: '/assets/record-player.png',
+    imageSrc: '/assets/record-player-off.png',
+    imageSrcAlt: '/assets/record-player-on.png',
     dialogue: {
       free: [{ speaker: 'Snippy', text: 'Epic! We can play music here! There\'s already something playing here, but feel free to change it up. Im always eager to hear some new tunes.' }],
       paid: 'music! Roli curates the absolute best beats for working. Let\'s make it extra cozy in here!',

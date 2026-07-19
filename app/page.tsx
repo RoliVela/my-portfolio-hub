@@ -132,7 +132,6 @@ export default function Home() {
     );
     const text = lines.join('\n');
     navigator.clipboard.writeText(text);
-    // eslint-disable-next-line no-console
     console.log('REPOSITION_DATA_START\n' + text + '\nREPOSITION_DATA_END');
     setCopied(true);
     if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
@@ -230,6 +229,9 @@ export default function Home() {
 
           const state = objectState[obj.id] ?? {};
           const isToggled = obj.toggleKey ? Boolean(state[obj.toggleKey]) : false;
+          const activeKey = obj.altStateKey ?? obj.toggleKey;
+          const showAlt = activeKey ? Boolean(state[activeKey]) : false;
+          const src = showAlt && obj.imageSrcAlt ? obj.imageSrcAlt : obj.imageSrc;
 
           return (
             <button
@@ -258,7 +260,7 @@ export default function Home() {
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={getAssetPath(obj.imageSrc)}
+                    src={getAssetPath(src ?? '')}
                     alt=""
                     className="h-full w-full object-contain pixel-art drop-shadow-lg"
                   />
