@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DialogueEntry } from '@/lib/roomData';
+import { getAssetPath } from '@/lib/assets';
 
 interface DialogueBoxProps {
   entries: DialogueEntry[];
@@ -13,6 +14,22 @@ const TYPEWRITER_SPEED_MS = 30;
 function TypewriterText({ text, onFinish }: { text: string; onFinish?: () => void }) {
   const [displayedLength, setDisplayedLength] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio(getAssetPath('/assets/snippy-talk.mp3'));
+    audio.loop = true;
+    audio.volume = 0.18;
+    audioRef.current = audio;
+
+    audio.play().catch(() => {});
+
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+      audioRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -21,6 +38,8 @@ function TypewriterText({ text, onFinish }: { text: string; onFinish?: () => voi
           clearInterval(interval);
           setIsFinished(true);
           onFinish?.();
+          audioRef.current?.pause();
+          if (audioRef.current) audioRef.current.currentTime = 0;
           return prev;
         }
         return prev + 1;
