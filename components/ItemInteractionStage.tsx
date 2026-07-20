@@ -1,7 +1,9 @@
 'use client';
 
 import { RoomObject } from '@/lib/roomData';
+import CalculatorInteraction from './CalculatorInteraction';
 import ClockInteraction from './ClockInteraction';
+import DinoGame from './DinoGame';
 import NeeDohInteraction from './NeeDohInteraction';
 import PosterboardInteraction from './PosterboardInteraction';
 import SuggestionBoxInteraction from './SuggestionBoxInteraction';
@@ -44,6 +46,14 @@ export default function ItemInteractionStage({
 
   if (obj.id === 'OBJ_03' || obj.id === 'OBJ_04' || obj.id === 'OBJ_06') {
     return <WateringGame onComplete={onComplete} onSuccess={onToggle} plantName={obj.assetName} />;
+  }
+
+  if (obj.id === 'OBJ_11') {
+    return <CalculatorInteraction onComplete={onComplete} />;
+  }
+
+  if (obj.id === 'OBJ_16') {
+    return <DinoGame onComplete={onComplete} />;
   }
 
   if (obj.id === 'OBJ_17') {

@@ -260,6 +260,8 @@ export default function Home() {
       inspectedObject.id !== 'OBJ_06' &&
       inspectedObject.id !== 'OBJ_14' &&
       inspectedObject.id !== 'OBJ_15' &&
+      inspectedObject.id !== 'OBJ_11' &&
+      inspectedObject.id !== 'OBJ_16' &&
       inspectedObject.id !== 'OBJ_17'
     ) {
       performObjectToggle(inspectedObject);
