@@ -69,6 +69,10 @@ export default function Home() {
   // Pixel-alpha maps keyed by image src for pixel-perfect hit detection
   const alphaMapsRef = useRef<Record<string, AlphaMap | null>>({});
 
+  // Room container size for fitting object boxes to image aspect ratio
+  const objectsLayerRef = useRef<HTMLDivElement | null>(null);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number } | null>(null);
+
   // Drag / resize state
   const [dragState, setDragState] = useState<{
     id: string;
@@ -112,6 +116,19 @@ export default function Home() {
         });
       });
     });
+  }, []);
+
+  // Track the room container's rendered size so object boxes can be fitted
+  // to their image aspect ratio within the position.width/height bounding box.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const updateSize = () => {
+      const rect = objectsLayerRef.current?.getBoundingClientRect();
+      if (rect) setContainerSize({ width: rect.width, height: rect.height });
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
   }, []);
 
   // Global drag / resize listeners
@@ -309,6 +326,50 @@ export default function Home() {
     return obj.dialogue.free;
   };
 
+  // Compute the actual rendered position/size for an object with a known image
+  // aspect ratio, treating position.width/height as a maximum bounding box and
+  // fitting the image inside it with `object-fit: contain` semantics.
+  const getFittedStyle = (
+    position: RoomObject['position'],
+    ratio: number | undefined
+  ): React.CSSProperties => {
+    if (!ratio || !containerSize) {
+      return {
+        left: `${position.x}%`,
+        top: `${position.y}%`,
+        width: `${position.width}%`,
+        height: `${position.height}%`,
+      };
+    }
+
+    const boxWidthPx = containerSize.width * (position.width / 100);
+    const boxHeightPx = containerSize.height * (position.height / 100);
+    const boxAspectRatio = boxWidthPx / boxHeightPx;
+
+    let actualWidthPx: number;
+    let actualHeightPx: number;
+
+    if (boxAspectRatio > ratio) {
+      // Bounding box is wider relative to height than the image; height binds.
+      actualHeightPx = boxHeightPx;
+      actualWidthPx = actualHeightPx * ratio;
+    } else {
+      // Bounding box is taller relative to width than the image; width binds.
+      actualWidthPx = boxWidthPx;
+      actualHeightPx = actualWidthPx / ratio;
+    }
+
+    const actualWidthPercent = (actualWidthPx / containerSize.width) * 100;
+    const actualHeightPercent = (actualHeightPx / containerSize.height) * 100;
+
+    return {
+      left: `${position.x + (position.width - actualWidthPercent) / 2}%`,
+      top: `${position.y + (position.height - actualHeightPercent) / 2}%`,
+      width: `${actualWidthPercent}%`,
+      height: `${actualHeightPercent}%`,
+    };
+  };
+
   const handleObjectPointerDown = (obj: RoomObject, e: React.PointerEvent) => {
     if (!repositionMode) return;
     e.stopPropagation();
@@ -416,7 +477,7 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Interactive Objects Layer */}
-      <div className="absolute inset-0 z-10">
+      <div className="absolute inset-0 z-10" ref={objectsLayerRef}>
         {roomObjects.map((obj) => {
           if (obj.id === 'OBJ_01' || obj.id === 'OBJ_02') return null;
 
@@ -449,11 +510,7 @@ export default function Home() {
                     }`
               }`}
               style={{
-                left: `${obj.position.x}%`,
-                top: `${obj.position.y}%`,
-                width: `${obj.position.width}%`,
-                height: obj.imageSrc && ratio ? 'auto' : `${obj.position.height}%`,
-                aspectRatio: obj.imageSrc && ratio ? ratio : undefined,
+                ...getFittedStyle(obj.position, obj.imageSrc ? ratio : undefined),
                 opacity: isInspecting && !isInspected ? 0.3 : undefined,
               }}
               title={obj.assetName}
