@@ -82,33 +82,125 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const drawDino = () => {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(DINO_X, dinoYRef.current, DINO_SIZE, DINO_SIZE);
+    const drawSky = () => {
+      const gradient = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+      gradient.addColorStop(0, '#0f172a');
+      gradient.addColorStop(1, '#334155');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, CANVAS_WIDTH, GROUND_Y);
+    };
+
+    const drawSun = () => {
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(CANVAS_WIDTH - 60, 40, 18, 0, Math.PI * 2);
+      ctx.fill();
+      // Pixel sun rays
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 3;
+      for (let i = 0; i < 8; i++) {
+        const angle = (i * Math.PI) / 4;
+        const x1 = CANVAS_WIDTH - 60 + Math.cos(angle) * 24;
+        const y1 = 40 + Math.sin(angle) * 24;
+        const x2 = CANVAS_WIDTH - 60 + Math.cos(angle) * 32;
+        const y2 = 40 + Math.sin(angle) * 32;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+    };
+
+    const drawClouds = () => {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      const cloud1X = 120 + Math.sin(frameRef.current * 0.005) * 10;
+      const cloud2X = 350 + Math.sin(frameRef.current * 0.004) * 12;
+      [cloud1X, cloud2X].forEach((cx, i) => {
+        const cy = i === 0 ? 45 : 70;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+        ctx.arc(cx + 22, cy, 24, 0, Math.PI * 2);
+        ctx.arc(cx + 48, cy, 18, 0, Math.PI * 2);
+        ctx.fill();
+      });
     };
 
     const drawGround = () => {
-      ctx.strokeStyle = '#ffffff';
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y);
+      ctx.strokeStyle = '#475569';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(0, GROUND_Y);
       ctx.lineTo(CANVAS_WIDTH, GROUND_Y);
       ctx.stroke();
+
+      // Moving ground dots for speed sensation
+      ctx.fillStyle = '#475569';
+      const offset = (frameRef.current * speedRef.current) % 40;
+      for (let x = -offset; x < CANVAS_WIDTH; x += 40) {
+        ctx.fillRect(x + 20, GROUND_Y + 10, 6, 3);
+      }
+    };
+
+    const drawDino = () => {
+      const x = DINO_X;
+      const y = dinoYRef.current;
+
+      // Body (green)
+      ctx.fillStyle = '#4ade80';
+      ctx.fillRect(x + 8, y + 10, 28, 22);
+
+      // Head
+      ctx.fillRect(x + 28, y, 16, 16);
+
+      // Eye
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(x + 36, y + 4, 4, 4);
+
+      // Legs (alternate when running)
+      ctx.fillStyle = '#22c55e';
+      const legOffset = Math.floor(frameRef.current / 10) % 2 === 0 ? 0 : 4;
+      ctx.fillRect(x + 10 + legOffset, y + 32, 8, 8);
+      ctx.fillRect(x + 24 - legOffset, y + 32, 8, 8);
+
+      // Tail
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(x, y + 16, 8, 8);
+    };
+
+    const drawCactus = (obstacle: Obstacle) => {
+      const { x, y, width, height } = obstacle;
+
+      // Main trunk
+      ctx.fillStyle = '#16a34a';
+      ctx.fillRect(x + width * 0.35, y, width * 0.3, height);
+
+      // Left arm
+      ctx.fillRect(x, y + height * 0.3, width * 0.35, height * 0.15);
+      ctx.fillRect(x, y + height * 0.2, width * 0.15, height * 0.3);
+
+      // Right arms
+      ctx.fillRect(x + width * 0.65, y + height * 0.4, width * 0.35, height * 0.15);
+      ctx.fillRect(x + width * 0.85, y + height * 0.3, width * 0.15, height * 0.3);
+
+      // Outline detail
+      ctx.fillStyle = '#14532d';
+      ctx.fillRect(x + width * 0.35, y + height, width * 0.3, 3);
     };
 
     const drawObstacles = () => {
-      ctx.fillStyle = '#ffffff';
       obstaclesRef.current.forEach((obstacle) => {
-        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        drawCactus(obstacle);
       });
     };
 
     const checkCollision = () => {
       const dino = {
-        x: DINO_X,
-        y: dinoYRef.current,
-        width: DINO_SIZE,
-        height: DINO_SIZE,
+        x: DINO_X + 4,
+        y: dinoYRef.current + 4,
+        width: DINO_SIZE - 8,
+        height: DINO_SIZE - 8,
       };
 
       return obstaclesRef.current.some((obstacle) => {
@@ -120,7 +212,10 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
 
     const gameLoop = () => {
       if (!gameOverRef.current && isPlaying) {
-        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        drawSky();
+        drawSun();
+        drawClouds();
+        drawGround();
 
         // Update dino physics
         dinoVyRef.current += GRAVITY;
@@ -137,14 +232,12 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
 
         // Spawn obstacles
         frameRef.current += 1;
-        if (
-          frameRef.current % Math.max(60, 150 - Math.floor(scoreRef.current / 20)) === 0
-        ) {
+        if (frameRef.current % Math.max(60, 150 - Math.floor(scoreRef.current / 20)) === 0) {
           const height = 30 + Math.random() * 30;
           obstaclesRef.current.push({
             x: CANVAS_WIDTH,
             y: GROUND_Y - height,
-            width: 20,
+            width: 24,
             height,
           });
         }
@@ -158,6 +251,9 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
         scoreRef.current += 0.1;
         setScore(Math.floor(scoreRef.current));
 
+        drawDino();
+        drawObstacles();
+
         // Check collision
         if (checkCollision()) {
           gameOverRef.current = true;
@@ -166,10 +262,6 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
           if (rafRef.current) cancelAnimationFrame(rafRef.current);
           return;
         }
-
-        drawGround();
-        drawDino();
-        drawObstacles();
 
         rafRef.current = requestAnimationFrame(gameLoop);
       }

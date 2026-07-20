@@ -229,7 +229,9 @@ export default function WateringGame({ onComplete, onSuccess, plantName = 'plant
         ))}
       </div>
 
-      {message && <p className="font-vt323 text-2xl text-yellow-300">{message}</p>}
+      <div className="h-10 w-full text-center">
+        {message && <p className="font-vt323 text-2xl text-yellow-300">{message}</p>}
+      </div>
 
       <button
         type="button"
