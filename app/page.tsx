@@ -336,8 +336,8 @@ export default function Home() {
       return [obj.dialogue.free[1] ?? obj.dialogue.free[0]];
     }
 
-    if (obj.id === 'OBJ_12' && state.isOpen === false) {
-      return [obj.dialogue.free[1] ?? obj.dialogue.free[0]];
+    if (obj.id === 'OBJ_12') {
+      return state.isOpen === false ? [obj.dialogue.free[1] ?? obj.dialogue.free[0]] : [obj.dialogue.free[0]];
     }
 
     return obj.dialogue.free;
