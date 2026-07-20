@@ -36,10 +36,20 @@ function SuccessZoneWedge({ start, end }: { start: number; end: number }) {
   return <path d={path} fill="rgba(74, 222, 128, 0.5)" stroke="rgba(20, 83, 45, 0.8)" strokeWidth={2} />;
 }
 
+const HINT_STORAGE_KEY = 'watering-game-hint-seen';
+
 export default function WateringGame({ onComplete, onSuccess, plantName = 'plant' }: WateringGameProps) {
   const [streak, setStreak] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [showHint, setShowHint] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      return localStorage.getItem(HINT_STORAGE_KEY) !== 'true';
+    } catch {
+      return true;
+    }
+  });
 
   // Needle angle in degrees, sweeping across an arc
   const [angle, setAngle] = useState(ARC_START);
@@ -70,6 +80,15 @@ export default function WateringGame({ onComplete, onSuccess, plantName = 'plant
     streakRef.current = streak;
   }, [streak]);
 
+  const dismissHint = useCallback(() => {
+    setShowHint(false);
+    try {
+      localStorage.setItem(HINT_STORAGE_KEY, 'true');
+    } catch {
+      // ignore
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
       timersRef.current.forEach((id) => clearTimeout(id));
@@ -97,11 +116,12 @@ export default function WateringGame({ onComplete, onSuccess, plantName = 'plant
         setIsComplete(true);
         isCompleteRef.current = true;
         setMessage('Watered! 🌿');
-        if (rafRef.current) cancelAnimationFrame(rafRef.current);        const completeTimer = window.setTimeout(() => {
-            onSuccess?.();
-            onComplete?.();
-          }, 1200);
-          timersRef.current.push(completeTimer);
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        const completeTimer = window.setTimeout(() => {
+          onSuccess?.();
+          onComplete?.();
+        }, 1200);
+        timersRef.current.push(completeTimer);
       } else {
         setMessage(`Nice! ${HITS_TO_WIN - nextStreak} more.`);
         const niceTimer = window.setTimeout(() => setMessage(null), 800);
@@ -156,6 +176,29 @@ export default function WateringGame({ onComplete, onSuccess, plantName = 'plant
       <p className="text-center font-vt323 text-lg text-green-100">
         Press Space when the indicator is in the green zone. Get {HITS_TO_WIN} in a row!
       </p>
+
+      {showHint && (
+        <div className="w-full rounded-lg border-2 border-yellow-300 bg-yellow-100/90 p-4 text-left text-black shadow-md">
+          <div className="mb-2 flex items-start gap-2">
+            <span className="text-2xl">💡</span>
+            <div>
+              <p className="font-vt323 text-xl font-bold text-green-900">How to water</p>
+              <p className="font-vt323 text-lg leading-snug text-green-800">
+                Watch the yellow needle sweep back and forth. Press Space (or tap the button)
+                when the needle is inside the bright green wedge. Land three hits in a row to
+                finish watering!
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={dismissHint}
+            className="w-full rounded bg-green-700 px-4 py-1 font-vt323 text-lg text-white transition hover:bg-green-600"
+          >
+            Got it
+          </button>
+        </div>
+      )}
 
       <div className="relative h-48 w-64">
         {/* Arc track */}
