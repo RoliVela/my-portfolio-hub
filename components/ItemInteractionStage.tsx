@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { RoomObject } from '@/lib/roomData';
 import CalculatorInteraction from './CalculatorInteraction';
 import ClockInteraction from './ClockInteraction';
@@ -32,6 +33,8 @@ export default function ItemInteractionStage({
   selectedTimezone,
   onTimezoneChange,
 }: ItemInteractionStageProps) {
+  const [activated, setActivated] = useState(false);
+
   const handleInteract = () => {
     onComplete?.();
   };
@@ -68,18 +71,42 @@ export default function ItemInteractionStage({
   // Example:
   // if (obj.id === 'OBJ_13') return <KermitMiniGame onComplete={handleInteract} />;
 
+  const handleActivate = () => {
+    onToggle?.();
+    setActivated(true);
+  };
+
+  const handleDone = () => {
+    handleInteract();
+  };
+
   return (
     <div className="flex flex-col items-center gap-4">
       <p className="font-vt323 text-xl text-white/80">
         {obj.toggleKey ? `Use the ${obj.assetName}?` : `Nothing more to do with the ${obj.assetName}.`}
       </p>
-      <button
-        type="button"
-        onClick={handleInteract}
-        className="rounded bg-white px-6 py-2 font-vt323 text-xl text-black transition hover:bg-gray-200"
-      >
-        {obj.toggleKey ? 'Activate' : 'Done'}
-      </button>
+      {obj.toggleKey ? (
+        <button
+          type="button"
+          onClick={handleActivate}
+          disabled={activated}
+          className={`rounded px-6 py-2 font-vt323 text-xl text-black transition ${
+            activated
+              ? 'bg-gray-500/50 text-white/70 opacity-60'
+              : 'bg-white hover:bg-gray-200'
+          }`}
+        >
+          {activated ? 'Activated' : 'Activate'}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={handleDone}
+          className="rounded bg-white px-6 py-2 font-vt323 text-xl text-black transition hover:bg-gray-200"
+        >
+          Done
+        </button>
+      )}
     </div>
   );
 }

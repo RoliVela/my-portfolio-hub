@@ -11,6 +11,7 @@ interface Obstacle {
   y: number;
   width: number;
   height: number;
+  isFlying: boolean;
 }
 
 const CANVAS_WIDTH = 600;
@@ -34,6 +35,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
   const dinoYRef = useRef(GROUND_Y - DINO_SIZE);
   const dinoVyRef = useRef(0);
   const isJumpingRef = useRef(false);
+  const isDuckingRef = useRef(false);
   const obstaclesRef = useRef<Obstacle[]>([]);
   const speedRef = useRef(BASE_SPEED);
   const frameRef = useRef(0);
@@ -44,6 +46,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     dinoYRef.current = GROUND_Y - DINO_SIZE;
     dinoVyRef.current = 0;
     isJumpingRef.current = false;
+    isDuckingRef.current = false;
     obstaclesRef.current = [];
     speedRef.current = BASE_SPEED;
     frameRef.current = 0;
@@ -67,13 +70,27 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
         e.preventDefault();
         jump();
       }
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        e.preventDefault();
+        isDuckingRef.current = true;
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        e.preventDefault();
+        isDuckingRef.current = false;
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, [jump]);
 
   useEffect(() => {
@@ -84,19 +101,18 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
 
     const drawSky = () => {
       const gradient = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
-      gradient.addColorStop(0, '#0f172a');
-      gradient.addColorStop(1, '#334155');
+      gradient.addColorStop(0, '#4a1d4a');
+      gradient.addColorStop(1, '#2d1b4e');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, CANVAS_WIDTH, GROUND_Y);
     };
 
     const drawSun = () => {
-      ctx.fillStyle = '#facc15';
+      ctx.fillStyle = '#f9a8d4';
       ctx.beginPath();
       ctx.arc(CANVAS_WIDTH - 60, 40, 18, 0, Math.PI * 2);
       ctx.fill();
-      // Pixel sun rays
-      ctx.strokeStyle = '#fde047';
+      ctx.strokeStyle = '#fbcfe8';
       ctx.lineWidth = 3;
       for (let i = 0; i < 8; i++) {
         const angle = (i * Math.PI) / 4;
@@ -112,7 +128,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     };
 
     const drawClouds = () => {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.fillStyle = 'rgba(251, 207, 232, 0.15)';
       const cloud1X = 120 + Math.sin(frameRef.current * 0.005) * 10;
       const cloud2X = 350 + Math.sin(frameRef.current * 0.004) * 12;
       [cloud1X, cloud2X].forEach((cx, i) => {
@@ -126,17 +142,16 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     };
 
     const drawGround = () => {
-      ctx.fillStyle = '#1e293b';
+      ctx.fillStyle = '#1e1224';
       ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y);
-      ctx.strokeStyle = '#475569';
+      ctx.strokeStyle = '#701a75';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(0, GROUND_Y);
       ctx.lineTo(CANVAS_WIDTH, GROUND_Y);
       ctx.stroke();
 
-      // Moving ground dots for speed sensation
-      ctx.fillStyle = '#475569';
+      ctx.fillStyle = '#701a75';
       const offset = (frameRef.current * speedRef.current) % 40;
       for (let x = -offset; x < CANVAS_WIDTH; x += 40) {
         ctx.fillRect(x + 20, GROUND_Y + 10, 6, 3);
@@ -146,46 +161,42 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     const drawDino = () => {
       const x = DINO_X;
       const y = dinoYRef.current;
+      const ducking = isDuckingRef.current;
+      const bodyHeight = ducking ? DINO_SIZE * 0.6 : DINO_SIZE;
+      const yOffset = DINO_SIZE - bodyHeight;
 
-      // Body (green)
-      ctx.fillStyle = '#4ade80';
-      ctx.fillRect(x + 8, y + 10, 28, 22);
+      ctx.fillStyle = '#e879f9';
+      ctx.fillRect(x + 8, y + 10 + yOffset, 28, bodyHeight - 10);
+      ctx.fillRect(x + 28, y + yOffset, 16, 16);
 
-      // Head
-      ctx.fillRect(x + 28, y, 16, 16);
-
-      // Eye
       ctx.fillStyle = '#000000';
-      ctx.fillRect(x + 36, y + 4, 4, 4);
+      ctx.fillRect(x + 36, y + 4 + yOffset, 4, 4);
 
-      // Legs (alternate when running)
-      ctx.fillStyle = '#22c55e';
+      ctx.fillStyle = '#c026d3';
       const legOffset = Math.floor(frameRef.current / 10) % 2 === 0 ? 0 : 4;
-      ctx.fillRect(x + 10 + legOffset, y + 32, 8, 8);
-      ctx.fillRect(x + 24 - legOffset, y + 32, 8, 8);
+      if (ducking) {
+        ctx.fillRect(x + 10 + legOffset, y + bodyHeight - 2, 8, 5);
+        ctx.fillRect(x + 24 - legOffset, y + bodyHeight - 2, 8, 5);
+      } else {
+        ctx.fillRect(x + 10 + legOffset, y + bodyHeight - 2, 8, 8);
+        ctx.fillRect(x + 24 - legOffset, y + bodyHeight - 2, 8, 8);
+      }
 
-      // Tail
-      ctx.fillStyle = '#22c55e';
-      ctx.fillRect(x, y + 16, 8, 8);
+      ctx.fillStyle = '#c026d3';
+      ctx.fillRect(x, y + 16 + yOffset, 8, 8);
     };
 
     const drawCactus = (obstacle: Obstacle) => {
       const { x, y, width, height } = obstacle;
+      ctx.fillStyle = obstacle.isFlying ? '#d8b4fe' : '#a21caf';
 
-      // Main trunk
-      ctx.fillStyle = '#16a34a';
       ctx.fillRect(x + width * 0.35, y, width * 0.3, height);
-
-      // Left arm
       ctx.fillRect(x, y + height * 0.3, width * 0.35, height * 0.15);
       ctx.fillRect(x, y + height * 0.2, width * 0.15, height * 0.3);
-
-      // Right arms
       ctx.fillRect(x + width * 0.65, y + height * 0.4, width * 0.35, height * 0.15);
       ctx.fillRect(x + width * 0.85, y + height * 0.3, width * 0.15, height * 0.3);
 
-      // Outline detail
-      ctx.fillStyle = '#14532d';
+      ctx.fillStyle = '#701a75';
       ctx.fillRect(x + width * 0.35, y + height, width * 0.3, 3);
     };
 
@@ -196,11 +207,15 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     };
 
     const checkCollision = () => {
+      const ducking = isDuckingRef.current;
+      const dinoWidth = DINO_SIZE - 8;
+      const dinoHeight = ducking ? (DINO_SIZE - 8) * 0.6 : DINO_SIZE - 8;
+      const dinoY = dinoYRef.current + (DINO_SIZE - dinoHeight);
       const dino = {
         x: DINO_X + 4,
-        y: dinoYRef.current + 4,
-        width: DINO_SIZE - 8,
-        height: DINO_SIZE - 8,
+        y: dinoY + 4,
+        width: dinoWidth,
+        height: dinoHeight,
       };
 
       return obstaclesRef.current.some((obstacle) => {
@@ -217,7 +232,6 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
         drawClouds();
         drawGround();
 
-        // Update dino physics
         dinoVyRef.current += GRAVITY;
         dinoYRef.current += dinoVyRef.current;
 
@@ -227,34 +241,42 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
           isJumpingRef.current = false;
         }
 
-        // Increase speed gradually
         speedRef.current = Math.min(MAX_SPEED, BASE_SPEED + scoreRef.current / 500);
 
-        // Spawn obstacles
         frameRef.current += 1;
         if (frameRef.current % Math.max(60, 150 - Math.floor(scoreRef.current / 20)) === 0) {
-          const height = 30 + Math.random() * 30;
-          obstaclesRef.current.push({
-            x: CANVAS_WIDTH,
-            y: GROUND_Y - height,
-            width: 24,
-            height,
-          });
+          const isFlying = Math.random() < 0.35;
+          if (isFlying) {
+            const height = 28 + Math.random() * 24;
+            obstaclesRef.current.push({
+              x: CANVAS_WIDTH,
+              y: GROUND_Y - height - 10,
+              width: 24,
+              height,
+              isFlying: true,
+            });
+          } else {
+            const height = 30 + Math.random() * 30;
+            obstaclesRef.current.push({
+              x: CANVAS_WIDTH,
+              y: GROUND_Y - height,
+              width: 24,
+              height,
+              isFlying: false,
+            });
+          }
         }
 
-        // Move obstacles
         obstaclesRef.current = obstaclesRef.current
           .map((obstacle) => ({ ...obstacle, x: obstacle.x - speedRef.current }))
           .filter((obstacle) => obstacle.x + obstacle.width > 0);
 
-        // Update score
         scoreRef.current += 0.1;
         setScore(Math.floor(scoreRef.current));
 
         drawDino();
         drawObstacles();
 
-        // Check collision
         if (checkCollision()) {
           gameOverRef.current = true;
           setGameOver(true);
@@ -274,10 +296,10 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
   }, [isPlaying]);
 
   return (
-    <div className="flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000]">
-      <h2 className="font-vt323 text-3xl text-white">No Internet Dinosaur</h2>
-      <p className="text-center font-vt323 text-lg text-white/80">
-        Press Space to jump. Avoid the obstacles.
+    <div className="flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-pink-300 bg-purple-950 p-6 shadow-[0_0_0_4px_#000]">
+      <h2 className="font-vt323 text-3xl text-pink-200">No Internet Dinosaur</h2>
+      <p className="text-center font-vt323 text-lg text-pink-100/80">
+        Space / ↑ / W to jump · ↓ / S to duck · Avoid the obstacles.
       </p>
 
       <div className="relative">
@@ -286,24 +308,24 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
           width={CANVAS_WIDTH}
           height={CANVAS_HEIGHT}
           onClick={jump}
-          className="w-full max-w-[600px] cursor-pointer rounded bg-zinc-900"
-          aria-label="Dinosaur game canvas. Press space to jump."
+          className="w-full max-w-[600px] cursor-pointer rounded bg-purple-900"
+          aria-label="Dinosaur game canvas. Press space, up arrow, or W to jump. Press down arrow or S to duck."
         />
         {gameOver && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
-            <p className="font-vt323 text-4xl text-white">Game Over</p>
-            <p className="font-vt323 text-xl text-white/80">Score: {score}</p>
-            <p className="font-vt323 text-sm text-white/60">Press Space or click to restart</p>
+            <p className="font-vt323 text-4xl text-pink-200">Game Over</p>
+            <p className="font-vt323 text-xl text-pink-100/80">Score: {score}</p>
+            <p className="font-vt323 text-sm text-pink-100/60">Press Space or click to restart</p>
           </div>
         )}
       </div>
 
       <div className="flex w-full items-center justify-between">
-        <p className="font-vt323 text-2xl text-white">Score: {Math.floor(score)}</p>
+        <p className="font-vt323 text-2xl text-pink-200">Score: {Math.floor(score)}</p>
         <button
           type="button"
           onClick={onComplete}
-          className="rounded border-2 border-white/50 bg-black px-6 py-2 font-vt323 text-xl text-white transition hover:border-white hover:bg-white/10"
+          className="rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800"
         >
           Exit
         </button>

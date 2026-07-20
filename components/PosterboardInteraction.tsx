@@ -6,6 +6,7 @@ interface PinnedImage {
   id: string;
   dataUrl: string;
   rotation: number;
+  pinColor: string;
 }
 
 interface PosterboardInteractionProps {
@@ -13,6 +14,8 @@ interface PosterboardInteractionProps {
 }
 
 const STORAGE_KEY = 'posterboard_images';
+
+const PIN_COLORS = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-400', 'bg-purple-500', 'bg-pink-500'];
 
 function loadImages(): PinnedImage[] {
   if (typeof window === 'undefined') return [];
@@ -47,14 +50,14 @@ export default function PosterboardInteraction({ onComplete }: PosterboardIntera
       const newImage: PinnedImage = {
         id: crypto.randomUUID(),
         dataUrl,
-        rotation: (Math.random() - 0.5) * 12, // slight organic tilt
+        rotation: (Math.random() - 0.5) * 12,
+        pinColor: PIN_COLORS[Math.floor(Math.random() * PIN_COLORS.length)] ?? 'bg-red-500',
       };
       const next = [...images, newImage];
       setImages(next);
       saveImages(next);
     };
     reader.readAsDataURL(file);
-    // Reset input so the same file can be selected again.
     e.target.value = '';
   };
 
@@ -69,8 +72,8 @@ export default function PosterboardInteraction({ onComplete }: PosterboardIntera
   };
 
   return (
-    <div className="flex w-full max-w-2xl flex-col items-center gap-4">
-      <div className="relative flex min-h-[300px] w-full flex-wrap content-start items-start justify-center gap-6 overflow-y-auto rounded-md border-8 border-amber-900 bg-amber-700 p-6 shadow-inner">
+    <div className="flex h-full w-full flex-col items-center gap-4">
+      <div className="relative flex h-[60vh] min-h-[400px] w-full flex-wrap content-start items-start justify-center gap-6 overflow-y-auto rounded-md border-8 border-amber-900 bg-amber-700 p-6 shadow-inner">
         {images.length === 0 ? (
           <div className="flex h-full min-h-[200px] w-full flex-col items-center justify-center gap-2">
             <p className="font-vt323 text-2xl text-amber-900/60">The board is empty.</p>
@@ -83,11 +86,17 @@ export default function PosterboardInteraction({ onComplete }: PosterboardIntera
               className="group relative flex flex-col items-center bg-white p-2 pb-4 shadow-md transition-transform hover:z-10 hover:scale-105"
               style={{ transform: `rotate(${img.rotation}deg)` }}
             >
+              {/* Pixel-art push pin */}
+              <div
+                className={`absolute -top-3 left-1/2 z-10 h-4 w-4 -translate-x-1/2 border-2 border-black ${img.pinColor} shadow-sm`}
+                aria-hidden="true"
+              />
+              <div className="absolute -top-1 left-1/2 z-0 h-6 w-0.5 -translate-x-1/2 bg-neutral-800" aria-hidden="true" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={img.dataUrl}
                 alt="Pinned polaroid"
-                className="h-28 w-28 object-cover bg-amber-50 sm:h-32 sm:w-32"
+                className="h-28 w-28 bg-amber-50 object-cover sm:h-32 sm:w-32"
               />
               <button
                 type="button"

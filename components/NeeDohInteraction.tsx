@@ -66,10 +66,17 @@ export default function NeeDohInteraction() {
     const stretch = 1 + factor;
     const squash = 1 - factor * 0.5;
 
+    // Build an anisotropic scale matrix aligned with the pull direction
+    // so the image stretches toward the cursor without rotating.
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    const a = stretch * c * c + squash * s * s;
+    const d = stretch * s * s + squash * c * c;
+    const b = s * c * (stretch - squash);
+
     ctx.save();
     ctx.translate(CANVAS_SIZE / 2, CANVAS_SIZE / 2);
-    ctx.rotate(angle);
-    ctx.scale(stretch, squash);
+    ctx.transform(a, b, b, d, 0, 0);
     ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
     ctx.restore();
   }, []);
@@ -83,7 +90,7 @@ export default function NeeDohInteraction() {
     const startTime = performance.now();
 
     const animate = (now: number) => {
-      const t = Math.min((now - startTime) / 500, 1);
+      const t = Math.min((now - startTime) / 1400, 1);
       // Elastic out easing for a bouncy stress-ball feel.
       const ease = t === 1 ? 1 : 1 - Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3));
 

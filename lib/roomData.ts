@@ -239,7 +239,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Squish animation triggering local state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 65.96338222789115, y: 54.1934880239521, width: 10.988679846938776, height: 10.47679640718563 },
+    position: { x: 66.5, y: 54.7, width: 7.8, height: 7.4 },
   },
   {
     id: 'OBJ_16',
@@ -285,7 +285,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggles background audio playlist track array stream',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 6.906143707482992, y: 75.06858158682634, width: 26.271683673469386, height: 20.43703218562874 },
+    position: { x: 8.5, y: 77.2, width: 20, height: 15.5 },
   },
   {
     id: 'OBJ_19',

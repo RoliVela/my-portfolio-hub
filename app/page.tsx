@@ -253,19 +253,9 @@ export default function Home() {
   const handleInteract = () => {
     if (!inspectedObject) return;
     setInspectionPhase('interacting');
-    // Skip the generic toggle for objects that provide a custom interaction stage.
-    if (
-      inspectedObject.id !== 'OBJ_03' &&
-      inspectedObject.id !== 'OBJ_04' &&
-      inspectedObject.id !== 'OBJ_06' &&
-      inspectedObject.id !== 'OBJ_14' &&
-      inspectedObject.id !== 'OBJ_15' &&
-      inspectedObject.id !== 'OBJ_11' &&
-      inspectedObject.id !== 'OBJ_16' &&
-      inspectedObject.id !== 'OBJ_17'
-    ) {
-      performObjectToggle(inspectedObject);
-    }
+    // Generic toggles are now handled inside ItemInteractionStage so the user
+    // sees a dedicated "Activate" step. Only objects with custom interaction
+    // stages are skipped here.
   };
 
   const handleExit = () => {
@@ -672,12 +662,16 @@ export default function Home() {
 
       {/* Interaction stage (extensible mini-game hook) */}
       {inspectedObject && inspectionPhase === 'interacting' && !repositionMode && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-end justify-center p-4">
-          <div className="relative w-full max-w-4xl select-none rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000]">
-            <div className="absolute -top-5 left-4 rounded bg-white px-3 py-1 text-lg text-black font-vt323">
+        <div className="fixed bottom-0 left-0 right-0 top-0 z-50 flex items-end justify-center p-4">
+          <div
+            className={`relative flex w-full select-none flex-col rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000] ${
+              inspectedObject.id === 'OBJ_20' ? 'h-full max-w-7xl' : 'max-w-4xl'
+            }`}
+          >
+            <div className="absolute -top-5 left-4 rounded bg-white px-3 py-1 text-lg font-vt323 text-black">
               {inspectedObject.assetName}
             </div>
-            <div className="flex flex-col items-center gap-4 pt-2">
+            <div className="flex h-full flex-col items-center gap-4 pt-2">
               <ItemInteractionStage
                 obj={inspectedObject}
                 onComplete={handleExit}

@@ -18,24 +18,6 @@ function randomZone(): { start: number; end: number } {
   return { start, end: start + SUCCESS_SIZE };
 }
 
-function SuccessZoneWedge({ start, end }: { start: number; end: number }) {
-  const cx = 128;
-  const cy = 192;
-  const r = 170;
-
-  const startRad = (start * Math.PI) / 180;
-  const endRad = (end * Math.PI) / 180;
-
-  const startX = cx + r * Math.sin(startRad);
-  const startY = cy - r * Math.cos(startRad);
-  const endX = cx + r * Math.sin(endRad);
-  const endY = cy - r * Math.cos(endRad);
-
-  const path = `M ${cx} ${cy} L ${startX} ${startY} A ${r} ${r} 0 0 0 ${endX} ${endY} Z`;
-
-  return <path d={path} fill="rgba(74, 222, 128, 0.5)" stroke="rgba(20, 83, 45, 0.8)" strokeWidth={2} />;
-}
-
 const HINT_STORAGE_KEY = 'watering-game-hint-seen';
 
 export default function WateringGame({ onComplete, onSuccess, plantName = 'plant' }: WateringGameProps) {
@@ -51,11 +33,9 @@ export default function WateringGame({ onComplete, onSuccess, plantName = 'plant
     }
   });
 
-  // Needle angle in degrees, sweeping across an arc
   const [angle, setAngle] = useState(ARC_START);
   const [successZone, setSuccessZone] = useState(randomZone);
 
-  // Refs mirror mutable state for the keyboard/tap handler to avoid re-attaching listeners.
   const angleRef = useRef(angle);
   const successZoneRef = useRef(successZone);
   const isCompleteRef = useRef(isComplete);
@@ -168,17 +148,18 @@ export default function WateringGame({ onComplete, onSuccess, plantName = 'plant
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleHit]);
 
-  const needleTransform = `rotate(${angle}deg)`;
+  const successStart = successZone.start;
+  const successEnd = successZone.end;
 
   return (
-    <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-lg border-4 border-green-900 bg-green-800 p-6 shadow-[0_0_0_4px_#000]">
+    <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-lg border-4 border-green-950 bg-emerald-900 p-6 shadow-[0_0_0_4px_#000]">
       <h2 className="font-vt323 text-3xl text-white">Water the {plantName}</h2>
-      <p className="text-center font-vt323 text-lg text-green-100">
+      <p className="text-center font-vt323 text-lg text-emerald-100">
         Press Space when the indicator is in the green zone. Get {HITS_TO_WIN} in a row!
       </p>
 
       {showHint && (
-        <div className="w-full rounded-lg border-2 border-yellow-300 bg-yellow-100/90 p-4 text-left text-black shadow-md">
+        <div className="w-full rounded-lg border-4 border-yellow-400 bg-yellow-100 p-4 text-left text-black shadow-md">
           <div className="mb-2 flex items-start gap-2">
             <span className="text-2xl">💡</span>
             <div>
@@ -193,7 +174,7 @@ export default function WateringGame({ onComplete, onSuccess, plantName = 'plant
           <button
             type="button"
             onClick={dismissHint}
-            className="w-full rounded bg-green-700 px-4 py-1 font-vt323 text-lg text-white transition hover:bg-green-600"
+            className="w-full rounded border-2 border-green-900 bg-green-700 px-4 py-1 font-vt323 text-lg text-white transition hover:bg-green-600"
           >
             Got it
           </button>
@@ -201,29 +182,29 @@ export default function WateringGame({ onComplete, onSuccess, plantName = 'plant
       )}
 
       <div className="relative h-48 w-64">
-        {/* Arc track */}
-        <div className="absolute inset-0 rounded-t-full border-8 border-green-900/50 bg-green-950/30" />
-        {/* Success zone wedge */}
+        {/* Pixel-art arc track */}
+        <div className="absolute inset-x-0 top-0 h-full rounded-t-none border-4 border-b-0 border-emerald-950 bg-emerald-950/50" style={{ borderRadius: '128px 128px 0 0' }} />
+        {/* Success zone wedge - blocky SVG */}
         <svg className="absolute inset-0 h-full w-full" viewBox="0 0 256 192" preserveAspectRatio="xMidYMax meet">
-          <SuccessZoneWedge start={successZone.start} end={successZone.end} />
+          <SuccessZoneWedge start={successStart} end={successEnd} />
         </svg>
-        {/* Needle pivot */}
+        {/* Chunky pixel needle */}
         <div className="absolute bottom-0 left-1/2 h-full w-0">
           <div
-            className="absolute bottom-0 left-0 h-[90%] w-1 origin-bottom bg-yellow-300"
-            style={{ transform: needleTransform }}
+            className="absolute bottom-0 left-0 h-[90%] w-2 origin-bottom bg-yellow-300 shadow-[0_0_0_2px_#000]"
+            style={{ transform: `rotate(${angle}deg)` }}
           />
         </div>
-        {/* Pivot dot */}
-        <div className="absolute bottom-0 left-1/2 h-4 w-4 -translate-x-1/2 translate-y-1/2 rounded-full bg-yellow-300" />
+        {/* Pixel pivot */}
+        <div className="absolute bottom-0 left-1/2 h-5 w-5 -translate-x-1/2 translate-y-1/2 border-2 border-black bg-yellow-400" />
       </div>
 
       <div className="flex gap-2">
         {Array.from({ length: HITS_TO_WIN }).map((_, i) => (
           <div
             key={i}
-            className={`h-4 w-4 rounded-full border-2 border-white ${
-              i < streak ? 'bg-blue-400' : 'bg-white/20'
+            className={`h-5 w-5 border-2 border-white shadow-[0_0_0_2px_#000] ${
+              i < streak ? 'bg-sky-400' : 'bg-white/20'
             }`}
           />
         ))}
@@ -236,10 +217,35 @@ export default function WateringGame({ onComplete, onSuccess, plantName = 'plant
       <button
         type="button"
         onClick={handleHit}
-        className="rounded border-2 border-white bg-green-600 px-6 py-2 font-vt323 text-2xl text-white transition hover:bg-green-500 active:scale-95"
+        className="rounded border-2 border-white bg-green-700 px-6 py-2 font-vt323 text-2xl text-white shadow-[0_0_0_2px_#000] transition hover:bg-green-600 active:scale-95"
       >
         Space / Tap
       </button>
     </div>
+  );
+}
+
+function SuccessZoneWedge({ start, end }: { start: number; end: number }) {
+  const cx = 128;
+  const cy = 192;
+  const r = 170;
+
+  const startRad = (start * Math.PI) / 180;
+  const endRad = (end * Math.PI) / 180;
+
+  const startX = cx + r * Math.sin(startRad);
+  const startY = cy - r * Math.cos(startRad);
+  const endX = cx + r * Math.sin(endRad);
+  const endY = cy - r * Math.cos(endRad);
+
+  const path = `M ${cx} ${cy} L ${startX} ${startY} A ${r} ${r} 0 0 0 ${endX} ${endY} Z`;
+
+  return (
+    <path
+      d={path}
+      fill="rgba(74, 222, 128, 0.8)"
+      stroke="rgba(20, 83, 45, 1)"
+      strokeWidth={3}
+    />
   );
 }

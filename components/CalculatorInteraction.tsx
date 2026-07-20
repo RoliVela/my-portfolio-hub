@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { getAssetPath } from '@/lib/assets';
 
 interface CalculatorInteractionProps {
   onComplete?: () => void;
@@ -37,11 +36,11 @@ function CalcButton({
 }: CalcButtonProps) {
   const variantClasses = {
     default:
-      'bg-stone-300 text-stone-900 border-b-4 border-stone-500 hover:bg-stone-200 active:border-b-0 active:translate-y-1',
+      'bg-pink-200 text-pink-900 border-b-4 border-pink-400 hover:bg-pink-100 active:border-b-0 active:translate-y-1',
     accent:
-      'bg-amber-600 text-white border-b-4 border-amber-800 hover:bg-amber-500 active:border-b-0 active:translate-y-1',
+      'bg-fuchsia-600 text-white border-b-4 border-fuchsia-800 hover:bg-fuchsia-500 active:border-b-0 active:translate-y-1',
     danger:
-      'bg-red-700 text-white border-b-4 border-red-900 hover:bg-red-600 active:border-b-0 active:translate-y-1',
+      'bg-rose-500 text-white border-b-4 border-rose-700 hover:bg-rose-400 active:border-b-0 active:translate-y-1',
   };
 
   return (
@@ -190,16 +189,8 @@ export default function CalculatorInteraction({ onComplete }: CalculatorInteract
   }, [handleNumber, handleDecimal, handleOperator, handleEquals, clear]);
 
   return (
-    <div
-      className="flex w-full max-w-md flex-col items-center gap-5 rounded-xl border-4 border-stone-700 bg-stone-600 p-6 shadow-[0_0_0_4px_#000]"
-      style={{
-        backgroundImage: `url(${getAssetPath('/assets/calculator.png')})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        imageRendering: 'pixelated',
-      }}
-    >
-      <div className="mb-2 w-full rounded border-4 border-stone-500 bg-lime-900/90 p-4 text-right font-vt323 text-4xl text-lime-100 shadow-inner">
+    <div className="flex w-full max-w-md flex-col items-center gap-5 rounded-xl border-4 border-fuchsia-900 bg-fuchsia-950 p-6 shadow-[0_0_0_4px_#000]">
+      <div className="mb-2 w-full rounded border-4 border-fuchsia-700 bg-pink-100 p-4 text-right font-vt323 text-4xl text-fuchsia-950 shadow-inner">
         {display}
       </div>
 
@@ -265,7 +256,7 @@ export default function CalculatorInteraction({ onComplete }: CalculatorInteract
       <button
         type="button"
         onClick={onComplete}
-        className="mt-2 w-full rounded border-2 border-stone-400 bg-stone-800 py-2 font-vt323 text-xl text-stone-100 transition hover:bg-stone-700"
+        className="mt-2 w-full rounded border-2 border-fuchsia-400 bg-fuchsia-900 py-2 font-vt323 text-xl text-pink-100 transition hover:bg-fuchsia-800"
       >
         Exit
       </button>
