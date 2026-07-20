@@ -11,7 +11,15 @@ export default function ClockOverlay({ selectedTimezone }: ClockOverlayProps) {
 
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-      <span className="font-vt323 text-2xl font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] md:text-3xl">
+      <span
+        className="font-vt323 text-xl font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] sm:text-2xl md:text-3xl"
+        style={{
+          // Match the clock display face's isometric angle.
+          // Determined visually against public/assets/clock.png.
+          transform: 'translate(5%, -15%) rotate(-7deg) skewX(-5deg) skewY(2deg)',
+          transformOrigin: 'center center',
+        }}
+      >
         {currentTime.toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',
