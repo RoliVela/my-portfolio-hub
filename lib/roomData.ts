@@ -83,40 +83,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant watering animation state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 5, y: 15, width: 10, height: 25 },
-  },
-  {
-    id: 'OBJ_04',
-    assetName: 'Snake plant',
-    type: 'Click / Toggle',
-    initialState: { isWatered: false },
-    toggleKey: 'isWatered',
-    imageSrc: '/assets/snake-plant.png',
-    dialogue: {
-      free: [{ speaker: 'Snippy', text: 'A snake plant. These are pretty common as houseplants, but we probably shouldn\'t water them that much, since they\'re known for being drought-tolerant.' }],
-      paid: 'N/A',
-    },
-    actionTarget: 'Toggle plant watering animation state',
-    visualFeedback: 'Yellow highlight on hover',
-    position: { x: 71.7, y: 45, width: 10, height: 11 },
-  },
-  {
-    id: 'OBJ_05',
-    assetName: 'Venus Fly Trap',
-    type: 'Click / Toggle',
-    initialState: { isFed: false },
-    toggleKey: 'isFed',
-    imageSrc: '/assets/venus_flytrap.png',
-    dialogue: {
-      free: [
-        { speaker: 'Snippy', text: 'Yikes! A venus fly trap! You can feed it, but I\'ll be looking away because those always give me the creeps.' },
-        { speaker: 'Snippy', text: 'It looks pretty busy there. These plants can take 7-12 days to completely digest their prey, so don\'t bother waiting.' },
-      ],
-      paid: 'N/A',
-    },
-    actionTarget: 'Toggle plant feeding animation state. This plant is no longer available to interact with.',
-    visualFeedback: 'Yellow highlight on hover',
-    position: { x: 27, y: 35, width: 15, height: 20 },
+    position: { x: 16.290391156462583, y: 10.527694610778443, width: 5.443771258503402, height: 18.313529191616766 },
   },
   {
     id: 'OBJ_06',
@@ -131,7 +98,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant watering animation state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 90, y: 15, width: 8, height: 20 },
+    position: { x: 87.47767857142858, y: 16.180295658682635, width: 13.671502976190476, height: 29.686096556886227 },
   },
   {
     id: 'OBJ_07',
@@ -147,7 +114,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 18, y: 15, width: 18, height: 10 },
+    position: { x: 28.621811224489793, y: 14.188342065868262, width: 21.650882227891156, height: 14.562593562874252 },
   },
   {
     id: 'OBJ_08',
@@ -163,7 +130,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 90, y: 33, width: 11, height: 20 },
+    position: { x: 89.24771471088435, y: 43.390157185628745, width: 12.608205782312925, height: 21.715943113772454 },
   },
   {
     id: 'OBJ_09',
@@ -179,7 +146,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 70, y: 24, width: 20, height: 15 },
+    position: { x: 62.94137967687076, y: 19.17683383233533, width: 44.35321003401361, height: 30.62078967065868 },
   },
   {
     id: 'OBJ_10',
@@ -195,7 +162,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: -1.5, y: 50, width: 8, height: 10 },
+    position: { x: -8.688828656462587, y: 44.04144835329342, width: 27.258875425170068, height: 29.737556137724553 },
   },
   {
     id: 'OBJ_11',
@@ -228,7 +195,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Changes the window visual in the room to have the blinds closed',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 41, y: 9, width: 39, height: 39 },
+    position: { x: 38.552083333333336, y: 2.388847305389221, width: 45.81627338435374, height: 46.8312125748503 },
   },
   {
     id: 'OBJ_13',
@@ -242,7 +209,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Launches localized retro arcade overlay',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 4, y: 55, width: 14, height: 15 },
+    position: { x: 18.388286564625847, y: 55.28068862275449, width: 11.98044217687075, height: 11.199008233532934 },
   },
   {
     id: 'OBJ_14',
@@ -272,7 +239,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Squish animation triggering local state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 67, y: 50, width: 8, height: 7 },
+    position: { x: 65.96338222789115, y: 54.1934880239521, width: 10.988679846938776, height: 10.47679640718563 },
   },
   {
     id: 'OBJ_16',
@@ -288,7 +255,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Conditional branch overlay depending on Auth status',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 75, y: 35, width: 19, height: 29 },
+    position: { x: 70.97815688775509, y: 38.0810254491018, width: 25.078337585034014, height: 31.953312125748504 },
   },
   {
     id: 'OBJ_17',
@@ -302,7 +269,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Opens text box for the user to type in',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 50, y: 57, width: 14, height: 9 },
+    position: { x: 52.1734162414966, y: 59.894367514970064, width: 10.287733843537413, height: 5.316429640718563 },
   },
   {
     id: 'OBJ_18',
@@ -318,7 +285,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggles background audio playlist track array stream',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 11, y: 81, width: 8, height: 12 },
+    position: { x: 6.906143707482992, y: 75.06858158682634, width: 26.271683673469386, height: 20.43703218562874 },
   },
   {
     id: 'OBJ_19',
@@ -333,7 +300,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Triggers localized steam particle burst animation',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 81, y: 58.5, width: 10, height: 12 },
+    position: { x: 86.50834396258503, y: 57.43478667664671, width: 10, height: 12 },
   },
   {
     id: 'OBJ_20',
@@ -348,6 +315,40 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Opens image gallery overlay of personal and team photos',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: -4.5, y: 20, width: 15, height: 25 },
+    position: { x: -2.206738945578232, y: 13.019273952095809, width: 22.508237670068027, height: 33.67000374251497 },
+  },
+  // Rendered last (drawn on top) so they aren't covered by the window/computer.
+  {
+    id: 'OBJ_04',
+    assetName: 'Snake plant',
+    type: 'Click / Toggle',
+    initialState: { isWatered: false },
+    toggleKey: 'isWatered',
+    imageSrc: '/assets/snake-plant.png',
+    dialogue: {
+      free: [{ speaker: 'Snippy', text: 'A snake plant. These are pretty common as houseplants, but we probably shouldn\'t water them that much, since they\'re known for being drought-tolerant.' }],
+      paid: 'N/A',
+    },
+    actionTarget: 'Toggle plant watering animation state',
+    visualFeedback: 'Yellow highlight on hover',
+    position: { x: 70.06867559523809, y: 45.53284056886228, width: 11.079931972789115, height: 11.604883982035929 },
+  },
+  {
+    id: 'OBJ_05',
+    assetName: 'Venus Fly Trap',
+    type: 'Click / Toggle',
+    initialState: { isFed: false },
+    toggleKey: 'isFed',
+    imageSrc: '/assets/venus_flytrap.png',
+    dialogue: {
+      free: [
+        { speaker: 'Snippy', text: 'Yikes! A venus fly trap! You can feed it, but I\'ll be looking away because those always give me the creeps.' },
+        { speaker: 'Snippy', text: 'It looks pretty busy there. These plants can take 7-12 days to completely digest their prey, so don\'t bother waiting.' },
+      ],
+      paid: 'N/A',
+    },
+    actionTarget: 'Toggle plant feeding animation state. This plant is no longer available to interact with.',
+    visualFeedback: 'Yellow highlight on hover',
+    position: { x: 48.01482780612245, y: 39.564464820359284, width: 9.317867772108844, height: 13.800523952095809 },
   },
 ];
