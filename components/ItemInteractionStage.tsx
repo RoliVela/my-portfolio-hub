@@ -5,10 +5,12 @@ import ClockInteraction from './ClockInteraction';
 import NeeDohInteraction from './NeeDohInteraction';
 import PosterboardInteraction from './PosterboardInteraction';
 import SuggestionBoxInteraction from './SuggestionBoxInteraction';
+import WateringGame from './WateringGame';
 
 interface ItemInteractionStageProps {
   obj: RoomObject;
   onComplete?: () => void;
+  onToggle?: () => void;
   selectedTimezone?: string;
   onTimezoneChange?: (timezone: string) => void;
 }
@@ -24,6 +26,7 @@ interface ItemInteractionStageProps {
 export default function ItemInteractionStage({
   obj,
   onComplete,
+  onToggle,
   selectedTimezone,
   onTimezoneChange,
 }: ItemInteractionStageProps) {
@@ -37,6 +40,10 @@ export default function ItemInteractionStage({
 
   if (obj.id === 'OBJ_15') {
     return <NeeDohInteraction />;
+  }
+
+  if (obj.id === 'OBJ_03' || obj.id === 'OBJ_04' || obj.id === 'OBJ_06') {
+    return <WateringGame onComplete={onComplete} onSuccess={onToggle} plantName={obj.assetName} />;
   }
 
   if (obj.id === 'OBJ_17') {

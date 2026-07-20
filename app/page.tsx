@@ -254,7 +254,14 @@ export default function Home() {
     if (!inspectedObject) return;
     setInspectionPhase('interacting');
     // Skip the generic toggle for objects that provide a custom interaction stage.
-    if (inspectedObject.id !== 'OBJ_14' && inspectedObject.id !== 'OBJ_15' && inspectedObject.id !== 'OBJ_17') {
+    if (
+      inspectedObject.id !== 'OBJ_03' &&
+      inspectedObject.id !== 'OBJ_04' &&
+      inspectedObject.id !== 'OBJ_06' &&
+      inspectedObject.id !== 'OBJ_14' &&
+      inspectedObject.id !== 'OBJ_15' &&
+      inspectedObject.id !== 'OBJ_17'
+    ) {
       performObjectToggle(inspectedObject);
     }
   };
@@ -672,6 +679,7 @@ export default function Home() {
               <ItemInteractionStage
                 obj={inspectedObject}
                 onComplete={handleExit}
+                onToggle={() => performObjectToggle(inspectedObject)}
                 selectedTimezone={selectedTimezone}
                 onTimezoneChange={setSelectedTimezone}
               />
