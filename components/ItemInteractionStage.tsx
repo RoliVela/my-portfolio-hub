@@ -1,6 +1,7 @@
 'use client';
 
 import { RoomObject } from '@/lib/roomData';
+import NeeDohInteraction from './NeeDohInteraction';
 
 interface ItemInteractionStageProps {
   obj: RoomObject;
@@ -19,6 +20,10 @@ export default function ItemInteractionStage({ obj, onComplete }: ItemInteractio
   const handleInteract = () => {
     onComplete?.();
   };
+
+  if (obj.id === 'OBJ_15') {
+    return <NeeDohInteraction />;
+  }
 
   // Placeholder for future per-object mini-games.
   // Example:

@@ -247,7 +247,10 @@ export default function Home() {
   const handleInteract = () => {
     if (!inspectedObject) return;
     setInspectionPhase('interacting');
-    performObjectToggle(inspectedObject);
+    // Skip the generic toggle for objects that provide a custom interaction stage.
+    if (inspectedObject.id !== 'OBJ_14' && inspectedObject.id !== 'OBJ_15') {
+      performObjectToggle(inspectedObject);
+    }
   };
 
   const handleExit = () => {
