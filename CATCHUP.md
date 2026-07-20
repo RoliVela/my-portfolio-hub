@@ -1,78 +1,130 @@
 # Catch-up Notes — Gamified Portfolio Hub
 
-## What we did this session
+Read this file first in any new session on this project — it's written to be a complete,
+standalone picture of the project so far, no prior conversation needed.
 
-1. **Updated all 20 room-object positions** in `lib/roomData.ts` to the coordinates the user pasted.
-2. **Validated the changes** with TypeScript (`npx tsc --noEmit`) and ESLint (`npm run lint`).
-3. **Tested locally** with `npm run dev` and verified in the browser that the page loads, Snippy appears, and there are no console errors.
-4. **Committed and pushed** the change to GitHub.
-5. **Verified the live site** loads and the GitHub Pages deployment was triggered.
+## What this project is
 
----
+A "Gamified Portfolio Hub": a cozy 16-bit pixel-art bedroom (Lo-Fi aesthetic, pastel
+purples/pinks, neon accents) that visitors explore to learn about "Roli" as a person, not just
+professionally. 20 clickable objects in the room, each with dialogue from a companion character
+("Snippy," a pair of scissors, Olaf-personality). Eventually a "Computer" object gated behind
+payment/bypass-code links out to Roli's real professional sites with a fun custom UI wrapper.
 
-## Important repo discovery
+**Source of truth for the 20 objects' dialogue/behavior spec**: a user-authored file,
+`~/Downloads/Roli Room Interaction Table.txt` (not in this repo — local to the user's machine).
+It defines each `OBJ_01`–`OBJ_20`'s asset name, interaction type, free-tier dialogue, and intended
+action. `lib/roomData.ts` implements this spec.
 
-The actual git repository is at:
+## Repo / deploy facts
 
-```text
-/Users/rolivela/my-portfolio-hub
-```
+- **Real repo path**: `/Users/rolivela/my-portfolio-hub` — has git history and the GitHub remote.
+  (`/Users/rolivela/Claudes Stuff` is a separate, unrelated working directory some past sessions
+  started in by mistake — don't confuse the two.)
+- **GitHub**: `https://github.com/RoliVela/my-portfolio-hub` (public repo, account `RoliVela`).
+- **Hosting**: GitHub Pages, serving the `gh-pages` branch — **not Vercel** (explicitly chosen by
+  the user). Deploys are static exports (`output: 'export'` in `next.config.mjs`, gated behind a
+  `GITHUB_PAGES=true` env var so local `next dev` is unaffected).
+- **Live URL**: https://rolivela.github.io/my-portfolio-hub/
+- **CI**: `.github/workflows/deploy.yml` — on push to `main`, builds the static export and
+  publishes it to `gh-pages` via `peaceiris/actions-gh-pages`. The `gh` CLI needs both `repo` and
+  **`workflow`** OAuth scopes to push `.github/workflows/*.yml` changes — if pushing a workflow
+  file change fails with a scope error, run `gh auth refresh -h github.com -s workflow`.
+- **Critical hosting constraint**: because this is a static export, **Next.js Server Actions
+  cannot run** (`'use server'` functions fail the build outright — confirmed by hitting this for
+  real with an over-scoped suggestion-box feature that had to be reverted to client-only). Any
+  future feature needing a real backend (Stripe payment, LLM API calls, emailing form
+  submissions) needs either a static-safe third-party service called directly from the client
+  (e.g. Formspree/EmailJS for forms) or a hosting change — don't add Server Actions here.
+- Occasional GitHub-side `503` errors on the Pages-publish step are a known transient
+  infrastructure hiccup (not our bug) — re-running the workflow clears it.
 
-The session started in `/Users/rolivela/Claudes Stuff`, which is a separate working copy. The updated `lib/roomData.ts` was first edited there, then copied to the real repo before committing and pushing.
+## Architecture
 
----
+- Next.js 16 (App Router), Tailwind CSS, Framer Motion (added for the pick-up/inspect animation).
+- `lib/roomData.ts` — the `RoomObject` data model and all 20 objects' dialogue/state/position/
+  asset-path config. Key fields: `toggleKey` (state flipped on click), `imageSrc`/`imageSrcAlt`
+  (swapped based on `altStateKey` or `toggleKey`), `position` (x/y/width/height as % of room).
+- `app/page.tsx` — the main room component: renders the background, all object hitboxes, Snippy,
+  dialogue boxes, and the pick-up/inspect flow state machine.
+- `components/` — `SnippyCharacter`, `DialogueBox` (Undertale-style typewriter box, now also
+  plays a quiet talk-sound while typing), `ItemInteractionStage` (the per-object mini-game
+  dispatcher — add a new `case obj.id === 'OBJ_XX'` here for each custom interaction),
+  `ClockOverlay`/`ClockInteraction`, `NeeDohInteraction`, `SuggestionBoxInteraction`, and others
+  added over time.
+- `?reposition` query param — a built-in dev tool (drag to move, drag corner handle to resize,
+  numeric inputs, collapsible side panel, "Copy Data" button) for tuning object hitboxes visually
+  instead of hand-editing percentages.
 
-## New coordinates applied (`lib/roomData.ts`)
+## Interaction flow (how clicking an object works)
 
-| ID   | Asset                        | x     | y      | width | height |
-|------|------------------------------|-------|--------|-------|--------|
-| OBJ_01 | Snippy (Character)         | 31.6  | 67.9   | 30    | 24     |
-| OBJ_02 | Snippy (Scissors)          | 44    | 75.5   | 6     | 8      |
-| OBJ_03 | Monstera                   | 15    | -55.2  | 7.4   | 150    |
-| OBJ_04 | Snake plant                | 71.7  | 45     | 10    | 11     |
-| OBJ_05 | Venus Fly Trap             | 27    | 35     | 50    | 20     |
-| OBJ_06 | Senecio Rowleyanus         | 90    | 15     | 8     | 20     |
-| OBJ_07 | Light / Neon Sign          | 15    | 11     | 50    | 30     |
-| OBJ_08 | Lamp next to the desk      | 90    | 33     | 11    | 45     |
-| OBJ_09 | String lights above desk   | 70    | 24     | 28    | 25     |
-| OBJ_10 | Lamp next to the bed       | -1.5  | 50     | 14    | 17     |
-| OBJ_11 | Calculator                 | 5     | 65     | 8     | 8      |
-| OBJ_12 | Window blinds              | 41    | 9      | 39    | 39     |
-| OBJ_13 | Kermit (Cat)               | 4     | 45     | 40    | 32     |
-| OBJ_14 | Clock                      | 55    | 47     | 10    | 10     |
-| OBJ_15 | Nee-Doh (Stress Ball)      | 67    | 50     | 12    | 13     |
-| OBJ_16 | Computer Console           | 75    | 35     | 19    | 29     |
-| OBJ_17 | Suggestion box             | 50    | 57     | 14    | 9      |
-| OBJ_18 | Record Player / Boombox    | 11    | 81     | 15    | 20     |
-| OBJ_19 | Cozy Coffee Mug            | 81    | 58.5   | 19    | 12     |
-| OBJ_20 | Polaroid Wall Board        | -4.5  | 20     | 28    | 25     |
+`OBJ_01`/`OBJ_02` (Snippy himself) use a simple bottom dialogue box. Every other object
+(`OBJ_03`–`OBJ_20`) uses a richer flow: click → item animates to screen center and enlarges
+(Framer Motion `layoutId` shared-element transition) → backdrop dims → Snippy's dialogue plays →
+an Undertale-style "Interact / Exit" choice prompt appears → Interact opens that object's
+`ItemInteractionStage` case (custom mini-game, or a generic toggle-and-confirm fallback for
+objects without one yet) → Exit animates back to the room.
 
-These are the user's pasted values and were applied exactly as provided.
+## Known hitbox-sizing lesson (important, learned the hard way)
 
----
+Object hitboxes are fit to the image's real aspect ratio via `getFittedStyle` in `app/page.tsx`,
+which treats `position.width`/`height` as a **maximum bounding box**, not literal dimensions —
+the actual rendered/clickable size is the largest rectangle matching the image's aspect ratio
+that fits inside that box. Two consequences worth remembering:
+1. If a hitbox still looks oversized after this system is working, the fix is almost always
+   **shrinking the `position` data**, not the code — the fitting logic can't shrink a box that's
+   uniformly too big in both dimensions, only correct a mismatched aspect ratio.
+2. Sprite alpha-trimming (`scripts/trim-sprites.py`) only helps when there's real transparent
+   padding to crop. Several images (Kermit, Nee-Doh, the boombox on/off pair) already have
+   content spanning edge-to-edge (or, for on/off pairs, a combined bounding box that covers
+   nearly the whole canvas) — trimming does nothing for those; it's a data-only fix.
+3. There was also a real bug (fixed in commit `a281b43`/`f0f0b30`-era work) where cached images
+   never fire `onLoad`, so the fit-to-aspect-ratio logic silently never engaged on repeat page
+   loads. Fixed via a `ref` callback that checks `img.complete` as a fallback to `onLoad`.
 
-## Commit / push details
+## Object-by-object status (as of HEAD `8f2814b`)
 
-- **Commit SHA:** `dfb1984`
-- **Commit message:** `Update room object positions to match latest coordinate table`
-- **Branch pushed:** `main`
-- **Remote:** `origin` (`https://github.com/RoliVela/my-portfolio-hub`)
-- **Live URL:** https://rolivela.github.io/my-portfolio-hub/
+All 20 objects have real pixel-art sprites now (sourced from
+`~/Claudes Stuff/Portfolio Images/`, generated externally by the user — not by Claude, no
+image-gen tool is available in-session). Custom `ItemInteractionStage` cases exist for: Snippy
+check-in (`OBJ_02`), Clock/timezone picker (`OBJ_14`), Nee-Doh drag-warp (`OBJ_15`), Suggestion
+box (`OBJ_17`, client-only after the Server Action revert), and in-progress Polaroid board
+(`OBJ_20`, uncommitted — see "Loose ends" below). Everything else still uses the generic
+toggle-and-confirm fallback.
 
----
+Simple on/off toggles (lights, blinds, coffee mug, etc.) are considered done/acceptable as-is per
+explicit user sign-off ("the lights should obviously turn on and off and are fine for now").
 
-## Validation results
+## Loose ends / in-progress at last check
 
-- `npx tsc --noEmit` — passed
-- `npm run lint` — passed (one pre-existing warning about an unused `eslint-disable` directive in `app/page.tsx`)
-- Local `npm run dev` — page loads, Snippy visible, no console errors
-- Live site — loads, no console errors
-- GitHub Actions "Deploy to GitHub Pages" — triggered and was `in_progress` at the end of the session
+- **Uncommitted local changes** (not yet pushed as of this writing):
+  `components/ItemInteractionStage.tsx`, `components/NeeDohInteraction.tsx` (mid-rewrite of the
+  mesh-warp, reason unclear — verify it still works before trusting it, or revert to the
+  `8f2814b` version which was confirmed working via a correct triangle-affine-transform clip-path
+  fix), and a new untracked `components/PosterboardInteraction.tsx` (unfinished, not yet wired
+  into `ItemInteractionStage.tsx`).
+- An autonomous multi-section prompt was just handed off covering: finishing/resolving the above,
+  trimming Nee-Doh/Boombox hitboxes (data-only, see above), tilting the clock's live-time overlay
+  to match `clock.png`'s isometric angle, a Dead-by-Daylight-style watering mini-game shared
+  across Monstera/Snake Plant/Senecio Rowleyanus (explicitly **not** Venus Fly Trap, which uses a
+  different `isFed` state), a real functioning calculator, a window-blinds dialogue fix (only
+  show the "aww shucks" line once actually closed, not right after the open-view line), and a
+  playable Chrome-Dino-style game on the locked Computer. Check `git log` since `8f2814b` to see
+  how far it got.
 
----
+## Explicitly future / not-yet-built
 
-## Known notes / next steps
+- Global state + `localStorage` persistence (state currently resets on page reload — was in the
+  original architecture spec, never implemented).
+- Computer payment gating (Stripe or hidden bypass code via the calculator) — the calculator
+  interaction table mentions a hidden code but no code/logic has ever been defined; don't invent
+  one without the user's input.
+- Real LLM (NVIDIA NIM) wiring for paid-tier Snippy chat + rate-limit "circuit breaker" UI —
+  currently Snippy only ever uses the static free-tier dialogue script.
+- Kermit's actual "pet the cat" mini-game (currently flavor dialogue only).
 
-- Some objects have extreme coordinates (e.g., OBJ_03 Monstera `y: -55.2, height: 150`; OBJ_10 and OBJ_20 with negative `x`). These match the user's pasted coordinates, but may need visual fine-tuning once real assets are placed.
-- The project still uses placeholder boxes for objects without dedicated pixel-art assets.
-- Future work from the original project plan includes: global state + `localStorage` persistence, computer gating (Stripe / bypass code), Kermit mini-game, NVIDIA NIM LLM wiring, Framer Motion animations, and swapping Snippy's placeholder SVG for real pixel art.
+## Persona note
+
+Snippy's dialogue should read Olaf-inspired (naive, warm, hyper-enthusiastic) — a past instruction
+mentioned "sounds like Tom Nook" but that was about vocal delivery/cadence only, not the core
+personality, which stays Olaf. Don't overcorrect toward a shrewd/transactional Tom Nook tone.
