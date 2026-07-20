@@ -52,7 +52,7 @@ export const roomObjects: RoomObject[] = [
     visualFeedback: 'Launches with text dialogue upon the website loading up.',
     imageSrc: '/assets/snippy.png',
     isInitialDialogue: true,
-    position: { x: 31.6, y: 67.9, width: 30, height: 24 },
+    position: { x: 31.6, y: 67.9, width: 22, height: 16 },
   },
   {
     id: 'OBJ_02',
@@ -179,7 +179,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 70, y: 24, width: 28, height: 25 },
+    position: { x: 70, y: 24, width: 20, height: 15 },
   },
   {
     id: 'OBJ_10',
@@ -195,7 +195,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: -1.5, y: 50, width: 14, height: 17 },
+    position: { x: -1.5, y: 50, width: 8, height: 10 },
   },
   {
     id: 'OBJ_11',
@@ -272,7 +272,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Squish animation triggering local state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 67, y: 50, width: 12, height: 13 },
+    position: { x: 67, y: 50, width: 8, height: 7 },
   },
   {
     id: 'OBJ_16',
@@ -318,7 +318,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggles background audio playlist track array stream',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 11, y: 81, width: 15, height: 20 },
+    position: { x: 11, y: 81, width: 8, height: 12 },
   },
   {
     id: 'OBJ_19',

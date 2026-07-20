@@ -59,6 +59,7 @@ export default function Home() {
   const clickYRef = useRef<HTMLSpanElement | null>(null);
   const clickLineRef = useRef<HTMLDivElement | null>(null);
   const [copied, setCopied] = useState(false);
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [musicOn, setMusicOn] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -674,6 +675,18 @@ export default function Home() {
       )}
 
       {repositionMode && (
+        <button
+          type="button"
+          onClick={() => setPanelCollapsed((c) => !c)}
+          aria-label={panelCollapsed ? 'Expand reposition panel' : 'Collapse reposition panel'}
+          className="fixed top-4 z-50 rounded-l bg-black/90 px-2 py-3 text-white transition-all"
+          style={{ right: panelCollapsed ? 0 : '20rem' }}
+        >
+          {panelCollapsed ? '◀' : '▶'}
+        </button>
+      )}
+
+      {repositionMode && !panelCollapsed && (
         <div className="fixed top-0 right-0 z-50 h-full w-80 overflow-y-auto bg-black/90 p-4 text-white">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-bold">Reposition Mode</h2>
