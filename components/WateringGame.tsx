@@ -18,6 +18,24 @@ function randomZone(): { start: number; end: number } {
   return { start, end: start + SUCCESS_SIZE };
 }
 
+function SuccessZoneWedge({ start, end }: { start: number; end: number }) {
+  const cx = 128;
+  const cy = 192;
+  const r = 170;
+
+  const startRad = (start * Math.PI) / 180;
+  const endRad = (end * Math.PI) / 180;
+
+  const startX = cx + r * Math.sin(startRad);
+  const startY = cy - r * Math.cos(startRad);
+  const endX = cx + r * Math.sin(endRad);
+  const endY = cy - r * Math.cos(endRad);
+
+  const path = `M ${cx} ${cy} L ${startX} ${startY} A ${r} ${r} 0 0 0 ${endX} ${endY} Z`;
+
+  return <path d={path} fill="rgba(74, 222, 128, 0.5)" stroke="rgba(20, 83, 45, 0.8)" strokeWidth={2} />;
+}
+
 export default function WateringGame({ onComplete, onSuccess, plantName = 'plant' }: WateringGameProps) {
   const [streak, setStreak] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
@@ -131,7 +149,6 @@ export default function WateringGame({ onComplete, onSuccess, plantName = 'plant
   }, [handleHit]);
 
   const needleTransform = `rotate(${angle}deg)`;
-  const zoneCenter = (successZone.start + successZone.end) / 2;
 
   return (
     <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-lg border-4 border-green-900 bg-green-800 p-6 shadow-[0_0_0_4px_#000]">
@@ -143,14 +160,10 @@ export default function WateringGame({ onComplete, onSuccess, plantName = 'plant
       <div className="relative h-48 w-64">
         {/* Arc track */}
         <div className="absolute inset-0 rounded-t-full border-8 border-green-900/50 bg-green-950/30" />
-        {/* Success zone */}
-        <div
-          className="absolute left-1/2 top-1/2 h-1/2 w-4 -translate-x-1/2 bg-green-400/40"
-          style={{
-            transform: `translateX(-50%) rotate(${zoneCenter}deg)`,
-            transformOrigin: 'bottom center',
-          }}
-        />
+        {/* Success zone wedge */}
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 256 192" preserveAspectRatio="xMidYMax meet">
+          <SuccessZoneWedge start={successZone.start} end={successZone.end} />
+        </svg>
         {/* Needle pivot */}
         <div className="absolute bottom-0 left-1/2 h-full w-0">
           <div
