@@ -242,7 +242,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Launches localized retro arcade overlay',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 4, y: 45, width: 25, height: 30 },
+    position: { x: 4, y: 55, width: 14, height: 15 },
   },
   {
     id: 'OBJ_14',

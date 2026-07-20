@@ -1,29 +1,30 @@
 'use client';
 
-import { useState } from 'react';
 import { RoomObject } from '@/lib/roomData';
 import { getAssetPath } from '@/lib/assets';
 
 interface SnippyCharacterProps {
   data: RoomObject;
+  style: React.CSSProperties;
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onImageLoad?: (naturalWidth: number, naturalHeight: number) => void;
 }
 
-export default function SnippyCharacter({ data, onClick }: SnippyCharacterProps) {
-  const [aspectRatio, setAspectRatio] = useState<number | undefined>(undefined);
+export default function SnippyCharacter({ data, style, onClick, onImageLoad }: SnippyCharacterProps) {
+  // Cached images never re-fire `onLoad`, so a ref callback (checked on every
+  // render) covers repeat loads; onLoad still covers a true first load.
+  const captureMeta = (img: HTMLImageElement | null) => {
+    if (img?.complete && img.naturalWidth && img.naturalHeight) {
+      onImageLoad?.(img.naturalWidth, img.naturalHeight);
+    }
+  };
 
   return (
     <button
       type="button"
       onClick={onClick}
       className="absolute z-20 cursor-pointer rounded-lg transition-transform duration-200 hover:scale-105 hover:outline hover:outline-2 hover:outline-yellow-300 hover:drop-shadow-[0_0_8px_rgba(253,224,71,0.6)] focus:outline-none"
-      style={{
-        left: `${data.position.x}%`,
-        top: `${data.position.y}%`,
-        width: `${data.position.width}%`,
-        height: aspectRatio ? 'auto' : `${data.position.height}%`,
-        aspectRatio,
-      }}
+      style={style}
       aria-label={data.assetName}
       title={data.assetName}
     >
@@ -33,12 +34,11 @@ export default function SnippyCharacter({ data, onClick }: SnippyCharacterProps)
           <img
             src={getAssetPath(data.imageSrc)}
             alt=""
-            className="pointer-events-none h-full w-full object-contain drop-shadow-lg pixel-art"
+            className="h-full w-full object-contain drop-shadow-lg pixel-art"
+            ref={captureMeta}
             onLoad={(e) => {
               const img = e.currentTarget;
-              if (img.naturalWidth && img.naturalHeight) {
-                setAspectRatio(img.naturalWidth / img.naturalHeight);
-              }
+              if (img.naturalWidth && img.naturalHeight) onImageLoad?.(img.naturalWidth, img.naturalHeight);
             }}
           />
         </>

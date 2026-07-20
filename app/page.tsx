@@ -370,6 +370,24 @@ export default function Home() {
     };
   };
 
+  // Cached images never fire `onLoad` again once already loaded (naturalWidth
+  // is readable immediately via the ref instead), so this runs on every
+  // mount/update as a fallback — onLoad below still covers true first-loads.
+  const captureImageMeta = (img: HTMLImageElement | null, obj: RoomObject) => {
+    if (!img?.complete || !img.naturalWidth || !img.naturalHeight) return;
+    setAspectRatios((prev) =>
+      prev[obj.id] === img.naturalWidth / img.naturalHeight
+        ? prev
+        : { ...prev, [obj.id]: img.naturalWidth / img.naturalHeight }
+    );
+    const src = getObjectImageSrc(obj, objectState[obj.id] ?? {});
+    if (src && !alphaMapsRef.current[src]) {
+      loadImageAlphaMap(getAssetPath(src)).then((map) => {
+        if (map) alphaMapsRef.current[src] = map;
+      });
+    }
+  };
+
   const handleObjectPointerDown = (obj: RoomObject, e: React.PointerEvent) => {
     if (!repositionMode) return;
     e.stopPropagation();
@@ -523,6 +541,7 @@ export default function Home() {
                     src={getAssetPath(src ?? '')}
                     alt=""
                     className="pointer-events-none h-full w-full object-contain pixel-art drop-shadow-lg"
+                    ref={(el) => captureImageMeta(el, obj)}
                     onLoad={(e) => {
                       const img = e.currentTarget;
                       if (img.naturalWidth && img.naturalHeight) {
@@ -562,7 +581,16 @@ export default function Home() {
           );
         })}
 
-        {snippy && <SnippyCharacter data={snippy} onClick={handleSnippyClick} />}
+        {snippy && (
+          <SnippyCharacter
+            data={snippy}
+            onClick={handleSnippyClick}
+            style={getFittedStyle(snippy.position, snippy.imageSrc ? aspectRatios[snippy.id] : undefined)}
+            onImageLoad={(w, h) =>
+              setAspectRatios((prev) => (prev[snippy.id] === w / h ? prev : { ...prev, [snippy.id]: w / h }))
+            }
+          />
+        )}
       </div>
 
       {/* Centered inspected item */}
