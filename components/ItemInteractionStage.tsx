@@ -1,11 +1,14 @@
 'use client';
 
 import { RoomObject } from '@/lib/roomData';
+import ClockInteraction from './ClockInteraction';
 import NeeDohInteraction from './NeeDohInteraction';
 
 interface ItemInteractionStageProps {
   obj: RoomObject;
   onComplete?: () => void;
+  selectedTimezone?: string;
+  onTimezoneChange?: (timezone: string) => void;
 }
 
 /**
@@ -16,10 +19,19 @@ interface ItemInteractionStageProps {
  * Add a case below (or a dynamic import map) to swap in a real mini-game for a
  * specific obj.id.
  */
-export default function ItemInteractionStage({ obj, onComplete }: ItemInteractionStageProps) {
+export default function ItemInteractionStage({
+  obj,
+  onComplete,
+  selectedTimezone,
+  onTimezoneChange,
+}: ItemInteractionStageProps) {
   const handleInteract = () => {
     onComplete?.();
   };
+
+  if (obj.id === 'OBJ_14' && selectedTimezone && onTimezoneChange) {
+    return <ClockInteraction selectedTimezone={selectedTimezone} onTimezoneChange={onTimezoneChange} />;
+  }
 
   if (obj.id === 'OBJ_15') {
     return <NeeDohInteraction />;

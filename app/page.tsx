@@ -8,6 +8,7 @@ import { loadImageAlphaMap, isPixelVisible, AlphaMap } from '@/lib/hitbox';
 import DialogueBox from '@/components/DialogueBox';
 import SnippyCharacter from '@/components/SnippyCharacter';
 import ItemInteractionStage from '@/components/ItemInteractionStage';
+import ClockOverlay from '@/components/ClockOverlay';
 
 type ObjectState = Record<string, Record<string, unknown>>;
 type InspectionPhase = 'closed' | 'dialogue' | 'choice' | 'interacting';
@@ -63,6 +64,11 @@ export default function Home() {
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [musicOn, setMusicOn] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Live clock state shared between the idle-room overlay and the clock interaction.
+  const [selectedTimezone, setSelectedTimezone] = useState<string>(() =>
+    Intl.DateTimeFormat().resolvedOptions().timeZone
+  );
 
   // Aspect ratios keyed by object id
   const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
@@ -562,6 +568,8 @@ export default function Home() {
                       }
                     }}
                   />
+                  {/* Live clock overlay for OBJ_14 */}
+                  {obj.id === 'OBJ_14' && <ClockOverlay selectedTimezone={selectedTimezone} />}
                 </>
               ) : (
                 <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-center text-[10px] leading-tight text-white/90 drop-shadow md:text-xs">
@@ -664,6 +672,8 @@ export default function Home() {
               <ItemInteractionStage
                 obj={inspectedObject}
                 onComplete={handleExit}
+                selectedTimezone={selectedTimezone}
+                onTimezoneChange={setSelectedTimezone}
               />
               <button
                 type="button"
