@@ -184,8 +184,8 @@ export const roomObjects: RoomObject[] = [
     type: 'Click / Toggle',
     initialState: { isOpen: true },
     toggleKey: 'isOpen',
-    imageSrc: '/assets/window-blinds-open.png',
-    imageSrcAlt: '/assets/window-blinds-closed.png',
+    imageSrc: '/assets/window-blinds-closed.png',
+    imageSrcAlt: '/assets/window-blinds-open.png',
     dialogue: {
       free: [
         { speaker: 'Snippy', text: 'Laredo is truly a beautiful city. I always wondered how Los Angeles took the name LA when there is a city as beautiful as this.' },
