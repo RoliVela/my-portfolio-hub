@@ -254,7 +254,7 @@ export default function Home() {
     if (!inspectedObject) return;
     setInspectionPhase('interacting');
     // Skip the generic toggle for objects that provide a custom interaction stage.
-    if (inspectedObject.id !== 'OBJ_14' && inspectedObject.id !== 'OBJ_15') {
+    if (inspectedObject.id !== 'OBJ_14' && inspectedObject.id !== 'OBJ_15' && inspectedObject.id !== 'OBJ_17') {
       performObjectToggle(inspectedObject);
     }
   };

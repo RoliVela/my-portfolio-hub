@@ -77,9 +77,9 @@ function drawTriangle(
   ctx.save();
   ctx.setTransform(a, b, c, d, e, f);
   ctx.beginPath();
-  ctx.moveTo(d1.x, d1.y);
-  ctx.lineTo(d2.x, d2.y);
-  ctx.lineTo(d3.x, d3.y);
+  ctx.moveTo(s1.x, s1.y);
+  ctx.lineTo(s2.x, s2.y);
+  ctx.lineTo(s3.x, s3.y);
   ctx.closePath();
   ctx.clip();
   ctx.drawImage(img, 0, 0);

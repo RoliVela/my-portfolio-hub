@@ -3,6 +3,7 @@
 import { RoomObject } from '@/lib/roomData';
 import ClockInteraction from './ClockInteraction';
 import NeeDohInteraction from './NeeDohInteraction';
+import SuggestionBoxInteraction from './SuggestionBoxInteraction';
 
 interface ItemInteractionStageProps {
   obj: RoomObject;
@@ -35,6 +36,10 @@ export default function ItemInteractionStage({
 
   if (obj.id === 'OBJ_15') {
     return <NeeDohInteraction />;
+  }
+
+  if (obj.id === 'OBJ_17') {
+    return <SuggestionBoxInteraction onComplete={handleInteract} />;
   }
 
   // Placeholder for future per-object mini-games.
