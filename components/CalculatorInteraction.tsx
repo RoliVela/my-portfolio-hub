@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { getAssetPath } from '@/lib/assets';
 
 interface CalculatorInteractionProps {
   onComplete?: () => void;
@@ -20,20 +21,37 @@ function formatResult(value: number): string {
 interface CalcButtonProps {
   children: React.ReactNode;
   onClick: () => void;
-  className?: string;
+  variant?: 'default' | 'accent' | 'danger';
   label?: string;
   wide?: boolean;
+  className?: string;
 }
 
-function CalcButton({ children, onClick, className = '', label, wide = false }: CalcButtonProps) {
+function CalcButton({
+  children,
+  onClick,
+  variant = 'default',
+  label,
+  wide = false,
+  className = '',
+}: CalcButtonProps) {
+  const variantClasses = {
+    default:
+      'bg-stone-300 text-stone-900 border-b-4 border-stone-500 hover:bg-stone-200 active:border-b-0 active:translate-y-1',
+    accent:
+      'bg-amber-600 text-white border-b-4 border-amber-800 hover:bg-amber-500 active:border-b-0 active:translate-y-1',
+    danger:
+      'bg-red-700 text-white border-b-4 border-red-900 hover:bg-red-600 active:border-b-0 active:translate-y-1',
+  };
+
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={label}
-      className={`rounded font-vt323 text-2xl transition active:scale-95 ${
+      className={`rounded font-vt323 text-xl leading-none transition ${
         wide ? 'col-span-2' : ''
-      } ${className}`}
+      } ${variantClasses[variant]} ${className}`}
     >
       {children}
     </button>
@@ -172,13 +190,21 @@ export default function CalculatorInteraction({ onComplete }: CalculatorInteract
   }, [handleNumber, handleDecimal, handleOperator, handleEquals, clear]);
 
   return (
-    <div className="flex w-full max-w-sm flex-col items-center gap-4 rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000]">
-      <div className="mb-2 w-full rounded bg-gray-800 p-4 text-right font-vt323 text-4xl text-white shadow-inner">
+    <div
+      className="flex w-full max-w-md flex-col items-center gap-5 rounded-xl border-4 border-stone-700 bg-stone-600 p-6 shadow-[0_0_0_4px_#000]"
+      style={{
+        backgroundImage: `url(${getAssetPath('/assets/calculator.png')})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        imageRendering: 'pixelated',
+      }}
+    >
+      <div className="mb-2 w-full rounded border-4 border-stone-500 bg-lime-900/90 p-4 text-right font-vt323 text-4xl text-lime-100 shadow-inner">
         {display}
       </div>
 
       <div className="grid w-full grid-cols-4 gap-3">
-        <CalcButton onClick={clear} className="bg-red-600 text-white hover:bg-red-500" label="Clear">
+        <CalcButton onClick={clear} variant="danger" label="Clear">
           C
         </CalcButton>
         <div className="col-span-3" />
@@ -192,7 +218,7 @@ export default function CalculatorInteraction({ onComplete }: CalculatorInteract
         <CalcButton onClick={() => handleNumber('9')} label="9">
           9
         </CalcButton>
-        <CalcButton onClick={() => handleOperator('/')} className="bg-yellow-600 text-white hover:bg-yellow-500" label="Divide">
+        <CalcButton onClick={() => handleOperator('/')} variant="accent" label="Divide">
           ÷
         </CalcButton>
 
@@ -205,7 +231,7 @@ export default function CalculatorInteraction({ onComplete }: CalculatorInteract
         <CalcButton onClick={() => handleNumber('6')} label="6">
           6
         </CalcButton>
-        <CalcButton onClick={() => handleOperator('*')} className="bg-yellow-600 text-white hover:bg-yellow-500" label="Multiply">
+        <CalcButton onClick={() => handleOperator('*')} variant="accent" label="Multiply">
           ×
         </CalcButton>
 
@@ -218,7 +244,7 @@ export default function CalculatorInteraction({ onComplete }: CalculatorInteract
         <CalcButton onClick={() => handleNumber('3')} label="3">
           3
         </CalcButton>
-        <CalcButton onClick={() => handleOperator('-')} className="bg-yellow-600 text-white hover:bg-yellow-500" label="Subtract">
+        <CalcButton onClick={() => handleOperator('-')} variant="accent" label="Subtract">
           −
         </CalcButton>
 
@@ -228,10 +254,10 @@ export default function CalculatorInteraction({ onComplete }: CalculatorInteract
         <CalcButton onClick={handleDecimal} label="Decimal">
           .
         </CalcButton>
-        <CalcButton onClick={() => handleOperator('+')} className="bg-yellow-600 text-white hover:bg-yellow-500" label="Add">
+        <CalcButton onClick={() => handleOperator('+')} variant="accent" label="Add">
           +
         </CalcButton>
-        <CalcButton onClick={handleEquals} className="bg-green-600 text-white hover:bg-green-500" label="Equals">
+        <CalcButton onClick={handleEquals} variant="accent" label="Equals">
           =
         </CalcButton>
       </div>
@@ -239,7 +265,7 @@ export default function CalculatorInteraction({ onComplete }: CalculatorInteract
       <button
         type="button"
         onClick={onComplete}
-        className="mt-2 w-full rounded border-2 border-white/50 bg-black py-2 font-vt323 text-xl text-white transition hover:border-white hover:bg-white/10"
+        className="mt-2 w-full rounded border-2 border-stone-400 bg-stone-800 py-2 font-vt323 text-xl text-stone-100 transition hover:bg-stone-700"
       >
         Exit
       </button>
