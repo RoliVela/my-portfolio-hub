@@ -94,6 +94,8 @@ function generateConfetti(): ConfettiPiece[] {
   }));
 }
 
+// Keep onComplete prop available for callers; it's passed by the shared wrapper.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
   const [phase, setPhase] = useState<Phase>('intro');
   const [sequence, setSequence] = useState<Direction[]>([]);
@@ -184,7 +186,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
       }
 
       setActiveDirection(direction);
-      queueTimeout(() => setActiveDirection(null), 200);
+      queueTimeout(() => setActiveDirection(null), 550);
 
       const nextIndex = inputIndex + 1;
       if (nextIndex >= sequence.length) {
@@ -228,8 +230,17 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
         ? IMAGES[activeDirection]
         : IMAGES.neutral;
 
+  const kermitTransform = activeDirection
+    ? ({
+        up: 'translateY(-16px)',
+        down: 'translateY(16px)',
+        left: 'translateX(-16px)',
+        right: 'translateX(16px)',
+      }[activeDirection])
+    : 'translate(0, 0)';
+
   return (
-    <div className="flex w-full flex-col items-center gap-6 p-2 font-vt323 text-white">
+    <div className="flex w-full max-w-2xl flex-col items-center gap-6 rounded-lg border-4 border-pink-300 bg-purple-950 p-6 shadow-[0_0_0_4px_#000] font-vt323 text-white">
       <div className="text-center">
         <h2 className="text-3xl md:text-4xl">Kermit Says</h2>
         <p className="text-lg text-white/80 md:text-xl">
@@ -238,7 +249,10 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
       </div>
 
       <div className="relative">
-        <div className="relative h-48 w-48 md:h-64 md:w-64">
+        <div
+          className="relative h-48 w-48 transition-transform duration-300 ease-out will-change-transform md:h-64 md:w-64"
+          style={{ transform: kermitTransform }}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={getAssetPath(currentImage)}
@@ -343,13 +357,6 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
             Try Again
           </button>
         )}
-        <button
-          type="button"
-          onClick={onComplete}
-          className="rounded border-2 border-white bg-black px-6 py-2 text-2xl text-white transition hover:bg-white hover:text-black"
-        >
-          Exit
-        </button>
       </div>
 
       <p className="max-w-md text-center text-sm text-white/60">

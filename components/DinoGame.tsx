@@ -39,6 +39,8 @@ function readStoredDinoHighScore(): number {
   return 0;
 }
 
+// Keep onComplete prop available for callers; it's passed by the shared wrapper.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function DinoGame({ onComplete }: DinoGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -454,13 +456,6 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
           <p className="font-vt323 text-2xl text-pink-200">Score: {Math.floor(score)}</p>
           <p className="font-vt323 text-xl text-pink-100/70">Best: {highScore}</p>
         </div>
-        <button
-          type="button"
-          onClick={onComplete}
-          className="min-h-[44px] min-w-[44px] rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800"
-        >
-          Exit
-        </button>
       </div>
     </div>
   );

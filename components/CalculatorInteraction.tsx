@@ -57,6 +57,8 @@ function CalcButton({
   );
 }
 
+// Keep onComplete prop available for callers; it's passed by the shared wrapper.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function CalculatorInteraction({ onComplete }: CalculatorInteractionProps) {
   const [display, setDisplay] = useState('0');
   const [previousValue, setPreviousValue] = useState<number | null>(null);
@@ -253,13 +255,6 @@ export default function CalculatorInteraction({ onComplete }: CalculatorInteract
         </CalcButton>
       </div>
 
-      <button
-        type="button"
-        onClick={onComplete}
-        className="mt-2 w-full rounded border-2 border-fuchsia-400 bg-fuchsia-900 py-2 font-vt323 text-xl text-pink-100 transition hover:bg-fuchsia-800"
-      >
-        Exit
-      </button>
     </div>
   );
 }
