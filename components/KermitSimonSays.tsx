@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Transition } from 'framer-motion';
 import { getAssetPath } from '@/lib/assets';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -230,14 +230,26 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
         ? IMAGES[activeDirection]
         : IMAGES.neutral;
 
-  const kermitTransform = activeDirection
-    ? ({
-        up: 'translateY(-16px)',
-        down: 'translateY(16px)',
-        left: 'translateX(-16px)',
-        right: 'translateX(16px)',
-      }[activeDirection])
-    : 'translate(0, 0)';
+  const kermitVariants = {
+    neutral: { x: 0, y: 0, scale: 1 },
+    up: { x: 0, y: -28, scale: 1.05 },
+    down: { x: 0, y: 28, scale: 1.05 },
+    left: { x: -28, y: 0, scale: 1.05 },
+    right: { x: 28, y: 0, scale: 1.05 },
+  };
+
+  const kermitTransition: Transition = {
+    type: 'spring',
+    stiffness: 260,
+    damping: 14,
+  };
+
+  const arrowPositionClasses: Record<Direction, string> = {
+    up: '-top-8 left-1/2 -translate-x-1/2',
+    down: '-bottom-8 left-1/2 -translate-x-1/2',
+    left: '-left-8 top-1/2 -translate-y-1/2',
+    right: '-right-8 top-1/2 -translate-y-1/2',
+  };
 
   return (
     <div className="flex w-full max-w-2xl flex-col items-center gap-6 rounded-lg border-4 border-pink-300 bg-purple-950 p-6 shadow-[0_0_0_4px_#000] font-vt323 text-white">
@@ -249,9 +261,11 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
       </div>
 
       <div className="relative">
-        <div
-          className="relative h-48 w-48 transition-transform duration-300 ease-out will-change-transform md:h-64 md:w-64"
-          style={{ transform: kermitTransform }}
+        <motion.div
+          className="relative h-48 w-48 md:h-64 md:w-64"
+          animate={activeDirection ?? 'neutral'}
+          variants={kermitVariants}
+          transition={kermitTransition}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -259,12 +273,6 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
             alt="Kermit"
             className="h-full w-full object-contain pixel-art drop-shadow-2xl"
           />
-          {activeDirection && (
-            <div className="pointer-events-none absolute -right-8 top-1/2 -translate-y-1/2 text-5xl text-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.8)] md:text-6xl">
-              {DIRECTION_ICONS[activeDirection]}
-            </div>
-          )}
-
           <AnimatePresence>
             {celebrating && (
               <div className="pointer-events-none absolute inset-0 overflow-visible">
@@ -292,7 +300,22 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
               </div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
+
+        <AnimatePresence>
+          {activeDirection && (
+            <motion.div
+              key={activeDirection}
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.15 }}
+              className={`pointer-events-none absolute ${arrowPositionClasses[activeDirection]} text-5xl text-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.8)] md:text-6xl`}
+            >
+              {DIRECTION_ICONS[activeDirection]}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="mt-4 grid grid-cols-3 gap-2">
           <div />
