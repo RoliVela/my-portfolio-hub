@@ -312,7 +312,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
             const height = 28 + Math.random() * 24;
             obstaclesRef.current.push({
               x: CANVAS_WIDTH,
-              y: GROUND_Y - height - 15,
+              y: GROUND_Y - height - 20,
               width: 24,
               height,
               isFlying: true,
