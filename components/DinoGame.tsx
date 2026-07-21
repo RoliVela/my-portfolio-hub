@@ -188,7 +188,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
 
     const drawCactus = (obstacle: Obstacle) => {
       const { x, y, width, height } = obstacle;
-      ctx.fillStyle = obstacle.isFlying ? '#d8b4fe' : '#a21caf';
+      ctx.fillStyle = '#a21caf';
 
       ctx.fillRect(x + width * 0.35, y, width * 0.3, height);
       ctx.fillRect(x, y + height * 0.3, width * 0.35, height * 0.15);
@@ -200,9 +200,71 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       ctx.fillRect(x + width * 0.35, y + height, width * 0.3, 3);
     };
 
+    const drawFlyingCat = (obstacle: Obstacle) => {
+      const { x, y, width, height } = obstacle;
+      const hover = Math.sin(frameRef.current * 0.15) * 3;
+      const catX = x;
+      const catY = y + hover;
+
+      // Body
+      ctx.fillStyle = '#d8b4fe';
+      ctx.beginPath();
+      ctx.ellipse(catX + width / 2, catY + height * 0.6, width * 0.45, height * 0.3, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Head
+      ctx.beginPath();
+      ctx.arc(catX + width * 0.75, catY + height * 0.35, width * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ears
+      ctx.beginPath();
+      ctx.moveTo(catX + width * 0.65, catY + height * 0.2);
+      ctx.lineTo(catX + width * 0.72, catY + height * 0.05);
+      ctx.lineTo(catX + width * 0.78, catY + height * 0.2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(catX + width * 0.78, catY + height * 0.2);
+      ctx.lineTo(catX + width * 0.85, catY + height * 0.05);
+      ctx.lineTo(catX + width * 0.9, catY + height * 0.2);
+      ctx.closePath();
+      ctx.fill();
+
+      // Legs (hovering pose)
+      ctx.strokeStyle = '#d8b4fe';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      const legOffset = Math.sin(frameRef.current * 0.2) * 2;
+      ctx.beginPath();
+      ctx.moveTo(catX + width * 0.35, catY + height * 0.75);
+      ctx.lineTo(catX + width * 0.25 - legOffset, catY + height * 0.95);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(catX + width * 0.55, catY + height * 0.75);
+      ctx.lineTo(catX + width * 0.5 + legOffset, catY + height * 0.95);
+      ctx.stroke();
+
+      // Tail
+      ctx.beginPath();
+      ctx.moveTo(catX + width * 0.15, catY + height * 0.6);
+      ctx.quadraticCurveTo(catX - width * 0.1, catY + height * 0.5, catX + width * 0.05, catY + height * 0.75);
+      ctx.stroke();
+
+      // Eye
+      ctx.fillStyle = '#1e1224';
+      ctx.beginPath();
+      ctx.arc(catX + width * 0.78, catY + height * 0.32, width * 0.04, 0, Math.PI * 2);
+      ctx.fill();
+    };
+
     const drawObstacles = () => {
       obstaclesRef.current.forEach((obstacle) => {
-        drawCactus(obstacle);
+        if (obstacle.isFlying) {
+          drawFlyingCat(obstacle);
+        } else {
+          drawCactus(obstacle);
+        }
       });
     };
 

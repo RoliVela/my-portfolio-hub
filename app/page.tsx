@@ -7,7 +7,7 @@ import { getAssetPath } from '@/lib/assets';
 import { loadImageAlphaMap, isPixelVisible, AlphaMap } from '@/lib/hitbox';
 import DialogueBox from '@/components/DialogueBox';
 import SnippyCharacter from '@/components/SnippyCharacter';
-import ItemInteractionStage from '@/components/ItemInteractionStage';
+import ItemInteractionStage, { JukeboxTrack } from '@/components/ItemInteractionStage';
 import ClockOverlay from '@/components/ClockOverlay';
 
 type ObjectState = Record<string, Record<string, unknown>>;
@@ -63,6 +63,7 @@ export default function Home() {
   const [panelCollapsed, setPanelCollapsed] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [musicOn, setMusicOn] = useState(false);
+  const [currentJukeboxTrack, setCurrentJukeboxTrack] = useState<JukeboxTrack | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Live clock state shared between the idle-room overlay and the clock interaction.
@@ -104,12 +105,45 @@ export default function Home() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!audioRef.current) return;
     return () => {
       audioRef.current?.pause();
       audioRef.current = null;
     };
   }, []);
+
+  // Keep the global audio element in sync with the selected jukebox track and play state.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.4;
+    }
+
+    const audio = audioRef.current;
+
+    if (currentJukeboxTrack && audio.src !== currentJukeboxTrack.src) {
+      audio.src = currentJukeboxTrack.src;
+      audio.currentTime = 0;
+    }
+
+    if (!currentJukeboxTrack) {
+      audio.pause();
+      return;
+    }
+
+    if (musicOn) {
+      const playPromise = audio.play();
+      playPromise.catch((err) => {
+        if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
+          console.error('Audio playback failed:', err);
+        }
+      });
+    } else {
+      audio.pause();
+    }
+  }, [currentJukeboxTrack, musicOn]);
 
   // Pre-load alpha maps for all object images (including alt states) so
   // pixel-perfect hit detection is ready before the user clicks.
@@ -174,19 +208,12 @@ export default function Home() {
   }, [dragState]);
 
   const toggleMusic = () => {
-    if (!audioRef.current) {
-      const audio = new Audio(getAssetPath('/assets/bg-music.mp3'));
-      audio.loop = true;
-      audio.volume = 0.4;
-      audioRef.current = audio;
+    if (!currentJukeboxTrack) {
+      setCurrentJukeboxTrack({ title: 'Default Audio', src: getAssetPath('/assets/bg-music.mp3') });
+      setMusicOn(true);
+      return;
     }
-    const audio = audioRef.current;
-    if (musicOn) {
-      audio.pause();
-      setMusicOn(false);
-    } else {
-      audio.play().then(() => setMusicOn(true)).catch(() => setMusicOn(false));
-    }
+    setMusicOn((prev) => !prev);
   };
 
   const performObjectToggle = (obj: RoomObject) => {
@@ -491,6 +518,19 @@ export default function Home() {
         />
       </div>
 
+      {/* Chair overlay */}
+      <div
+        className="pointer-events-none absolute z-10 aspect-[740/1024] w-[13%]"
+        style={{ left: '48%', top: '50%' }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={getAssetPath('/assets/chair.png')}
+          alt=""
+          className="h-full w-full object-contain pixel-art drop-shadow-lg"
+        />
+      </div>
+
       {/* Dim overlay during inspection */}
       <AnimatePresence>
         {isInspecting && (
@@ -678,6 +718,10 @@ export default function Home() {
                 onToggle={() => performObjectToggle(inspectedObject)}
                 selectedTimezone={selectedTimezone}
                 onTimezoneChange={setSelectedTimezone}
+                currentJukeboxTrack={currentJukeboxTrack}
+                isJukeboxPlaying={musicOn}
+                onJukeboxTrackSelect={setCurrentJukeboxTrack}
+                onJukeboxToggle={() => setMusicOn((prev) => !prev)}
               />
               <button
                 type="button"

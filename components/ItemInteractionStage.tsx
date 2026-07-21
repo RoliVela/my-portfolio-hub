@@ -9,6 +9,13 @@ import NeeDohInteraction from './NeeDohInteraction';
 import PosterboardInteraction from './PosterboardInteraction';
 import SuggestionBoxInteraction from './SuggestionBoxInteraction';
 import WateringGame from './WateringGame';
+import JukeboxInteraction from './JukeboxInteraction';
+
+export type JukeboxTrack = {
+  title: string;
+  src: string;
+  isUserUpload?: boolean;
+};
 
 interface ItemInteractionStageProps {
   obj: RoomObject;
@@ -16,6 +23,10 @@ interface ItemInteractionStageProps {
   onToggle?: () => void;
   selectedTimezone?: string;
   onTimezoneChange?: (timezone: string) => void;
+  currentJukeboxTrack?: JukeboxTrack | null;
+  isJukeboxPlaying?: boolean;
+  onJukeboxTrackSelect?: (track: JukeboxTrack | null) => void;
+  onJukeboxToggle?: () => void;
 }
 
 /**
@@ -32,6 +43,10 @@ export default function ItemInteractionStage({
   onToggle,
   selectedTimezone,
   onTimezoneChange,
+  currentJukeboxTrack,
+  isJukeboxPlaying,
+  onJukeboxTrackSelect,
+  onJukeboxToggle,
 }: ItemInteractionStageProps) {
   const [activated, setActivated] = useState(false);
 
@@ -65,6 +80,17 @@ export default function ItemInteractionStage({
 
   if (obj.id === 'OBJ_20') {
     return <PosterboardInteraction onComplete={handleInteract} />;
+  }
+
+  if (obj.id === 'OBJ_18') {
+    return (
+      <JukeboxInteraction
+        currentTrack={currentJukeboxTrack ?? null}
+        isPlaying={isJukeboxPlaying ?? false}
+        onTrackSelect={onJukeboxTrackSelect ?? (() => {})}
+        onTogglePlay={onJukeboxToggle ?? (() => {})}
+      />
+    );
   }
 
   // Placeholder for future per-object mini-games.

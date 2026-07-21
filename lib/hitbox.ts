@@ -28,6 +28,9 @@ export function loadImageAlphaMap(src: string): Promise<AlphaMap | null> {
   });
 }
 
+const ALPHA_THRESHOLD = 10;
+const NEIGHBORHOOD_RADIUS = 7;
+
 export function isPixelVisible(
   alphaMap: AlphaMap,
   clickX: number,
@@ -35,9 +38,27 @@ export function isPixelVisible(
   renderedWidth: number,
   renderedHeight: number
 ): boolean {
-  const x = Math.floor((clickX / renderedWidth) * alphaMap.width);
-  const y = Math.floor((clickY / renderedHeight) * alphaMap.height);
-  if (x < 0 || x >= alphaMap.width || y < 0 || y >= alphaMap.height) return false;
-  const index = (y * alphaMap.width + x) * 4 + 3;
-  return alphaMap.data[index] > 0;
+  const xCenter = (clickX / renderedWidth) * alphaMap.width;
+  const yCenter = (clickY / renderedHeight) * alphaMap.height;
+
+  const xStart = Math.max(0, Math.floor(xCenter - NEIGHBORHOOD_RADIUS));
+  const xEnd = Math.min(alphaMap.width - 1, Math.floor(xCenter + NEIGHBORHOOD_RADIUS));
+  const yStart = Math.max(0, Math.floor(yCenter - NEIGHBORHOOD_RADIUS));
+  const yEnd = Math.min(alphaMap.height - 1, Math.floor(yCenter + NEIGHBORHOOD_RADIUS));
+
+  for (let y = yStart; y <= yEnd; y += 1) {
+    const dxMax = NEIGHBORHOOD_RADIUS * NEIGHBORHOOD_RADIUS - (y - yCenter) ** 2;
+    if (dxMax < 0) continue;
+    const dx = Math.sqrt(dxMax);
+    const rowStart = Math.max(xStart, Math.ceil(xCenter - dx));
+    const rowEnd = Math.min(xEnd, Math.floor(xCenter + dx));
+    for (let x = rowStart; x <= rowEnd; x += 1) {
+      const index = (y * alphaMap.width + x) * 4 + 3;
+      if (alphaMap.data[index] > ALPHA_THRESHOLD) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }

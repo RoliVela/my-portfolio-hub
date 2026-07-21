@@ -41,12 +41,20 @@ STATE_GROUPS: list[list[str]] = [
 ]
 
 
+ALPHA_THRESHOLD = 10
+
+
 def get_bbox(path: str) -> tuple[int, int, int, int] | None:
-    """Return the bounding box of non-transparent pixels, or None."""
+    """Return the bounding box of visible pixels (alpha >= threshold), or None."""
     with Image.open(path) as img:
         if img.mode != "RGBA":
             img = img.convert("RGBA")
-        return img.getbbox()
+        alpha = img.split()[-1]
+        # Mask out pixels below the threshold so only visible content counts.
+        mask = alpha.point(lambda p: 255 if p >= ALPHA_THRESHOLD else 0)
+        bbox = img.crop((0, 0, img.width, img.height))
+        bbox.putalpha(mask)
+        return bbox.getbbox()
 
 
 def combined_bbox(bboxes: list[tuple[int, int, int, int]]) -> tuple[int, int, int, int]:
