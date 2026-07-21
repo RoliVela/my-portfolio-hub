@@ -139,23 +139,27 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     };
 
     const drawSun = () => {
+      const cx = CANVAS_WIDTH - 60;
+      const cy = 40;
+      const px = 4;
+
       ctx.fillStyle = '#f9a8d4';
-      ctx.beginPath();
-      ctx.arc(CANVAS_WIDTH - 60, 40, 18, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#fbcfe8';
-      ctx.lineWidth = 3;
-      for (let i = 0; i < 8; i++) {
-        const angle = (i * Math.PI) / 4;
-        const x1 = CANVAS_WIDTH - 60 + Math.cos(angle) * 24;
-        const y1 = 40 + Math.sin(angle) * 24;
-        const x2 = CANVAS_WIDTH - 60 + Math.cos(angle) * 32;
-        const y2 = 40 + Math.sin(angle) * 32;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-      }
+      // Stepped blocky core
+      ctx.fillRect(cx - px * 3, cy - px * 4, px * 6, px * 8);
+      ctx.fillRect(cx - px * 4, cy - px * 3, px * 8, px * 6);
+      ctx.fillRect(cx - px * 2, cy - px * 2, px * 4, px * 4);
+
+      // Rays as small squares
+      ctx.fillStyle = '#fbcfe8';
+      const rays = [
+        { x: 0, y: -5 }, { x: 0, y: 4 },
+        { x: -5, y: 0 }, { x: 4, y: 0 },
+        { x: -4, y: -4 }, { x: 4, y: -4 },
+        { x: -4, y: 3 }, { x: 4, y: 3 },
+      ];
+      rays.forEach((r) => {
+        ctx.fillRect(cx + r.x * px, cy + r.y * px, px, px);
+      });
     };
 
     const drawClouds = () => {
@@ -164,11 +168,10 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       const cloud2X = 350 + Math.sin(frameRef.current * 0.004) * 12;
       [cloud1X, cloud2X].forEach((cx, i) => {
         const cy = i === 0 ? 45 : 70;
-        ctx.beginPath();
-        ctx.arc(cx, cy, 18, 0, Math.PI * 2);
-        ctx.arc(cx + 22, cy, 24, 0, Math.PI * 2);
-        ctx.arc(cx + 48, cy, 18, 0, Math.PI * 2);
-        ctx.fill();
+        // Blocky cloud silhouette made of stacked rectangles
+        ctx.fillRect(cx - 10, cy + 6, 68, 14);
+        ctx.fillRect(cx + 2, cy - 6, 48, 18);
+        ctx.fillRect(cx + 16, cy - 14, 24, 14);
       });
     };
 
@@ -197,13 +200,22 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       const yOffset = DINO_SIZE - bodyHeight;
 
       ctx.fillStyle = '#e879f9';
+      // Chunky pixel body
       ctx.fillRect(x + 8, y + 10 + yOffset, 28, bodyHeight - 10);
-      ctx.fillRect(x + 28, y + yOffset, 16, 16);
+      ctx.fillRect(x + 28, y + 4 + yOffset, 16, 12);
+      // Snout
+      ctx.fillRect(x + 36, y + 6 + yOffset, 8, 8);
 
+      // Eye
       ctx.fillStyle = '#000000';
-      ctx.fillRect(x + 36, y + 4 + yOffset, 4, 4);
+      ctx.fillRect(x + 34, y + 6 + yOffset, 4, 4);
 
+      // Tail
       ctx.fillStyle = '#c026d3';
+      ctx.fillRect(x - 4, y + 16 + yOffset, 8, 8);
+      ctx.fillRect(x - 8, y + 18 + yOffset, 6, 6);
+
+      // Legs
       const legOffset = Math.floor(frameRef.current / 10) % 2 === 0 ? 0 : 4;
       if (ducking) {
         ctx.fillRect(x + 10 + legOffset, y + yOffset + bodyHeight - 2, 8, 5);
@@ -212,9 +224,6 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
         ctx.fillRect(x + 10 + legOffset, y + bodyHeight - 2, 8, 8);
         ctx.fillRect(x + 24 - legOffset, y + bodyHeight - 2, 8, 8);
       }
-
-      ctx.fillStyle = '#c026d3';
-      ctx.fillRect(x, y + 16 + yOffset, 8, 8);
     };
 
     const drawCactus = (obstacle: Obstacle) => {
@@ -236,57 +245,32 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       const hover = Math.sin(frameRef.current * 0.15) * 3;
       const catX = x;
       const catY = y + hover;
-
-      // Body
-      ctx.fillStyle = '#d8b4fe';
-      ctx.beginPath();
-      ctx.ellipse(catX + width / 2, catY + height * 0.6, width * 0.45, height * 0.3, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Head
-      ctx.beginPath();
-      ctx.arc(catX + width * 0.75, catY + height * 0.35, width * 0.22, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Ears
-      ctx.beginPath();
-      ctx.moveTo(catX + width * 0.65, catY + height * 0.2);
-      ctx.lineTo(catX + width * 0.72, catY + height * 0.05);
-      ctx.lineTo(catX + width * 0.78, catY + height * 0.2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(catX + width * 0.78, catY + height * 0.2);
-      ctx.lineTo(catX + width * 0.85, catY + height * 0.05);
-      ctx.lineTo(catX + width * 0.9, catY + height * 0.2);
-      ctx.closePath();
-      ctx.fill();
-
-      // Legs (hovering pose)
-      ctx.strokeStyle = '#d8b4fe';
-      ctx.lineWidth = 3;
-      ctx.lineCap = 'round';
       const legOffset = Math.sin(frameRef.current * 0.2) * 2;
-      ctx.beginPath();
-      ctx.moveTo(catX + width * 0.35, catY + height * 0.75);
-      ctx.lineTo(catX + width * 0.25 - legOffset, catY + height * 0.95);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(catX + width * 0.55, catY + height * 0.75);
-      ctx.lineTo(catX + width * 0.5 + legOffset, catY + height * 0.95);
-      ctx.stroke();
 
-      // Tail
-      ctx.beginPath();
-      ctx.moveTo(catX + width * 0.15, catY + height * 0.6);
-      ctx.quadraticCurveTo(catX - width * 0.1, catY + height * 0.5, catX + width * 0.05, catY + height * 0.75);
-      ctx.stroke();
+      ctx.fillStyle = '#d8b4fe';
+      // Body block
+      ctx.fillRect(catX + width * 0.25, catY + height * 0.5, width * 0.55, height * 0.35);
+      // Head block
+      ctx.fillRect(catX + width * 0.6, catY + height * 0.25, width * 0.35, height * 0.35);
+      // Ears as small squares
+      ctx.fillRect(catX + width * 0.65, catY + height * 0.1, width * 0.1, height * 0.15);
+      ctx.fillRect(catX + width * 0.8, catY + height * 0.1, width * 0.1, height * 0.15);
+
+      // Tail (stepped blocks)
+      ctx.fillRect(catX + width * 0.15, catY + height * 0.6, width * 0.15, height * 0.1);
+      ctx.fillRect(catX + width * 0.05, catY + height * 0.65, width * 0.1, height * 0.15);
+      ctx.fillRect(catX - width * 0.05, catY + height * 0.75, width * 0.1, height * 0.1);
+
+      // Legs (hovering blocks)
+      ctx.fillRect(catX + width * 0.3, catY + height * 0.85, width * 0.12, height * 0.2);
+      ctx.fillRect(catX + width * 0.55, catY + height * 0.85, width * 0.12, height * 0.2);
+      // Animated dangling paws
+      ctx.fillRect(catX + width * 0.3 - legOffset, catY + height * 1.05, width * 0.08, height * 0.1);
+      ctx.fillRect(catX + width * 0.6 + legOffset, catY + height * 1.05, width * 0.08, height * 0.1);
 
       // Eye
       ctx.fillStyle = '#1e1224';
-      ctx.beginPath();
-      ctx.arc(catX + width * 0.78, catY + height * 0.32, width * 0.04, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillRect(catX + width * 0.75, catY + height * 0.35, width * 0.08, height * 0.08);
     };
 
     const drawObstacles = () => {
