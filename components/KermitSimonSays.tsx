@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getAssetPath } from '@/lib/assets';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -39,8 +40,58 @@ const IMAGES: Record<Direction | 'neutral' | 'loss', string> = {
   loss: '/assets/Kermit_Game_Loss.png',
 };
 
+const CONFETTI_COLORS = ['#fde047', '#f472b6', '#60a5fa', '#34d399', '#fb923c'];
+
 interface KermitSimonSaysProps {
   onComplete?: () => void;
+}
+
+interface ConfettiPiece {
+  id: number;
+  color: string;
+  x: number;
+  y: number;
+  rotate: number;
+  scale: number;
+  delay: number;
+}
+
+function readStoredHighScore(): number {
+  if (typeof window === 'undefined') return 1;
+  try {
+    const stored = window.localStorage.getItem('kermit-says-high-score');
+    if (!stored) return 1;
+    const parsed = parseInt(stored, 10);
+    return Number.isNaN(parsed) ? 1 : parsed;
+  } catch {
+    return 1;
+  }
+}
+
+function updateHighScore(round: number, prev: number): number {
+  if (round > prev) {
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem('kermit-says-high-score', String(round));
+      } catch {
+        // Ignore storage errors (e.g. private browsing restrictions).
+      }
+    }
+    return round;
+  }
+  return prev;
+}
+
+function generateConfetti(): ConfettiPiece[] {
+  return Array.from({ length: 40 }).map((_, i) => ({
+    id: i,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    x: (Math.random() - 0.5) * 300,
+    y: -(Math.random() * 250 + 100),
+    rotate: Math.random() * 360,
+    scale: 0.6 + Math.random() * 0.6,
+    delay: Math.random() * 0.1,
+  }));
 }
 
 export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
@@ -49,7 +100,12 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
   const [inputIndex, setInputIndex] = useState(0);
   const [activeDirection, setActiveDirection] = useState<Direction | null>(null);
   const [message, setMessage] = useState('Help Kermit remember the pattern!');
+  const [highScore, setHighScore] = useState(readStoredHighScore);
+  const [celebrating, setCelebrating] = useState(false);
+  const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const round = Math.max(1, sequence.length);
 
   const clearAllTimeouts = () => {
     timeoutsRef.current.forEach((id) => clearTimeout(id));
@@ -68,6 +124,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
     setActiveDirection(null);
     setMessage('Watch the pattern...');
     setInputIndex(0);
+    setCelebrating(false);
 
     let delay = 500;
     seq.forEach((dir, index) => {
@@ -93,6 +150,8 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
     setSequence(first);
     setInputIndex(0);
     setActiveDirection(null);
+    setCelebrating(false);
+    setConfetti([]);
     setMessage('Watch the pattern...');
     setPhase('playing');
     playSequence(first);
@@ -118,6 +177,8 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
       if (direction !== expected) {
         setPhase('failure');
         setActiveDirection(null);
+        setCelebrating(false);
+        setConfetti([]);
         setMessage('Oops! Kermit got confused.');
         return;
       }
@@ -127,12 +188,16 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
 
       const nextIndex = inputIndex + 1;
       if (nextIndex >= sequence.length) {
+        const nextSequence: Direction[] = [...sequence, getRandomDirection()];
+        const nextRound = nextSequence.length;
+        setSequence(nextSequence);
+        setInputIndex(0);
+        setHighScore((prev) => updateHighScore(nextRound, prev));
+        setConfetti(generateConfetti());
+        setCelebrating(true);
         setPhase('success');
         setMessage('Great job! Next round...');
         queueTimeout(() => {
-          const nextSequence: Direction[] = [...sequence, getRandomDirection()];
-          setSequence(nextSequence);
-          setInputIndex(0);
           playSequence(nextSequence);
         }, 1200);
       } else {
@@ -168,7 +233,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
       <div className="text-center">
         <h2 className="text-3xl md:text-4xl">Kermit Says</h2>
         <p className="text-lg text-white/80 md:text-xl">
-          Round: {Math.max(1, sequence.length)}
+          Round: {round} — Best: {highScore}
         </p>
       </div>
 
@@ -185,6 +250,34 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
               {DIRECTION_ICONS[activeDirection]}
             </div>
           )}
+
+          <AnimatePresence>
+            {celebrating && (
+              <div className="pointer-events-none absolute inset-0 overflow-visible">
+                {confetti.map((piece) => (
+                  <motion.span
+                    key={piece.id}
+                    initial={{ opacity: 1, x: 0, y: 0, rotate: 0, scale: 0 }}
+                    animate={{
+                      opacity: [1, 1, 0],
+                      x: piece.x,
+                      y: piece.y,
+                      rotate: piece.rotate,
+                      scale: piece.scale,
+                    }}
+                    exit={{ opacity: 0 }}
+                    transition={{
+                      duration: 1.2,
+                      delay: piece.delay,
+                      ease: 'easeOut',
+                    }}
+                    className="absolute left-1/2 top-1/2 block h-2 w-2 rounded-sm"
+                    style={{ backgroundColor: piece.color }}
+                  />
+                ))}
+              </div>
+            )}
+          </AnimatePresence>
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2">
