@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 interface CalculatorInteractionProps {
   onComplete?: () => void;
+  onUnlock?: () => void;
 }
 
 type Operator = '+' | '-' | '*' | '/' | null;
@@ -57,9 +58,12 @@ function CalcButton({
   );
 }
 
+// Placeholder — change to whatever secret code should unlock the computer.
+const FREE_BYPASS_CODE = '31337';
+
 // Keep onComplete prop available for callers; it's passed by the shared wrapper.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export default function CalculatorInteraction({ onComplete }: CalculatorInteractionProps) {
+export default function CalculatorInteraction({ onComplete, onUnlock }: CalculatorInteractionProps) {
   const [display, setDisplay] = useState('0');
   const [previousValue, setPreviousValue] = useState<number | null>(null);
   const [operator, setOperator] = useState<Operator>(null);
@@ -166,6 +170,12 @@ export default function CalculatorInteraction({ onComplete }: CalculatorInteract
     setOperator(null);
     setShouldResetDisplay(true);
   }, [display, operator, previousValue, calculate]);
+
+  useEffect(() => {
+    if (display === FREE_BYPASS_CODE) {
+      onUnlock?.();
+    }
+  }, [display, onUnlock]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

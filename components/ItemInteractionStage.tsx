@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { RoomObject } from '@/lib/roomData';
 import CalculatorInteraction from './CalculatorInteraction';
 import ClockInteraction from './ClockInteraction';
+import ComputerUnlockedInteraction from './ComputerUnlockedInteraction';
 import DinoGame from './DinoGame';
 import NeeDohInteraction from './NeeDohInteraction';
 import PosterboardInteraction from './PosterboardInteraction';
@@ -28,6 +29,8 @@ interface ItemInteractionStageProps {
   isJukeboxPlaying?: boolean;
   onJukeboxTrackSelect?: (track: JukeboxTrack | null) => void;
   onJukeboxToggle?: () => void;
+  isComputerUnlocked?: boolean;
+  onUnlockComputer?: () => void;
 }
 
 /**
@@ -48,6 +51,8 @@ export default function ItemInteractionStage({
   isJukeboxPlaying,
   onJukeboxTrackSelect,
   onJukeboxToggle,
+  isComputerUnlocked,
+  onUnlockComputer,
 }: ItemInteractionStageProps) {
   const [activated, setActivated] = useState(false);
 
@@ -68,11 +73,11 @@ export default function ItemInteractionStage({
   }
 
   if (obj.id === 'OBJ_11') {
-    return <CalculatorInteraction onComplete={onComplete} />;
+    return <CalculatorInteraction onComplete={onComplete} onUnlock={onUnlockComputer} />;
   }
 
   if (obj.id === 'OBJ_16') {
-    return <DinoGame onComplete={onComplete} />;
+    return isComputerUnlocked ? <ComputerUnlockedInteraction /> : <DinoGame onComplete={onComplete} />;
   }
 
   if (obj.id === 'OBJ_17') {

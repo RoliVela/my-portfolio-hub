@@ -39,11 +39,27 @@ function InspectedItemImage({
   );
 }
 
+const STORAGE_KEY = 'room-object-state';
+
 function getInitialState(): ObjectState {
-  return initialRoomObjects.reduce((acc, obj) => {
+  const defaults = initialRoomObjects.reduce((acc, obj) => {
     acc[obj.id] = { ...obj.initialState };
     return acc;
   }, {} as ObjectState);
+
+  if (typeof window === 'undefined') return defaults;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaults;
+    const stored = JSON.parse(raw) as ObjectState;
+    const merged: ObjectState = {};
+    for (const id of Object.keys(defaults)) {
+      merged[id] = { ...defaults[id], ...(stored[id] ?? {}) };
+    }
+    return merged;
+  } catch {
+    return defaults;
+  }
 }
 
 export default function Home() {
@@ -360,6 +376,12 @@ export default function Home() {
       return [obj.dialogue.free[1] ?? obj.dialogue.free[0]];
     }
 
+    if (obj.id === 'OBJ_16') {
+      return state.isUnlocked
+        ? [{ speaker: 'Snippy', text: obj.dialogue.paid }]
+        : obj.dialogue.free;
+    }
+
     if (obj.id === 'OBJ_12') {
       return state.isOpen === false ? [obj.dialogue.free[1] ?? obj.dialogue.free[0]] : [obj.dialogue.free[0]];
     }
@@ -463,6 +485,15 @@ export default function Home() {
 
   const isInspecting = inspectedObject !== null;
   const dimLevel = inspectionPhase === 'interacting' ? 'bg-black/80' : 'bg-black/50';
+
+  // Persist room object state across reloads.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(objectState));
+    } catch {
+      // ignore storage errors (e.g. private browsing restrictions)
+    }
+  }, [objectState]);
 
   useInteractionSound();
 
@@ -737,6 +768,13 @@ export default function Home() {
                 isJukeboxPlaying={musicOn}
                 onJukeboxTrackSelect={setCurrentJukeboxTrack}
                 onJukeboxToggle={() => setMusicOn((prev) => !prev)}
+                isComputerUnlocked={Boolean(objectState.OBJ_16?.isUnlocked)}
+                onUnlockComputer={() =>
+                  setObjectState((prev) => ({
+                    ...prev,
+                    OBJ_16: { ...prev.OBJ_16, isUnlocked: true },
+                  }))
+                }
               />
               <button
                 type="button"
