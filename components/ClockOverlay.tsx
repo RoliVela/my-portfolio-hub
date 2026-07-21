@@ -16,7 +16,7 @@ export default function ClockOverlay({ selectedTimezone }: ClockOverlayProps) {
         style={{
           // Match the clock display face's isometric angle.
           // Determined visually against public/assets/clock.png.
-          transform: 'translate(1%, -6%) rotate(19deg) skewX(5deg) skewY(-2deg)',
+          transform: 'translate(-3%, -2%) rotate(19deg) skewX(5deg) skewY(-2deg)',
           transformOrigin: 'center center',
         }}
       >
