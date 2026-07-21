@@ -25,12 +25,27 @@ const JUMP_STRENGTH = -12;
 const BASE_SPEED = 4;
 const MAX_SPEED = 12;
 
+function readStoredDinoHighScore(): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const saved = localStorage.getItem('dino-high-score');
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return 0;
+}
+
 export default function DinoGame({ onComplete }: DinoGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
 
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState<number>(() => readStoredDinoHighScore());
   const [isPlaying, setIsPlaying] = useState(true);
 
   const dinoYRef = useRef(GROUND_Y - DINO_SIZE);
@@ -42,6 +57,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
   const frameRef = useRef(0);
   const scoreRef = useRef(0);
   const gameOverRef = useRef(false);
+  const highScoreRef = useRef<number>(readStoredDinoHighScore());
 
   const resetGame = useCallback(() => {
     dinoYRef.current = GROUND_Y - DINO_SIZE;
@@ -188,8 +204,8 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       ctx.fillStyle = '#c026d3';
       const legOffset = Math.floor(frameRef.current / 10) % 2 === 0 ? 0 : 4;
       if (ducking) {
-        ctx.fillRect(x + 10 + legOffset, y + bodyHeight - 2, 8, 5);
-        ctx.fillRect(x + 24 - legOffset, y + bodyHeight - 2, 8, 5);
+        ctx.fillRect(x + 10 + legOffset, y + yOffset + bodyHeight - 2, 8, 5);
+        ctx.fillRect(x + 24 - legOffset, y + yOffset + bodyHeight - 2, 8, 5);
       } else {
         ctx.fillRect(x + 10 + legOffset, y + bodyHeight - 2, 8, 8);
         ctx.fillRect(x + 24 - legOffset, y + bodyHeight - 2, 8, 8);
@@ -356,6 +372,15 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
           gameOverRef.current = true;
           setGameOver(true);
           setIsPlaying(false);
+          if (scoreRef.current > highScoreRef.current) {
+            highScoreRef.current = Math.floor(scoreRef.current);
+            setHighScore(highScoreRef.current);
+            try {
+              localStorage.setItem('dino-high-score', String(highScoreRef.current));
+            } catch {
+              // ignore storage errors
+            }
+          }
           if (rafRef.current) cancelAnimationFrame(rafRef.current);
           return;
         }
@@ -393,6 +418,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
             <p className="font-vt323 text-4xl text-pink-200">Game Over</p>
             <p className="font-vt323 text-xl text-pink-100/80">Score: {score}</p>
+            <p className="font-vt323 text-lg text-pink-100/70">Best: {highScore}</p>
             <p className="font-vt323 text-sm text-pink-100/60">Press Space or click to restart</p>
           </div>
         )}
@@ -424,7 +450,10 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
             Duck
           </button>
         </div>
-        <p className="font-vt323 text-2xl text-pink-200">Score: {Math.floor(score)}</p>
+        <div className="flex items-center gap-4">
+          <p className="font-vt323 text-2xl text-pink-200">Score: {Math.floor(score)}</p>
+          <p className="font-vt323 text-xl text-pink-100/70">Best: {highScore}</p>
+        </div>
         <button
           type="button"
           onClick={onComplete}

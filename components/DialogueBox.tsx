@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { DialogueEntry } from '@/lib/roomData';
 import { getAssetPath } from '@/lib/assets';
+import { registerDialogueAudio, playDialogue } from '@/lib/audioManager';
 
 interface DialogueBoxProps {
   entries: DialogueEntry[];
@@ -21,13 +22,15 @@ function TypewriterText({ text, onFinish }: { text: string; onFinish?: () => voi
     audio.loop = true;
     audio.volume = 0.18;
     audioRef.current = audio;
+    registerDialogueAudio(audio);
 
-    audio.play().catch(() => {});
+    playDialogue();
 
     return () => {
       audio.pause();
       audio.currentTime = 0;
       audioRef.current = null;
+      registerDialogueAudio(null);
     };
   }, []);
 

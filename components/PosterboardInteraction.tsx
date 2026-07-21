@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import { getAssetPath } from '@/lib/assets';
 
 interface PinnedImage {
   id: string;
@@ -143,7 +144,7 @@ export default function PosterboardInteraction({ onComplete }: PosterboardIntera
             <div className="absolute -top-1 left-1/2 z-0 h-6 w-0.5 -translate-x-1/2 bg-neutral-800" aria-hidden="true" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={img.src}
+              src={getAssetPath(img.src)}
               alt={img.caption}
               className="h-28 w-28 bg-amber-50 object-cover sm:h-32 sm:w-32"
             />

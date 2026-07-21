@@ -6,6 +6,7 @@ import { roomObjects as initialRoomObjects, RoomObject, DialogueEntry } from '@/
 import { getAssetPath } from '@/lib/assets';
 import { loadImageAlphaMap, isPixelVisible, AlphaMap } from '@/lib/hitbox';
 import { useInteractionSound } from '@/hooks/useInteractionSound';
+import { registerMusicAudio } from '@/lib/audioManager';
 import DialogueBox from '@/components/DialogueBox';
 import SnippyCharacter from '@/components/SnippyCharacter';
 import ItemInteractionStage, { JukeboxTrack } from '@/components/ItemInteractionStage';
@@ -109,6 +110,7 @@ export default function Home() {
     return () => {
       audioRef.current?.pause();
       audioRef.current = null;
+      registerMusicAudio(null);
     };
   }, []);
 
@@ -123,6 +125,7 @@ export default function Home() {
     }
 
     const audio = audioRef.current;
+    registerMusicAudio(audio);
 
     if (currentJukeboxTrack && audio.src !== currentJukeboxTrack.src) {
       audio.src = currentJukeboxTrack.src;
