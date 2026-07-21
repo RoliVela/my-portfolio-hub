@@ -199,30 +199,44 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       const bodyHeight = ducking ? DINO_SIZE * 0.6 : DINO_SIZE;
       const yOffset = DINO_SIZE - bodyHeight;
 
-      ctx.fillStyle = '#e879f9';
-      // Chunky pixel body
-      ctx.fillRect(x + 8, y + 10 + yOffset, 28, bodyHeight - 10);
-      ctx.fillRect(x + 28, y + 4 + yOffset, 16, 12);
+      const OUTLINE = '#1e1224';
+      const SKIN = '#e879f9';
+      const SKIN_SHADOW = '#c026d3';
+      const HIGHLIGHT = '#f5a6fd';
+
+      const drawBlock = (bx: number, by: number, bw: number, bh: number, color: string) => {
+        ctx.fillStyle = OUTLINE;
+        ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+        ctx.fillStyle = color;
+        ctx.fillRect(bx, by, bw, bh);
+      };
+
+      // Body
+      drawBlock(x + 8, y + 10 + yOffset, 28, bodyHeight - 10, SKIN);
+      // Highlight on upper-left torso
+      ctx.fillStyle = HIGHLIGHT;
+      ctx.fillRect(x + 9, y + 11 + yOffset, 8, bodyHeight - 14);
+      // Head
+      drawBlock(x + 28, y + 4 + yOffset, 16, 12, SKIN);
+      ctx.fillStyle = HIGHLIGHT;
+      ctx.fillRect(x + 29, y + 5 + yOffset, 8, 4);
       // Snout
-      ctx.fillRect(x + 36, y + 6 + yOffset, 8, 8);
-
+      drawBlock(x + 36, y + 6 + yOffset, 8, 8, SKIN);
       // Eye
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(x + 34, y + 6 + yOffset, 4, 4);
+      drawBlock(x + 34, y + 6 + yOffset, 4, 4, '#000000');
 
-      // Tail
-      ctx.fillStyle = '#c026d3';
-      ctx.fillRect(x - 4, y + 16 + yOffset, 8, 8);
-      ctx.fillRect(x - 8, y + 18 + yOffset, 6, 6);
+      // Tail (attached to torso)
+      drawBlock(x, y + 16 + yOffset, 8, 8, SKIN_SHADOW);
+      drawBlock(x - 6, y + 18 + yOffset, 6, 6, SKIN_SHADOW);
 
       // Legs
       const legOffset = Math.floor(frameRef.current / 10) % 2 === 0 ? 0 : 4;
       if (ducking) {
-        ctx.fillRect(x + 10 + legOffset, y + yOffset + bodyHeight - 2, 8, 5);
-        ctx.fillRect(x + 24 - legOffset, y + yOffset + bodyHeight - 2, 8, 5);
+        drawBlock(x + 10 + legOffset, y + yOffset + bodyHeight - 2, 8, 5, SKIN_SHADOW);
+        drawBlock(x + 24 - legOffset, y + yOffset + bodyHeight - 2, 8, 5, SKIN_SHADOW);
       } else {
-        ctx.fillRect(x + 10 + legOffset, y + bodyHeight - 2, 8, 8);
-        ctx.fillRect(x + 24 - legOffset, y + bodyHeight - 2, 8, 8);
+        drawBlock(x + 10 + legOffset, y + bodyHeight - 2, 8, 8, SKIN_SHADOW);
+        drawBlock(x + 24 - legOffset, y + bodyHeight - 2, 8, 8, SKIN_SHADOW);
       }
     };
 
@@ -247,30 +261,44 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       const catY = y + hover;
       const legOffset = Math.sin(frameRef.current * 0.2) * 2;
 
-      ctx.fillStyle = '#d8b4fe';
-      // Body block
-      ctx.fillRect(catX + width * 0.25, catY + height * 0.5, width * 0.55, height * 0.35);
-      // Head block
-      ctx.fillRect(catX + width * 0.6, catY + height * 0.25, width * 0.35, height * 0.35);
-      // Ears as small squares
-      ctx.fillRect(catX + width * 0.65, catY + height * 0.1, width * 0.1, height * 0.15);
-      ctx.fillRect(catX + width * 0.8, catY + height * 0.1, width * 0.1, height * 0.15);
+      const OUTLINE = '#1e1224';
+      const FUR = '#d8b4fe';
+      const FUR_SHADOW = '#b07ce8';
+      const FUR_HIGHLIGHT = '#ecdbff';
 
-      // Tail (stepped blocks)
-      ctx.fillRect(catX + width * 0.15, catY + height * 0.6, width * 0.15, height * 0.1);
-      ctx.fillRect(catX + width * 0.05, catY + height * 0.65, width * 0.1, height * 0.15);
-      ctx.fillRect(catX - width * 0.05, catY + height * 0.75, width * 0.1, height * 0.1);
+      const drawBlock = (bx: number, by: number, bw: number, bh: number, color: string) => {
+        ctx.fillStyle = OUTLINE;
+        ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+        ctx.fillStyle = color;
+        ctx.fillRect(bx, by, bw, bh);
+      };
+
+      // Tail (behind body)
+      drawBlock(catX + width * 0.15, catY + height * 0.6, width * 0.15, height * 0.1, FUR_SHADOW);
+      drawBlock(catX + width * 0.05, catY + height * 0.65, width * 0.1, height * 0.15, FUR_SHADOW);
+      drawBlock(catX - width * 0.05, catY + height * 0.75, width * 0.1, height * 0.1, FUR_SHADOW);
+
+      // Body block
+      drawBlock(catX + width * 0.25, catY + height * 0.5, width * 0.55, height * 0.35, FUR);
+      // Lighter highlight along back
+      ctx.fillStyle = FUR_HIGHLIGHT;
+      ctx.fillRect(catX + width * 0.25, catY + height * 0.5, width * 0.2, height * 0.1);
+
+      // Head block
+      drawBlock(catX + width * 0.6, catY + height * 0.25, width * 0.35, height * 0.35, FUR);
+      // Ears as small squares
+      drawBlock(catX + width * 0.65, catY + height * 0.1, width * 0.1, height * 0.15, FUR);
+      drawBlock(catX + width * 0.8, catY + height * 0.1, width * 0.1, height * 0.15, FUR);
 
       // Legs (hovering blocks)
-      ctx.fillRect(catX + width * 0.3, catY + height * 0.85, width * 0.12, height * 0.2);
-      ctx.fillRect(catX + width * 0.55, catY + height * 0.85, width * 0.12, height * 0.2);
+      drawBlock(catX + width * 0.3, catY + height * 0.85, width * 0.12, height * 0.2, FUR);
+      drawBlock(catX + width * 0.55, catY + height * 0.85, width * 0.12, height * 0.2, FUR);
       // Animated dangling paws
-      ctx.fillRect(catX + width * 0.3 - legOffset, catY + height * 1.05, width * 0.08, height * 0.1);
-      ctx.fillRect(catX + width * 0.6 + legOffset, catY + height * 1.05, width * 0.08, height * 0.1);
+      drawBlock(catX + width * 0.3 - legOffset, catY + height * 1.05, width * 0.08, height * 0.1, FUR_SHADOW);
+      drawBlock(catX + width * 0.6 + legOffset, catY + height * 1.05, width * 0.08, height * 0.1, FUR_SHADOW);
 
       // Eye
-      ctx.fillStyle = '#1e1224';
-      ctx.fillRect(catX + width * 0.75, catY + height * 0.35, width * 0.08, height * 0.08);
+      drawBlock(catX + width * 0.75, catY + height * 0.35, width * 0.08, height * 0.08, '#1e1224');
     };
 
     const drawObstacles = () => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence, type Transition } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getAssetPath } from '@/lib/assets';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -101,6 +101,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
   const [sequence, setSequence] = useState<Direction[]>([]);
   const [inputIndex, setInputIndex] = useState(0);
   const [activeDirection, setActiveDirection] = useState<Direction | null>(null);
+  const [bounceKey, setBounceKey] = useState(0);
   const [message, setMessage] = useState('Help Kermit remember the pattern!');
   const [highScore, setHighScore] = useState(readStoredHighScore);
   const [celebrating, setCelebrating] = useState(false);
@@ -131,6 +132,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
     let delay = 500;
     seq.forEach((dir, index) => {
       queueTimeout(() => {
+        setBounceKey((prev) => prev + 1);
         setActiveDirection(dir);
         queueTimeout(() => {
           setActiveDirection(null);
@@ -185,6 +187,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
         return;
       }
 
+      setBounceKey((prev) => prev + 1);
       setActiveDirection(direction);
       queueTimeout(() => setActiveDirection(null), 550);
 
@@ -230,20 +233,6 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
         ? IMAGES[activeDirection]
         : IMAGES.neutral;
 
-  const kermitVariants = {
-    neutral: { x: 0, y: 0, scale: 1 },
-    up: { x: 0, y: -28, scale: 1.05 },
-    down: { x: 0, y: 28, scale: 1.05 },
-    left: { x: -28, y: 0, scale: 1.05 },
-    right: { x: 28, y: 0, scale: 1.05 },
-  };
-
-  const kermitTransition: Transition = {
-    type: 'spring',
-    stiffness: 260,
-    damping: 14,
-  };
-
   const arrowPositionClasses: Record<Direction, string> = {
     up: '-top-8 left-1/2 -translate-x-1/2',
     down: '-bottom-8 left-1/2 -translate-x-1/2',
@@ -262,10 +251,14 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
 
       <div className="relative">
         <motion.div
-          className="relative h-48 w-48 md:h-64 md:w-64"
-          animate={activeDirection ?? 'neutral'}
-          variants={kermitVariants}
-          transition={kermitTransition}
+          key={bounceKey}
+          className="relative h-48 w-48 will-change-transform md:h-64 md:w-64"
+          initial={{ x: 0, y: 0 }}
+          animate={{
+            x: activeDirection === 'left' ? -16 : activeDirection === 'right' ? 16 : 0,
+            y: activeDirection === 'up' ? -16 : activeDirection === 'down' ? 16 : 0,
+          }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

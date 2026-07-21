@@ -512,6 +512,23 @@ export default function Home() {
         />
       </div>
 
+      {/* Ambient light glow overlay */}
+      {(() => {
+        const LIT_OBJECT_IDS = ['OBJ_07', 'OBJ_09', 'OBJ_10', 'OBJ_08'];
+        const litCount = LIT_OBJECT_IDS.filter((id) => objectState[id]?.isLit).length;
+        const ambientGlow = litCount / LIT_OBJECT_IDS.length;
+        return (
+          <div
+            className="pointer-events-none absolute inset-0 z-[5] transition-opacity duration-700"
+            style={{
+              opacity: ambientGlow,
+              background: 'radial-gradient(circle at 50% 40%, rgba(255,214,170,0.35), rgba(255,214,170,0) 70%)',
+              mixBlendMode: 'screen',
+            }}
+          />
+        );
+      })()}
+
       {/* Dim overlay during inspection */}
       <AnimatePresence>
         {isInspecting && (
@@ -642,7 +659,7 @@ export default function Home() {
             layoutId={`inspect-${inspectedObject.id}`}
             className="fixed z-30"
             style={getFittedStyle(
-              { x: 20, y: 20, width: 60, height: 60 },
+              { x: 20, y: 5, width: 60, height: 55 },
               aspectRatios[inspectedObject.id]
             )}
           >
