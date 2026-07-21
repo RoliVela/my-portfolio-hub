@@ -640,8 +640,11 @@ export default function Home() {
         {inspectedObject && (
           <motion.div
             layoutId={`inspect-${inspectedObject.id}`}
-            className="fixed left-1/2 top-1/2 z-30 h-auto w-[min(60vw,60vh)] -translate-x-1/2 -translate-y-1/2"
-            style={{ aspectRatio: aspectRatios[inspectedObject.id] }}
+            className="fixed z-30"
+            style={getFittedStyle(
+              { x: 20, y: 20, width: 60, height: 60 },
+              aspectRatios[inspectedObject.id]
+            )}
           >
             <InspectedItemImage obj={inspectedObject} objectState={objectState} />
           </motion.div>

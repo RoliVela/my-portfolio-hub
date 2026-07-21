@@ -56,7 +56,7 @@ export const roomObjects: RoomObject[] = [
     visualFeedback: 'Launches with text dialogue upon the website loading up.',
     imageSrc: '/assets/snippy.png',
     isInitialDialogue: true,
-    position: { x: 31.6, y: 67.9, width: 22, height: 16 },
+    position: { x: 34.156069302721086, y: 66.16206961077845, width: 25.422087585034014, height: 19.58111901197605 },
   },
   {
     id: 'OBJ_02',
@@ -151,7 +151,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: -3.895036139455783, y: 47.72829341317366, width: 19.652848639455783, height: 21.137256736526947 },
+    position: { x: -4.230389030612246, y: 47.75495883233533, width: 19.652848639455783, height: 21.137256736526947 },
   },
   {
     id: 'OBJ_11',
@@ -213,7 +213,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Pull action physics engine callback',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 54.06117134353742, y: 45.883794910179645, width: 10.812606292517005, height: 11.062874251497005 },
+    position: { x: 54.30351828231293, y: 45.71351047904192, width: 10.812606292517005, height: 11.062874251497005 },
   },
   {
     id: 'OBJ_15',
@@ -228,7 +228,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Squish animation triggering local state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 66.5, y: 54.7, width: 7.8, height: 7.4 },
+    position: { x: 68.10182823129252, y: 51.509505988023946, width: 7.8, height: 7.4 },
   },
   {
     id: 'OBJ_16',
@@ -274,7 +274,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Opens text box for the user to type in',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 52.008662840136054, y: 59.03265344311377, width: 10.920705782312924, height: 6.283401946107785 },
+    position: { x: 51.67490433673469, y: 58.84739895209581, width: 10.920705782312924, height: 6.283401946107785 },
   },
   {
     id: 'DECOR_WHITE_MONSTER',
@@ -286,7 +286,7 @@ export const roomObjects: RoomObject[] = [
     dialogue: { free: [], paid: 'N/A' },
     actionTarget: 'N/A',
     visualFeedback: 'N/A',
-    position: { x: 58, y: 58, width: 4, height: 5 },
+    position: { x: 55.64482355442177, y: 57.76936751497006, width: 9.465295493197278, height: 9.716036676646706 },
   },
   {
     id: 'OBJ_18',
@@ -302,7 +302,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggles background audio playlist track array stream',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 8.78938137755102, y: 77.51062874251497, width: 20, height: 15.5 },
+    position: { x: 8.78938137755102, y: 77.51062874251497, width: 21.849755527210885, height: 17.79696856287425 },
   },
   {
     id: 'OBJ_19',
@@ -348,7 +348,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant watering animation state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 70.06867559523809, y: 45.53284056886228, width: 11.079931972789115, height: 11.604883982035929 },
+    position: { x: 70.07452168367347, y: 43.83561002994012, width: 11.493941326530612, height: 12.317365269461078 },
   },
   {
     id: 'OBJ_05',
@@ -366,7 +366,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant feeding animation state. This plant is no longer available to interact with.',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 48.01482780612245, y: 39.564464820359284, width: 9.317867772108844, height: 13.800523952095809 },
+    position: { x: 48.011639030612244, y: 39.406343562874255, width: 9.317867772108844, height: 13.800523952095809 },
   },
   // Renders in front of everything.
   {
@@ -379,6 +379,6 @@ export const roomObjects: RoomObject[] = [
     dialogue: { free: [], paid: 'N/A' },
     actionTarget: 'N/A',
     visualFeedback: 'N/A',
-    position: { x: 48, y: 50, width: 13, height: 18 },
+    position: { x: 46.50818452380952, y: 55.952470059880234, width: 57.99282525510205, height: 43.23063248502994 },
   },
 ];
