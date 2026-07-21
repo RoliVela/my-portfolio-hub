@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { roomObjects as initialRoomObjects, RoomObject, DialogueEntry } from '@/lib/roomData';
 import { getAssetPath } from '@/lib/assets';
 import { loadImageAlphaMap, isPixelVisible, AlphaMap } from '@/lib/hitbox';
+import { useInteractionSound } from '@/hooks/useInteractionSound';
 import DialogueBox from '@/components/DialogueBox';
 import SnippyCharacter from '@/components/SnippyCharacter';
 import ItemInteractionStage, { JukeboxTrack } from '@/components/ItemInteractionStage';
@@ -228,6 +229,7 @@ export default function Home() {
   };
 
   const isClickOnVisiblePixel = (obj: RoomObject, e: React.MouseEvent<HTMLButtonElement>): boolean => {
+    if (obj.skipPixelPerfectHitTest) return true;
     const src = getObjectImageSrc(obj, objectState[obj.id] ?? {});
     if (!src) return true;
     const alphaMap = alphaMapsRef.current[src];
@@ -459,6 +461,8 @@ export default function Home() {
   const isInspecting = inspectedObject !== null;
   const dimLevel = inspectionPhase === 'interacting' ? 'bg-black/80' : 'bg-black/50';
 
+  useInteractionSound();
+
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-black">
       {/* Speaker / music toggle */}
@@ -518,7 +522,7 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Interactive Objects Layer */}
-      <div className="absolute inset-0 z-10" ref={objectsLayerRef}>
+      <div className="absolute inset-0 z-10" ref={objectsLayerRef} data-no-pop={repositionMode ? true : undefined}>
         {roomObjects.map((obj) => {
           if (obj.id === 'OBJ_01' || obj.id === 'OBJ_02') return null;
 
@@ -689,7 +693,11 @@ export default function Home() {
         <div className="fixed bottom-0 left-0 right-0 top-0 z-50 flex items-end justify-center p-4">
           <div
             className={`relative flex w-full select-none flex-col rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000] ${
-              inspectedObject.id === 'OBJ_20' ? 'h-full max-w-7xl' : 'max-w-4xl'
+              inspectedObject.id === 'OBJ_20'
+                ? 'h-full max-w-7xl'
+                : inspectedObject.id === 'OBJ_18'
+                  ? 'max-h-[calc(100%-4rem)] max-w-4xl overflow-y-auto'
+                  : 'max-w-4xl'
             }`}
           >
             <div className="absolute -top-5 left-4 rounded bg-white px-3 py-1 text-lg font-vt323 text-black">

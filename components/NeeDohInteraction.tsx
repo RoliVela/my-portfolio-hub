@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { getAssetPath } from '@/lib/assets';
+import { playPopSound } from '@/lib/sfx';
 
 const CANVAS_SIZE = 400;
 const MAX_STRETCH = 0.6;
@@ -128,6 +129,7 @@ export default function NeeDohInteraction() {
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault();
+    playPopSound();
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;

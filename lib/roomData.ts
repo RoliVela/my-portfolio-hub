@@ -22,6 +22,8 @@ export interface RoomObject {
   altStateKey?: string;
   /** Decorative objects are purely visual and not interactive in normal mode. */
   decorative?: boolean;
+  /** Skip pixel-perfect hit testing and use the full bounding box for clicks. */
+  skipPixelPerfectHitTest?: boolean;
   dialogue: {
     free: DialogueEntry[];
     paid: string;
@@ -125,6 +127,7 @@ export const roomObjects: RoomObject[] = [
     type: 'Click / Toggle',
     initialState: { isWatered: false },
     toggleKey: 'isWatered',
+    skipPixelPerfectHitTest: true,
     imageSrc: '/assets/senecio.png',
     dialogue: {
       free: [{ speaker: 'Snippy', text: 'Senecio Rowleyanus, *heheh*, it has the word anus in it. People usually call it the "String of Pearls" plant. You can water it if you\'d like; it\'s looking a little dry.' }],

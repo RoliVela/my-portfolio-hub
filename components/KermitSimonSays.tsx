@@ -286,7 +286,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
             type="button"
             onClick={() => handleUserPress('up')}
             disabled={phase !== 'input'}
-            className="flex h-10 w-10 items-center justify-center rounded bg-white/10 text-xl hover:bg-white/20 disabled:opacity-50"
+            className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded border-2 border-pink-300/50 bg-purple-900 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 disabled:opacity-50"
             aria-label="Up"
           >
             ▲
@@ -296,7 +296,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
             type="button"
             onClick={() => handleUserPress('left')}
             disabled={phase !== 'input'}
-            className="flex h-10 w-10 items-center justify-center rounded bg-white/10 text-xl hover:bg-white/20 disabled:opacity-50"
+            className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded border-2 border-pink-300/50 bg-purple-900 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 disabled:opacity-50"
             aria-label="Left"
           >
             ◀
@@ -305,7 +305,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
             type="button"
             onClick={() => handleUserPress('down')}
             disabled={phase !== 'input'}
-            className="flex h-10 w-10 items-center justify-center rounded bg-white/10 text-xl hover:bg-white/20 disabled:opacity-50"
+            className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded border-2 border-pink-300/50 bg-purple-900 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 disabled:opacity-50"
             aria-label="Down"
           >
             ▼
@@ -314,7 +314,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
             type="button"
             onClick={() => handleUserPress('right')}
             disabled={phase !== 'input'}
-            className="flex h-10 w-10 items-center justify-center rounded bg-white/10 text-xl hover:bg-white/20 disabled:opacity-50"
+            className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded border-2 border-pink-300/50 bg-purple-900 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 disabled:opacity-50"
             aria-label="Right"
           >
             ▶

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { playPopSound } from '@/lib/sfx';
 
 interface DinoGameProps {
   onComplete?: () => void;
@@ -57,7 +58,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     setIsPlaying(true);
   }, []);
 
-  const jump = useCallback(() => {
+  const startJump = useCallback(() => {
     if (gameOverRef.current) {
       resetGame();
       return;
@@ -67,6 +68,18 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       isJumpingRef.current = true;
     }
   }, [resetGame]);
+
+  const startDuck = useCallback(() => {
+    isDuckingRef.current = true;
+  }, []);
+
+  const stopDuck = useCallback(() => {
+    isDuckingRef.current = false;
+  }, []);
+
+  const jump = useCallback(() => {
+    startJump();
+  }, [startJump]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -369,7 +382,10 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
           ref={canvasRef}
           width={CANVAS_WIDTH}
           height={CANVAS_HEIGHT}
-          onClick={jump}
+          onClick={() => {
+            playPopSound();
+            jump();
+          }}
           className="w-full max-w-[600px] cursor-pointer rounded bg-purple-900"
           aria-label="Dinosaur game canvas. Press space, up arrow, or W to jump. Press down arrow or S to duck."
         />
@@ -382,12 +398,37 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
         )}
       </div>
 
-      <div className="flex w-full items-center justify-between">
+      <div className="flex w-full flex-wrap items-center justify-center gap-4">
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              startJump();
+            }}
+            className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
+          >
+            Jump
+          </button>
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              startDuck();
+            }}
+            onPointerUp={stopDuck}
+            onPointerLeave={stopDuck}
+            onPointerCancel={stopDuck}
+            className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
+          >
+            Duck
+          </button>
+        </div>
         <p className="font-vt323 text-2xl text-pink-200">Score: {Math.floor(score)}</p>
         <button
           type="button"
           onClick={onComplete}
-          className="rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800"
+          className="min-h-[44px] min-w-[44px] rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800"
         >
           Exit
         </button>

@@ -115,7 +115,7 @@ export default function JukeboxInteraction({
         {/* Roli's Favorites */}
         <section className="w-full rounded-md bg-purple-900/60 p-4">
           <h3 className="mb-2 font-vt323 text-xl text-pink-200">Roli&apos;s Favorites</h3>
-          <div className="flex flex-col gap-2">
+          <div className="flex max-h-60 flex-col gap-2 overflow-y-auto pr-1">
             {ROLIS_FAVORITES.map((track) => (
               <button
                 key={track.src}
