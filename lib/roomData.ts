@@ -20,6 +20,8 @@ export interface RoomObject {
   imageSrcAlt?: string;
   /** Optional state key to check for the alternate image; defaults to toggleKey if omitted. */
   altStateKey?: string;
+  /** Decorative objects are purely visual and not interactive in normal mode. */
+  decorative?: boolean;
   dialogue: {
     free: DialogueEntry[];
     paid: string;
@@ -83,22 +85,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant watering animation state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 16.290391156462583, y: 10.527694610778443, width: 5.443771258503402, height: 18.313529191616766 },
-  },
-  {
-    id: 'OBJ_06',
-    assetName: 'Senecio Rowleyanus',
-    type: 'Click / Toggle',
-    initialState: { isWatered: false },
-    toggleKey: 'isWatered',
-    imageSrc: '/assets/senecio.png',
-    dialogue: {
-      free: [{ speaker: 'Snippy', text: 'Senecio Rowleyanus, *heheh*, it has the word anus in it. People usually call it the "String of Pearls" plant. You can water it if you\'d like; it\'s looking a little dry.' }],
-      paid: 'N/A',
-    },
-    actionTarget: 'Toggle plant watering animation state',
-    visualFeedback: 'Yellow highlight on hover',
-    position: { x: 87.47767857142858, y: 16.180295658682635, width: 13.671502976190476, height: 29.686096556886227 },
+    position: { x: 10.65502763605442, y: -2.684318862275449, width: 16.59173044217687, height: 45.45097305389222 },
   },
   {
     id: 'OBJ_07',
@@ -114,23 +101,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 28.621811224489793, y: 14.188342065868262, width: 21.650882227891156, height: 14.562593562874252 },
-  },
-  {
-    id: 'OBJ_08',
-    assetName: 'Lamp next to the desk',
-    type: 'Click / Toggle',
-    initialState: { isLit: false },
-    toggleKey: 'isLit',
-    imageSrc: '/assets/desk-lamp-off.png',
-    imageSrcAlt: '/assets/desk-lamp-on.png',
-    dialogue: {
-      free: [{ speaker: 'Snippy', text: 'It kinda looks like the Pixar lamp.' }],
-      paid: 'N/A',
-    },
-    actionTarget: 'Swaps localized layer opacity / texture',
-    visualFeedback: 'Yellow highlight on hover',
-    position: { x: 89.24771471088435, y: 43.390157185628745, width: 12.608205782312925, height: 21.715943113772454 },
+    position: { x: 27.415391156462583, y: 13.669535928143711, width: 23.924744897959183, height: 16.778162425149702 },
   },
   {
     id: 'OBJ_09',
@@ -146,7 +117,22 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 62.94137967687076, y: 19.17683383233533, width: 44.35321003401361, height: 30.62078967065868 },
+    position: { x: 75.88860544217688, y: 22.538080089820355, width: 21.536192602040817, height: 14.581306137724548 },
+  },
+  {
+    id: 'OBJ_06',
+    assetName: 'Senecio Rowleyanus',
+    type: 'Click / Toggle',
+    initialState: { isWatered: false },
+    toggleKey: 'isWatered',
+    imageSrc: '/assets/senecio.png',
+    dialogue: {
+      free: [{ speaker: 'Snippy', text: 'Senecio Rowleyanus, *heheh*, it has the word anus in it. People usually call it the "String of Pearls" plant. You can water it if you\'d like; it\'s looking a little dry.' }],
+      paid: 'N/A',
+    },
+    actionTarget: 'Toggle plant watering animation state',
+    visualFeedback: 'Yellow highlight on hover',
+    position: { x: 85.20169005102042, y: 15.049588323353293, width: 17.35879039115646, height: 32.578592814371255 },
   },
   {
     id: 'OBJ_10',
@@ -162,7 +148,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: -8.688828656462587, y: 44.04144835329342, width: 27.258875425170068, height: 29.737556137724553 },
+    position: { x: -3.895036139455783, y: 47.72829341317366, width: 19.652848639455783, height: 21.137256736526947 },
   },
   {
     id: 'OBJ_11',
@@ -176,7 +162,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Verifies hidden string input for Free bypass',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 5, y: 65, width: 8, height: 8 },
+    position: { x: 5.535448554421769, y: 65.09636976047905, width: 7.60671768707483, height: 6.259262724550897 },
   },
   {
     id: 'OBJ_12',
@@ -209,7 +195,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Launches localized retro arcade overlay',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 18.388286564625847, y: 55.28068862275449, width: 11.98044217687075, height: 11.199008233532934 },
+    position: { x: 18.5984800170068, y: 55.46687874251497, width: 11.98044217687075, height: 11.199008233532934 },
   },
   {
     id: 'OBJ_14',
@@ -224,7 +210,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Pull action physics engine callback',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 55, y: 47, width: 10, height: 10 },
+    position: { x: 54.06117134353742, y: 45.883794910179645, width: 10.812606292517005, height: 11.062874251497005 },
   },
   {
     id: 'OBJ_15',
@@ -255,7 +241,23 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Conditional branch overlay depending on Auth status',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 70.97815688775509, y: 38.0810254491018, width: 25.078337585034014, height: 31.953312125748504 },
+    position: { x: 70.26785714285714, y: 35.416822604790426, width: 25.078337585034014, height: 31.953312125748504 },
+  },
+  {
+    id: 'OBJ_08',
+    assetName: 'Lamp next to the desk',
+    type: 'Click / Toggle',
+    initialState: { isLit: false },
+    toggleKey: 'isLit',
+    imageSrc: '/assets/desk-lamp-off.png',
+    imageSrcAlt: '/assets/desk-lamp-on.png',
+    dialogue: {
+      free: [{ speaker: 'Snippy', text: 'It kinda looks like the Pixar lamp.' }],
+      paid: 'N/A',
+    },
+    actionTarget: 'Swaps localized layer opacity / texture',
+    visualFeedback: 'Yellow highlight on hover',
+    position: { x: 89.24771471088435, y: 43.390157185628745, width: 12.608205782312925, height: 21.715943113772454 },
   },
   {
     id: 'OBJ_17',
@@ -269,7 +271,19 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Opens text box for the user to type in',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 52.1734162414966, y: 59.894367514970064, width: 10.287733843537413, height: 5.316429640718563 },
+    position: { x: 52.008662840136054, y: 59.03265344311377, width: 10.920705782312924, height: 6.283401946107785 },
+  },
+  {
+    id: 'DECOR_WHITE_MONSTER',
+    assetName: 'White Monster',
+    type: 'Decorative',
+    initialState: {},
+    imageSrc: '/assets/white-monster.png',
+    decorative: true,
+    dialogue: { free: [], paid: 'N/A' },
+    actionTarget: 'N/A',
+    visualFeedback: 'N/A',
+    position: { x: 58, y: 58, width: 4, height: 5 },
   },
   {
     id: 'OBJ_18',
@@ -285,7 +299,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggles background audio playlist track array stream',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 8.5, y: 77.2, width: 20, height: 15.5 },
+    position: { x: 8.78938137755102, y: 77.51062874251497, width: 20, height: 15.5 },
   },
   {
     id: 'OBJ_19',
@@ -300,7 +314,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Triggers localized steam particle burst animation',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 86.50834396258503, y: 57.43478667664671, width: 10, height: 12 },
+    position: { x: 86.14508928571428, y: 56.77984655688623, width: 10, height: 12 },
   },
   {
     id: 'OBJ_20',
@@ -315,7 +329,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Opens image gallery overlay of personal and team photos',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: -2.206738945578232, y: 13.019273952095809, width: 22.508237670068027, height: 33.67000374251497 },
+    position: { x: -3.817602040816327, y: 11.896051646706587, width: 23.81935586734694, height: 35.988491766467064 },
   },
   // Rendered last (drawn on top) so they aren't covered by the window/computer.
   {
@@ -350,5 +364,18 @@ export const roomObjects: RoomObject[] = [
     actionTarget: 'Toggle plant feeding animation state. This plant is no longer available to interact with.',
     visualFeedback: 'Yellow highlight on hover',
     position: { x: 48.01482780612245, y: 39.564464820359284, width: 9.317867772108844, height: 13.800523952095809 },
+  },
+  // Renders in front of everything.
+  {
+    id: 'DECOR_CHAIR',
+    assetName: 'Chair',
+    type: 'Decorative',
+    initialState: {},
+    imageSrc: '/assets/chair.png',
+    decorative: true,
+    dialogue: { free: [], paid: 'N/A' },
+    actionTarget: 'N/A',
+    visualFeedback: 'N/A',
+    position: { x: 48, y: 50, width: 13, height: 18 },
   },
 ];

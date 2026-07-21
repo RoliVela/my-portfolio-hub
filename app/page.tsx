@@ -505,32 +505,6 @@ export default function Home() {
         />
       </div>
 
-      {/* Decorative desk item (White monster) */}
-      <div
-        className="pointer-events-none absolute z-10 aspect-[3/4] w-[4%]"
-        style={{ left: '58%', top: '58%' }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={getAssetPath('/assets/white-monster.png')}
-          alt=""
-          className="h-full w-full object-contain pixel-art drop-shadow-lg"
-        />
-      </div>
-
-      {/* Chair overlay */}
-      <div
-        className="pointer-events-none absolute z-10 aspect-[740/1024] w-[13%]"
-        style={{ left: '48%', top: '50%' }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={getAssetPath('/assets/chair.png')}
-          alt=""
-          className="h-full w-full object-contain pixel-art drop-shadow-lg"
-        />
-      </div>
-
       {/* Dim overlay during inspection */}
       <AnimatePresence>
         {isInspecting && (
@@ -555,26 +529,33 @@ export default function Home() {
           const src = showAlt && obj.imageSrcAlt ? obj.imageSrcAlt : obj.imageSrc;
           const ratio = aspectRatios[obj.id];
           const isInspected = inspectedObject?.id === obj.id;
+          const isDecorative = obj.decorative ?? false;
+
+          // Decorative objects are purely visual in normal mode and should not
+          // respond to clicks or show hover highlights.
+          const isInteractive = !isDecorative;
 
           return (
             <motion.button
               key={obj.id}
               layoutId={`inspect-${obj.id}`}
               type="button"
-              onClick={(e) => handleObjectClick(obj, e)}
+              onClick={isInteractive ? (e) => handleObjectClick(obj, e) : undefined}
               onPointerDown={(e) => handleObjectPointerDown(obj, e)}
               className={`absolute transition-all duration-200 focus:outline-none ${
                 repositionMode
                   ? 'cursor-move border border-dashed border-white/50 bg-white/10 hover:bg-white/20'
-                  : `cursor-pointer rounded-lg hover:opacity-100 ${
-                      obj.imageSrc
-                        ? 'bg-transparent opacity-90 hover:opacity-100'
-                        : `border-2 border-dashed ${
-                            isToggled
-                              ? 'border-yellow-300 bg-yellow-300/20 opacity-80'
-                              : 'border-white/30 bg-white/10 opacity-40 hover:bg-white/20'
-                          }`
-                    }`
+                  : isInteractive
+                    ? `cursor-pointer rounded-lg hover:opacity-100 ${
+                        obj.imageSrc
+                          ? 'bg-transparent opacity-90 hover:opacity-100'
+                          : `border-2 border-dashed ${
+                              isToggled
+                                ? 'border-yellow-300 bg-yellow-300/20 opacity-80'
+                                : 'border-white/30 bg-white/10 opacity-40 hover:bg-white/20'
+                            }`
+                      }`
+                    : 'pointer-events-none bg-transparent'
               }`}
               style={{
                 ...getFittedStyle(obj.position, obj.imageSrc ? ratio : undefined),
@@ -640,6 +621,9 @@ export default function Home() {
             onImageLoad={(w, h) =>
               setAspectRatios((prev) => (prev[snippy.id] === w / h ? prev : { ...prev, [snippy.id]: w / h }))
             }
+            repositionMode={repositionMode}
+            onPointerDown={(e) => handleObjectPointerDown(snippy, e)}
+            onResizePointerDown={(e) => handleResizePointerDown(snippy, e)}
           />
         )}
       </div>

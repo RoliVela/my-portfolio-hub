@@ -8,9 +8,20 @@ interface SnippyCharacterProps {
   style: React.CSSProperties;
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onImageLoad?: (naturalWidth: number, naturalHeight: number) => void;
+  repositionMode?: boolean;
+  onPointerDown?: (e: React.PointerEvent<HTMLButtonElement>) => void;
+  onResizePointerDown?: (e: React.PointerEvent<HTMLSpanElement>) => void;
 }
 
-export default function SnippyCharacter({ data, style, onClick, onImageLoad }: SnippyCharacterProps) {
+export default function SnippyCharacter({
+  data,
+  style,
+  onClick,
+  onImageLoad,
+  repositionMode,
+  onPointerDown,
+  onResizePointerDown,
+}: SnippyCharacterProps) {
   // Cached images never re-fire `onLoad`, so a ref callback (checked on every
   // render) covers repeat loads; onLoad still covers a true first load.
   const captureMeta = (img: HTMLImageElement | null) => {
@@ -23,7 +34,12 @@ export default function SnippyCharacter({ data, style, onClick, onImageLoad }: S
     <button
       type="button"
       onClick={onClick}
-      className="absolute z-20 cursor-pointer rounded-lg transition-transform duration-200 hover:scale-105 hover:outline hover:outline-2 hover:outline-yellow-300 hover:drop-shadow-[0_0_8px_rgba(253,224,71,0.6)] focus:outline-none"
+      onPointerDown={onPointerDown}
+      className={`absolute z-20 transition-transform duration-200 focus:outline-none ${
+        repositionMode
+          ? 'cursor-move border border-dashed border-white/50 bg-white/10 hover:bg-white/20'
+          : 'cursor-pointer rounded-lg hover:scale-105 hover:outline hover:outline-2 hover:outline-yellow-300 hover:drop-shadow-[0_0_8px_rgba(253,224,71,0.6)]'
+      }`}
       style={style}
       aria-label={data.assetName}
       title={data.assetName}
@@ -71,6 +87,17 @@ export default function SnippyCharacter({ data, style, onClick, onImageLoad }: S
           <circle cx="55" cy="45" r="4" fill="#111" />
           <circle cx="45" cy="55" r="4" fill="#111" />
         </svg>
+      )}
+
+      {repositionMode && (
+        <span
+          role="button"
+          aria-label={`Resize ${data.assetName}`}
+          tabIndex={0}
+          onPointerDown={onResizePointerDown}
+          className="absolute -bottom-1 -right-1 z-20 h-3 w-3 cursor-nwse-resize rounded-sm bg-yellow-400 hover:bg-yellow-300"
+          style={{ transform: 'translate(50%, 50%)' }}
+        />
       )}
     </button>
   );

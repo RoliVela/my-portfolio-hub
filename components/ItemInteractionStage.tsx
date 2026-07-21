@@ -10,6 +10,7 @@ import PosterboardInteraction from './PosterboardInteraction';
 import SuggestionBoxInteraction from './SuggestionBoxInteraction';
 import WateringGame from './WateringGame';
 import JukeboxInteraction from './JukeboxInteraction';
+import KermitSimonSays from './KermitSimonSays';
 
 export type JukeboxTrack = {
   title: string;
@@ -82,6 +83,10 @@ export default function ItemInteractionStage({
     return <PosterboardInteraction onComplete={handleInteract} />;
   }
 
+  if (obj.id === 'OBJ_13') {
+    return <KermitSimonSays onComplete={handleInteract} />;
+  }
+
   if (obj.id === 'OBJ_18') {
     return (
       <JukeboxInteraction
@@ -92,10 +97,6 @@ export default function ItemInteractionStage({
       />
     );
   }
-
-  // Placeholder for future per-object mini-games.
-  // Example:
-  // if (obj.id === 'OBJ_13') return <KermitMiniGame onComplete={handleInteract} />;
 
   const handleActivate = () => {
     onToggle?.();
