@@ -65,7 +65,7 @@ const PERMANENT_PHOTOS: PermanentPhoto[] = [
   {
     id: 'permanent-music-festival',
     src: '/assets/corkboard/Music festival with friends.jpg',
-    caption: 'Music festival with friends',
+    caption: 'Malcom Todd 2026',
     pinColor: 'bg-pink-500',
     rotation: 1,
   },

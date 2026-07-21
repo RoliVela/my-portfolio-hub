@@ -38,7 +38,7 @@ export default function SnippyCharacter({
       className={`absolute z-20 transition-transform duration-200 focus:outline-none ${
         repositionMode
           ? 'cursor-move border border-dashed border-white/50 bg-white/10 hover:bg-white/20'
-          : 'cursor-pointer rounded-lg hover:scale-105 hover:outline hover:outline-2 hover:outline-yellow-300 hover:drop-shadow-[0_0_8px_rgba(253,224,71,0.6)]'
+          : 'cursor-pointer rounded-lg hover:scale-105 hover:drop-shadow-[0_0_8px_rgba(253,224,71,0.6)]'
       }`}
       style={style}
       aria-label={data.assetName}

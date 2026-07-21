@@ -555,7 +555,7 @@ export default function Home() {
                   : isInteractive
                     ? `cursor-pointer rounded-lg hover:opacity-100 ${
                         obj.imageSrc
-                          ? 'bg-transparent opacity-90 hover:opacity-100'
+                          ? 'bg-transparent opacity-90 hover:opacity-100 hover:drop-shadow-[0_0_8px_rgba(253,224,71,0.6)]'
                           : `border-2 border-dashed ${
                               isToggled
                                 ? 'border-yellow-300 bg-yellow-300/20 opacity-80'
@@ -566,7 +566,7 @@ export default function Home() {
               }`}
               style={{
                 ...getFittedStyle(obj.position, obj.imageSrc ? ratio : undefined),
-                opacity: isInspecting && !isInspected ? 0.3 : undefined,
+                opacity: isInspecting ? (isInspected ? 0 : 0.3) : undefined,
               }}
               title={obj.assetName}
               aria-label={obj.assetName}
