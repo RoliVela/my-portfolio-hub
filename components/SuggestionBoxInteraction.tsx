@@ -1,6 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import emailjs from '@emailjs/browser';
+
+const EMAILJS_SERVICE_ID = 'service_djzyl8c';
+const EMAILJS_TEMPLATE_ID = 'template_nko4bgc';
+const EMAILJS_PUBLIC_KEY = 'z0Vx2xEyRH8wEg62N';
 
 interface SuggestionBoxInteractionProps {
   onComplete?: () => void;
@@ -8,18 +13,33 @@ interface SuggestionBoxInteractionProps {
 
 export default function SuggestionBoxInteraction({ onComplete }: SuggestionBoxInteractionProps) {
   const [message, setMessage] = useState('');
-  const [status, setStatus] = useState<'idle' | 'success'>('idle');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    };
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || status === 'sending') return;
 
-    // Static-only confirmation: no server round trip. A future real backend
-    // (e.g. Formspree/EmailJS) can be wired in here without changing the UI.
-    setStatus('success');
-    setTimeout(() => {
-      onComplete?.();
-    }, 2500);
+    setStatus('sending');
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        { message },
+        { publicKey: EMAILJS_PUBLIC_KEY }
+      );
+      setStatus('success');
+      successTimerRef.current = setTimeout(() => onComplete?.(), 2500);
+    } catch (err) {
+      console.error('EmailJS send failed:', err);
+      setStatus('error');
+    }
   };
 
   if (status === 'success') {
@@ -51,19 +71,36 @@ export default function SuggestionBoxInteraction({ onComplete }: SuggestionBoxIn
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Type your message here..."
           maxLength={1000}
+          disabled={status === 'sending'}
         />
         <span className="absolute bottom-2 right-2 font-vt323 text-sm text-black/50">
           {message.length}/1000
         </span>
       </div>
 
+      {status === 'error' && (
+        <p className="text-center font-vt323 text-lg text-red-300">
+          Couldn&apos;t send that — check your connection and try again.
+        </p>
+      )}
+
       <button
         type="submit"
-        disabled={!message.trim()}
+        disabled={!message.trim() || status === 'sending'}
         className="rounded border-2 border-white bg-white px-6 py-2 font-vt323 text-2xl text-black transition hover:border-gray-200 hover:bg-gray-200 disabled:bg-gray-400 disabled:opacity-50"
       >
-        Submit
+        {status === 'sending' ? 'Sending...' : 'Submit'}
       </button>
+
+      {status === 'error' && (
+        <button
+          type="button"
+          onClick={() => setStatus('idle')}
+          className="rounded border-2 border-white bg-black px-6 py-2 font-vt323 text-2xl text-white transition hover:bg-white hover:text-black"
+        >
+          Try Again
+        </button>
+      )}
     </form>
   );
 }
