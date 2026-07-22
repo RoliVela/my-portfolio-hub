@@ -34,3 +34,42 @@ export function playPopSound(): void {
     // Ignore audio errors (e.g. autoplay policies, unsupported APIs).
   }
 }
+
+/**
+ * Procedurally synthesize a short "meow" for Kermit's Simon Says buttons.
+ * Pitched-up sawtooth with a quick attack/decay to sound cat-like.
+ */
+export function playMeowSound(): void {
+  if (typeof window === 'undefined') return;
+
+  const AudioContext = window.AudioContext || (window as typeof window & { webkitAudioContext?: AudioContext }).webkitAudioContext;
+  if (!AudioContext) return;
+
+  try {
+    const ctx = new AudioContext();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.type = 'sawtooth';
+    const now = ctx.currentTime;
+    oscillator.frequency.setValueAtTime(420, now);
+    oscillator.frequency.exponentialRampToValueAtTime(760, now + 0.12);
+    oscillator.frequency.exponentialRampToValueAtTime(380, now + 0.32);
+
+    gainNode.gain.setValueAtTime(0.0001, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.18, now + 0.05);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.36);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.start(now);
+    oscillator.stop(now + 0.38);
+
+    setTimeout(() => {
+      ctx.close().catch(() => {});
+    }, 420);
+  } catch {
+    // Ignore audio errors (e.g. autoplay policies, unsupported APIs).
+  }
+}

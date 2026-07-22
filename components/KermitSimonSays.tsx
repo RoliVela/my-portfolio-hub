@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAssetPath } from '@/lib/assets';
+import { playMeowSound } from '@/lib/sfx';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 type Phase = 'intro' | 'playing' | 'input' | 'success' | 'failure';
@@ -175,6 +176,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
 
   const handleUserPress = useCallback(
     (direction: Direction) => {
+      playMeowSound();
       if (phase !== 'input') return;
 
       const expected = sequence[inputIndex];
@@ -310,7 +312,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
           )}
         </AnimatePresence>
 
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-4 grid grid-cols-3 gap-2" data-no-pop>
           <div />
           <button
             type="button"

@@ -103,7 +103,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 27.415391156462583, y: 13.669535928143711, width: 23.924744897959183, height: 16.778162425149702 },
+    position: { x: 23.98, y: 7.16, width: 30.52, height: 29.3 },
   },
   {
     id: 'OBJ_09',

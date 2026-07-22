@@ -59,7 +59,7 @@ function CalcButton({
 }
 
 // Placeholder — change to whatever secret code should unlock the computer.
-const FREE_BYPASS_CODE = '31337';
+const FREE_BYPASS_CODE = '6767';
 
 // Keep onComplete prop available for callers; it's passed by the shared wrapper.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
