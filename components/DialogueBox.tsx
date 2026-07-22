@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { DialogueEntry } from '@/lib/roomData';
 import { getAssetPath } from '@/lib/assets';
-import { registerDialogueAudio, playDialogue } from '@/lib/audioManager';
+import { registerDialogueAudio, playDialogue, getIsMuted } from '@/lib/audioManager';
 
 interface DialogueBoxProps {
   entries: DialogueEntry[];
@@ -18,6 +18,8 @@ function TypewriterText({ text, onFinish }: { text: string; onFinish?: () => voi
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    if (getIsMuted()) return;
+
     const audio = new Audio(getAssetPath('/assets/snippy-talk.mp3'));
     audio.loop = true;
     audio.volume = 0.18;

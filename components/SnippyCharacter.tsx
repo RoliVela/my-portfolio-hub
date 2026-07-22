@@ -11,6 +11,7 @@ interface SnippyCharacterProps {
   repositionMode?: boolean;
   onPointerDown?: (e: React.PointerEvent<HTMLButtonElement>) => void;
   onResizePointerDown?: (e: React.PointerEvent<HTMLSpanElement>) => void;
+  isMuted?: boolean;
 }
 
 export default function SnippyCharacter({
@@ -21,6 +22,7 @@ export default function SnippyCharacter({
   repositionMode,
   onPointerDown,
   onResizePointerDown,
+  isMuted,
 }: SnippyCharacterProps) {
   // Cached images never re-fire `onLoad`, so a ref callback (checked on every
   // render) covers repeat loads; onLoad still covers a true first load.
@@ -46,6 +48,14 @@ export default function SnippyCharacter({
     >
       {data.imageSrc ? (
         <>
+          {isMuted && (
+            <div className="pointer-events-none absolute -top-2 -right-2 z-10 rounded-full bg-black/80 p-1 text-white shadow-[0_0_0_2px_#fff]" aria-label="Audio muted">
+              <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M14 3.23v17.54c0 .8-.88 1.28-1.55.84L6.5 16.5H3.75A1.75 1.75 0 0 1 2 14.75v-5.5C2 8.25 2.78 7.5 3.75 7.5H6.5l5.95-4.61c.67-.44 1.55.04 1.55.84Z" />
+                <path d="M18.78 5.22a.75.75 0 0 0-1.06 1.06L19.94 8.5l-2.22 2.22a.75.75 0 1 0 1.06 1.06l2.22-2.22 2.22 2.22a.75.75 0 1 0 1.06-1.06L21.06 7.44l2.22-2.22a.75.75 0 0 0-1.06-1.06L20 6.38l-2.22-2.22Z" />
+              </svg>
+            </div>
+          )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={getAssetPath(data.imageSrc)}
