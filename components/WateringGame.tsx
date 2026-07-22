@@ -119,7 +119,7 @@ export default function WateringGame({ onComplete, onSuccess, plantName = 'plant
   }, [onComplete, onSuccess, resetSuccessZone]);
 
   useEffect(() => {
-    const speed = 1.5; // degrees per frame
+    const speed = 2.5; // degrees per frame
     const loop = () => {
       setAngle((prev) => {
         let next = prev + speed * directionRef.current;

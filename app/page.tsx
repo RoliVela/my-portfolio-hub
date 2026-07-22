@@ -6,7 +6,7 @@ import { roomObjects as initialRoomObjects, RoomObject, DialogueEntry } from '@/
 import { getAssetPath } from '@/lib/assets';
 import { loadImageAlphaMap, isPixelVisible, AlphaMap } from '@/lib/hitbox';
 import { useInteractionSound } from '@/hooks/useInteractionSound';
-import { registerMusicAudio } from '@/lib/audioManager';
+
 import DialogueBox from '@/components/DialogueBox';
 import SnippyCharacter from '@/components/SnippyCharacter';
 import ItemInteractionStage, { JukeboxTrack } from '@/components/ItemInteractionStage';
@@ -126,7 +126,6 @@ export default function Home() {
     return () => {
       audioRef.current?.pause();
       audioRef.current = null;
-      registerMusicAudio(null);
     };
   }, []);
 
@@ -141,7 +140,6 @@ export default function Home() {
     }
 
     const audio = audioRef.current;
-    registerMusicAudio(audio);
 
     if (currentJukeboxTrack && audio.src !== currentJukeboxTrack.src) {
       audio.src = currentJukeboxTrack.src;
@@ -502,6 +500,22 @@ export default function Home() {
       {/* Speaker / music toggle */}
       <button
         type="button"
+        onClick={() => {
+          window.localStorage.clear();
+          window.location.reload();
+        }}
+        aria-label="Reset saved progress"
+        title="Reset saved progress"
+        className="absolute top-4 left-16 z-50 rounded-full bg-black/70 p-2 text-white transition hover:bg-black/90"
+      >
+        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M3 12a9 9 0 1 0 3-6.7" />
+          <path d="M3 4v5h5" />
+        </svg>
+      </button>
+
+      <button
+        type="button"
         onClick={toggleMusic}
         aria-label={musicOn ? 'Mute background music' : 'Play background music'}
         className="absolute top-4 left-4 z-50 rounded-full bg-black/70 p-2 text-white transition hover:bg-black/90"
@@ -549,14 +563,26 @@ export default function Home() {
         const litCount = LIT_OBJECT_IDS.filter((id) => objectState[id]?.isLit).length;
         const ambientGlow = litCount / LIT_OBJECT_IDS.length;
         return (
-          <div
-            className="pointer-events-none absolute inset-0 z-[5] transition-opacity duration-700"
-            style={{
-              opacity: ambientGlow,
-              background: 'radial-gradient(circle at 50% 40%, rgba(255,214,170,0.35), rgba(255,214,170,0) 70%)',
-              mixBlendMode: 'screen',
-            }}
-          />
+          <>
+            {/* Darkens the room by default, fades out as more lights turn on */}
+            <div
+              className="pointer-events-none absolute inset-0 z-[5] transition-opacity duration-700"
+              style={{
+                opacity: 1 - ambientGlow * 0.8,
+                backgroundColor: 'rgba(10, 8, 40, 0.55)',
+                mixBlendMode: 'multiply',
+              }}
+            />
+            {/* Warm wash that builds as more lights turn on */}
+            <div
+              className="pointer-events-none absolute inset-0 z-[5] transition-opacity duration-700"
+              style={{
+                opacity: ambientGlow,
+                background: 'radial-gradient(circle at 50% 40%, rgba(255,200,140,0.45), rgba(255,200,140,0) 75%)',
+                mixBlendMode: 'screen',
+              }}
+            />
+          </>
         );
       })()}
 
@@ -746,12 +772,8 @@ export default function Home() {
       {inspectedObject && inspectionPhase === 'interacting' && !repositionMode && (
         <div className="fixed bottom-0 left-0 right-0 top-0 z-50 flex items-end justify-center p-4">
           <div
-            className={`relative flex w-full select-none flex-col rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000] ${
-              inspectedObject.id === 'OBJ_20'
-                ? 'h-full max-w-7xl'
-                : inspectedObject.id === 'OBJ_18'
-                  ? 'max-h-[calc(100%-4rem)] max-w-4xl overflow-y-auto'
-                  : 'max-w-4xl'
+            className={`relative flex w-full select-none flex-col rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000] max-h-[calc(100%-4rem)] overflow-y-auto ${
+              inspectedObject.id === 'OBJ_20' ? 'h-full max-w-7xl' : 'max-w-4xl'
             }`}
           >
             <div className="absolute -top-5 left-4 rounded bg-white px-3 py-1 text-lg font-vt323 text-black">

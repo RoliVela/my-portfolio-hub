@@ -1,9 +1,11 @@
 'use client';
 
+import { getAssetPath } from '@/lib/assets';
+
 const LINKS = [
-  { label: 'LinkedIn', href: '#' }, // TODO: replace with real LinkedIn URL
-  { label: 'GitHub', href: '#' },   // TODO: replace with real GitHub URL
-  { label: 'Resume', href: '#' },   // TODO: replace with real resume link
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/rolivela' },
+  { label: 'GitHub', href: 'https://github.com/RoliVela' },
+  { label: 'Resume', href: getAssetPath('/assets/resume.pdf') },
 ];
 
 export default function ComputerUnlockedInteraction() {
