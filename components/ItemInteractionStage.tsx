@@ -12,6 +12,8 @@ import SuggestionBoxInteraction from './SuggestionBoxInteraction';
 import WateringGame from './WateringGame';
 import JukeboxInteraction from './JukeboxInteraction';
 import KermitSimonSays from './KermitSimonSays';
+import VenusFlyTrapGame from './VenusFlyTrapGame';
+import CloudClimberGame from './CloudClimberGame';
 
 export type JukeboxTrack = {
   title: string;
@@ -70,6 +72,14 @@ export default function ItemInteractionStage({
 
   if (obj.id === 'OBJ_03' || obj.id === 'OBJ_04' || obj.id === 'OBJ_06') {
     return <WateringGame onComplete={onComplete} onSuccess={onToggle} plantName={obj.assetName} />;
+  }
+
+  if (obj.id === 'OBJ_05') {
+    return <VenusFlyTrapGame onComplete={onComplete} onSuccess={onToggle} />;
+  }
+
+  if (obj.id === 'OBJ_21') {
+    return <CloudClimberGame onComplete={onComplete} />;
   }
 
   if (obj.id === 'OBJ_11') {

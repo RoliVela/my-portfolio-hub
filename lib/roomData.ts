@@ -103,7 +103,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 23.98, y: 7.16, width: 30.52, height: 29.3 },
+    position: { x: 30.886622023809526, y: 5.406631736526945, width: 18.166152210884356, height: 20.207092065868267 },
   },
   {
     id: 'OBJ_09',
@@ -184,7 +184,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Changes the window visual in the room to have the blinds closed',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 38.552083333333336, y: 2.388847305389221, width: 45.81627338435374, height: 46.8312125748503 },
+    position: { x: 38.37988945578231, y: 3.0222679640718555, width: 46.39981930272109, height: 48.25991766467066 },
   },
   {
     id: 'OBJ_13',
@@ -274,7 +274,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Opens text box for the user to type in',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 51.67490433673469, y: 58.84739895209581, width: 10.920705782312924, height: 6.283401946107785 },
+    position: { x: 51.67490433673469, y: 58.84739895209581, width: 11.706473214285714, height: 7.021145209580839 },
   },
   {
     id: 'DECOR_WHITE_MONSTER',
@@ -380,5 +380,18 @@ export const roomObjects: RoomObject[] = [
     actionTarget: 'N/A',
     visualFeedback: 'N/A',
     position: { x: 46.50818452380952, y: 55.952470059880234, width: 57.99282525510205, height: 43.23063248502994 },
+  },
+  {
+    id: 'OBJ_21',
+    assetName: 'Cloud Climber Game',
+    type: 'Click / Mini-game',
+    initialState: {},
+    dialogue: {
+      free: [{ speaker: 'Snippy', text: "Ooh, a little climbing game! Roli hasn't picked out art for this one yet, but it's fun to play already." }],
+      paid: 'N/A',
+    },
+    actionTarget: 'Launches falling-blocks climbing mini-game overlay',
+    visualFeedback: 'Yellow highlight on hover',
+    position: { x: 56.5, y: 83, width: 6, height: 8 },
   },
 ];
