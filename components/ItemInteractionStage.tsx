@@ -14,6 +14,7 @@ import JukeboxInteraction from './JukeboxInteraction';
 import KermitSimonSays from './KermitSimonSays';
 import VenusFlyTrapGame from './VenusFlyTrapGame';
 import CloudClimberGame from './CloudClimberGame';
+import BookshelfInteraction from './BookshelfInteraction';
 
 export type JukeboxTrack = {
   title: string;
@@ -96,6 +97,10 @@ export default function ItemInteractionStage({
 
   if (obj.id === 'OBJ_20') {
     return <PosterboardInteraction onComplete={handleInteract} />;
+  }
+
+  if (obj.id === 'OBJ_22') {
+    return <BookshelfInteraction onComplete={handleInteract} />;
   }
 
   if (obj.id === 'OBJ_13') {

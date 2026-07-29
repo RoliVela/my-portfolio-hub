@@ -394,4 +394,17 @@ export const roomObjects: RoomObject[] = [
     visualFeedback: 'Yellow highlight on hover',
     position: { x: 56.5, y: 83, width: 6, height: 8 },
   },
+  {
+    id: 'OBJ_22',
+    assetName: 'Bookshelf',
+    type: 'Click / Image Modal',
+    initialState: {},
+    dialogue: {
+      free: [{ speaker: 'Snippy', text: "These are some of Roli's favorite books! Take a look, and if you'd like, add your own favorite to the shelf." }],
+      paid: 'N/A',
+    },
+    actionTarget: 'Opens favorite-books shelf overlay',
+    visualFeedback: 'Yellow highlight on hover',
+    position: { x: 75, y: 9, width: 8, height: 9 },
+  },
 ];
