@@ -407,4 +407,18 @@ export const roomObjects: RoomObject[] = [
     visualFeedback: 'Yellow highlight on hover',
     position: { x: 75, y: 9, width: 8, height: 9 },
   },
+  {
+    id: 'OBJ_23',
+    assetName: 'Sticky Note',
+    type: 'Click / Inspect',
+    initialState: {},
+    imageSrc: '/assets/sticky-note-code.png',
+    dialogue: {
+      free: [{ speaker: 'Snippy', text: "Ooh, a sticky note! Better take a closer look..." }],
+      paid: 'N/A',
+    },
+    actionTarget: 'N/A — purely inspect/view',
+    visualFeedback: 'Yellow highlight on hover',
+    position: { x: 70, y: 33, width: 6, height: 6 },
+  },
 ];
