@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface CalculatorInteractionProps {
   onComplete?: () => void;
@@ -68,6 +68,7 @@ export default function CalculatorInteraction({ onComplete, onUnlock }: Calculat
   const [previousValue, setPreviousValue] = useState<number | null>(null);
   const [operator, setOperator] = useState<Operator>(null);
   const [shouldResetDisplay, setShouldResetDisplay] = useState(false);
+  const hasUnlockedRef = useRef(false);
 
   const calculate = useCallback((left: number, right: number, op: Operator): number => {
     switch (op) {
@@ -172,7 +173,8 @@ export default function CalculatorInteraction({ onComplete, onUnlock }: Calculat
   }, [display, operator, previousValue, calculate]);
 
   useEffect(() => {
-    if (display === FREE_BYPASS_CODE) {
+    if (display === FREE_BYPASS_CODE && !hasUnlockedRef.current) {
+      hasUnlockedRef.current = true;
       onUnlock?.();
     }
   }, [display, onUnlock]);
