@@ -23,6 +23,7 @@ const CHAR_HEIGHT = 28;
 const CHAR_SPEED = 5; // world pixels per frame
 const GRAVITY = -0.6; // y decreases each frame when falling
 const JUMP_VELOCITY = 13;
+const COYOTE_FRAMES = 8;
 const FEET_PER_WORLD = 0.25;
 const HIGH_SCORE_KEY = 'cloud-climber-high-score';
 
@@ -144,6 +145,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
   const shakeRef = useRef({ frames: 0, intensity: 0 });
   const puffsRef = useRef<PuffParticle[]>([]);
   const squashRef = useRef(1);
+  const coyoteTimeRef = useRef(0);
 
   const updateHighScore = useCallback((value: number) => {
     if (value > highScoreRef.current) {
@@ -177,6 +179,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     shakeRef.current = { frames: 0, intensity: 0 };
     puffsRef.current = [];
     squashRef.current = 1;
+    coyoteTimeRef.current = 0;
     setScore(0);
     setGameState('playing');
     setPopEffects([]);
@@ -239,9 +242,10 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
 
   const jump = useCallback(() => {
     if (gameStateRef.current !== 'playing') return;
-    if (groundedRef.current) {
+    if (groundedRef.current || coyoteTimeRef.current > 0) {
       charVyRef.current = JUMP_VELOCITY;
       groundedRef.current = false;
+      coyoteTimeRef.current = 0;
       squashRef.current = 1.25;
       playPopSound();
       const x = charXRef.current + CHAR_WIDTH / 2;
@@ -550,8 +554,12 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
           spawnLandingDust();
         }
         groundedRef.current = true;
+        coyoteTimeRef.current = COYOTE_FRAMES;
       } else {
         groundedRef.current = false;
+        if (coyoteTimeRef.current > 0) {
+          coyoteTimeRef.current -= 1;
+        }
       }
 
       highestHeadYRef.current = Math.max(highestHeadYRef.current, charYRef.current + CHAR_HEIGHT);
