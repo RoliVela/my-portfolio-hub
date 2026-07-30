@@ -11,9 +11,6 @@ import {
   type LandedBlock,
 } from '@/lib/cloudClimberPhysics';
 
-interface CloudClimberGameProps {
-  onComplete?: () => void;
-}
 
 // ======================== Tunables ========================
 const CANVAS_WIDTH = 400;
@@ -123,7 +120,7 @@ function drawRoundedRect(
   }
 }
 
-export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) {
+export default function CloudClimberGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -898,14 +895,6 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
           Restart (Space)
         </button>
       )}
-
-      <button
-        type="button"
-        onClick={onComplete}
-        className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
-      >
-        Exit
-      </button>
     </div>
   );
 }
