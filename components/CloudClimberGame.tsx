@@ -35,6 +35,7 @@ const WALL_SLIDE_SPEED = -2;
 const CAMERA_THRESHOLD_SCREEN_Y = CANVAS_HEIGHT * 0.5;
 const COYOTE_FRAMES = 8;
 const FEET_PER_WORLD = 0.25;
+const CRUSH_TOP_TOLERANCE = 10; // px: feet can be this close to a falling block's top without dying
 const HIGH_SCORE_KEY = 'cloud-climber-high-score';
 
 // ======================== Types ========================
@@ -682,6 +683,9 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
         const block = fallingRef.current[i];
         if (!block) continue;
         const blockRect = { x: block.x, y: block.y, width: block.width, height: block.height };
+        // Allow landing on top of falling blocks without dying (feet near/above block top)
+        const feetNearBlockTop = charRect.y >= blockRect.y + blockRect.height - CRUSH_TOP_TOLERANCE;
+        if (feetNearBlockTop) continue;
         if (rectsOverlap(charRect, blockRect)) {
           playPopSound();
           spawnDust(15);
