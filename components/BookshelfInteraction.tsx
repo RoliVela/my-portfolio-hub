@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+
+import emailjs from '@emailjs/browser';
 
 interface Book {
   title: string;
@@ -8,7 +10,6 @@ interface Book {
   color: string;
   height: number;
   fontSize: number;
-  letterSpacing: number;
 }
 
 interface BookEntry {
@@ -18,13 +19,14 @@ interface BookEntry {
 
 const STORAGE_KEY = 'bookshelf-visitor-book';
 
-// TODO: replace with Roli's real favorite books.
 const FAVORITE_BOOKS: BookEntry[] = [
-  { title: 'Where the Wild Things Are', author: 'Maurice Sendak' },
-  { title: 'Dune', author: 'Frank Herbert' },
-  { title: 'The Name of the Wind', author: 'Patrick Rothfuss' },
-  { title: 'Project Hail Mary', author: 'Andy Weir' },
-  { title: 'Norwegian Wood', author: 'Haruki Murakami' },
+  { title: 'IT', author: 'Stephen King' },
+  { title: 'War of the Worlds', author: 'H.G. Wells' },
+  { title: 'Silas Marner', author: 'George Eliot' },
+  { title: 'The Mist', author: 'Stephen King' },
+  { title: 'The Glass Menagerie', author: 'Tennessee Williams' },
+  { title: 'Animal Farm', author: 'George Orwell' },
+  { title: '1984', author: 'George Orwell' },
 ];
 
 const SPINE_COLORS = [
@@ -53,24 +55,19 @@ function randomSpineHeight(title: string) {
 
 const TITLE_AREA_OVERHEAD = 60; // rough space used by the author line + padding
 
-function titleTextStyle(title: string, spineHeight: number) {
+function titleTextStyle(title: string) {
   const fontSize = Math.max(12, Math.min(20, 220 / Math.max(title.length, 1)));
-  const availableHeight = Math.max(40, spineHeight - TITLE_AREA_OVERHEAD);
-  const naturalHeight = title.length * fontSize;
-  const letterSpacing =
-    title.length > 1 ? Math.max(0, (availableHeight - naturalHeight) / (title.length - 1)) : 0;
-  return { fontSize, letterSpacing };
+  return { fontSize };
 }
 
 function createBook(entry: BookEntry): Book {
   const height = randomSpineHeight(entry.title);
-  const { fontSize, letterSpacing } = titleTextStyle(entry.title, height);
+  const { fontSize } = titleTextStyle(entry.title);
   return {
     ...entry,
     color: randomColor(),
     height,
     fontSize,
-    letterSpacing,
   };
 }
 
@@ -84,6 +81,10 @@ function shuffle<T>(array: T[]): T[] {
   }
   return result;
 }
+
+const EMAILJS_SERVICE_ID = 'service_djzyl8c';
+const EMAILJS_TEMPLATE_ID = 'template_nko4bgc';
+const EMAILJS_PUBLIC_KEY = 'z0Vx2xEyRH8wEg62N';
 
 function loadVisitorBook(): BookEntry | null {
   if (typeof window === 'undefined') return null;
@@ -107,6 +108,40 @@ function saveVisitorBook(entry: BookEntry) {
   } catch {
     // ignore storage errors
   }
+}
+
+function StretchedTitle({
+  title,
+  fontSize,
+  availableHeight,
+}: {
+  title: string;
+  fontSize: number;
+  availableHeight: number;
+}) {
+  const spanRef = useRef<HTMLSpanElement>(null);
+  const [letterSpacing, setLetterSpacing] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = spanRef.current;
+    if (!el) return;
+    el.style.letterSpacing = '0px';
+    const naturalHeight = el.scrollHeight;
+    const extra = Math.max(0, availableHeight - naturalHeight);
+    const gaps = Math.max(1, title.length - 1);
+    setLetterSpacing(extra / gaps);
+  }, [title, fontSize, availableHeight]);
+
+  return (
+    <span
+      ref={spanRef}
+      className="truncate font-vt323 leading-none text-white [writing-mode:vertical-rl]"
+      style={{ fontSize, letterSpacing }}
+      title={title}
+    >
+      {title}
+    </span>
+  );
 }
 
 export default function BookshelfInteraction() {
@@ -143,6 +178,17 @@ export default function BookshelfInteraction() {
       return next;
     });
 
+    emailjs
+      .send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        { message: `New book added to the shelf: "${title}" by ${author}` },
+        { publicKey: EMAILJS_PUBLIC_KEY }
+      )
+      .catch(() => {
+        // Best-effort notification only — don't surface a failure to the visitor.
+      });
+
     setAddingIndex(null);
     setNewTitle('');
     setNewAuthor('');
@@ -175,13 +221,11 @@ export default function BookshelfInteraction() {
                     {item.author}
                   </span>
                   <div className="flex flex-1 w-full items-start justify-center overflow-hidden py-2">
-                    <span
-                      className="truncate font-vt323 leading-none text-white [writing-mode:vertical-rl]"
-                      style={{ fontSize: item.fontSize, letterSpacing: item.letterSpacing }}
+                    <StretchedTitle
                       title={item.title}
-                    >
-                      {item.title}
-                    </span>
+                      fontSize={item.fontSize}
+                      availableHeight={item.height - TITLE_AREA_OVERHEAD}
+                    />
                   </div>
                 </div>
               ) : (
