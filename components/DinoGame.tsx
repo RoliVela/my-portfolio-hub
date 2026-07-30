@@ -428,7 +428,8 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
 
       const drawBlock = (bx: number, by: number, bw: number, bh: number, color: string) => {
         ctx.fillStyle = OUTLINE;
-        ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+        // Counteract the squish/stretch scale so the 1 px outline stays crisp.
+        ctx.fillRect(bx - 1 / scaleX, by - 1 / scaleY, bw + 2 / scaleX, bh + 2 / scaleY);
         ctx.fillStyle = color;
         ctx.fillRect(bx, by, bw, bh);
       };
