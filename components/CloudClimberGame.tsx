@@ -545,8 +545,19 @@ export default function CloudClimberGame() {
       let gameOverThisFrame = false;
 
       // Update camera (deadzone: keep character in lower half, only scroll up)
-      const desiredCameraY = charYRef.current - (CANVAS_HEIGHT - CAMERA_THRESHOLD_SCREEN_Y);
-      cameraYRef.current = Math.max(cameraYRef.current, desiredCameraY, 0);
+      const desiredCameraYUp = charYRef.current - (CANVAS_HEIGHT - CAMERA_THRESHOLD_SCREEN_Y);
+      let nextCameraY = Math.max(cameraYRef.current, desiredCameraYUp, 0);
+
+      // If the character has fallen far enough to go below the visible bottom, drop the camera
+      // to keep them visible there. This becomes the new floor for future rises — no need to
+      // re-climb back to the old peak height first.
+      const BOTTOM_MARGIN = 40;
+      const maxCameraYToKeepVisible = charYRef.current - BOTTOM_MARGIN;
+      if (nextCameraY > maxCameraYToKeepVisible) {
+        nextCameraY = Math.max(0, maxCameraYToKeepVisible);
+      }
+
+      cameraYRef.current = nextCameraY;
 
       // Update lava
       lavaYRef.current += LAVA_RISE_SPEED;

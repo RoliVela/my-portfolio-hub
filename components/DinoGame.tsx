@@ -612,11 +612,11 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       drawBlock(catX + width * 0.8, catY + height * 0.1, width * 0.1, height * 0.15, FUR, OUTLINE);
 
       // Legs (hovering blocks)
-      drawBlock(catX + width * 0.3, catY + height * 0.85, width * 0.12, height * 0.2, FUR, OUTLINE);
-      drawBlock(catX + width * 0.55, catY + height * 0.85, width * 0.12, height * 0.2, FUR, OUTLINE);
-      // Animated dangling paws
-      drawBlock(catX + width * 0.3 - legOffset, catY + height * 1.05, width * 0.08, height * 0.1, FUR_SHADOW, OUTLINE);
-      drawBlock(catX + width * 0.6 + legOffset, catY + height * 1.05, width * 0.08, height * 0.1, FUR_SHADOW, OUTLINE);
+      drawBlock(catX + width * 0.3, catY + height * 0.88, width * 0.12, height * 0.12, FUR, OUTLINE);
+      drawBlock(catX + width * 0.55, catY + height * 0.88, width * 0.12, height * 0.12, FUR, OUTLINE);
+      // Animated dangling paws — tightened up from height*1.05 to sit closer to the legs
+      drawBlock(catX + width * 0.3 - legOffset, catY + height * 0.98, width * 0.08, height * 0.08, FUR_SHADOW, OUTLINE);
+      drawBlock(catX + width * 0.6 + legOffset, catY + height * 0.98, width * 0.08, height * 0.08, FUR_SHADOW, OUTLINE);
 
       // Eye
       drawBlock(catX + width * 0.75, catY + height * 0.35, width * 0.08, height * 0.08, '#1e1224', OUTLINE);
@@ -709,7 +709,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
             obstaclesRef.current.push({
               x: CANVAS_WIDTH,
               y: GROUND_Y - height - 20,
-              width: 24,
+              width: 44,
               height,
               isFlying: true,
             });
