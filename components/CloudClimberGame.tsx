@@ -11,18 +11,41 @@ interface CloudClimberGameProps {
 // ======================== Tunables ========================
 const CANVAS_WIDTH = 400;
 const CANVAS_HEIGHT = 600;
-const LANE_COUNT = 5;
-const LANE_WIDTH = CANVAS_WIDTH / LANE_COUNT;
-const BLOCK_SIZE = 40;
-const BLOCK_FALL_SPEED = 5; // world pixels per frame at ~60fps
-const BLOCK_SPAWN_INTERVAL_MS = 1300;
-const LAVA_RISE_SPEED = 0.6; // world pixels per frame
-const MARSHMALLOW_SIZE = 32;
-const BOUNCE_AMPLITUDE = 8;
-const BOUNCE_SPEED = 0.005; // radians per ms
-const MOVE_SPEED = 0.25; // lane progress per frame (~4 frames to switch)
-const GROUND_BUFFER = 120; // keep this much headroom below the highest stack
+const GROUND_BUFFER = 120;
+const MIN_BLOCK_WIDTH = 50;
+const MAX_BLOCK_WIDTH = 140;
+const BLOCK_FALL_SPEED = 4; // world pixels per frame (y decreases)
+const BLOCK_SPAWN_INTERVAL_MS = 1000;
+const LAVA_RISE_SPEED = 0.5; // world pixels per frame (lavaY increases)
+const CHAR_WIDTH = 28;
+const CHAR_HEIGHT = 28;
+const CHAR_SPEED = 5; // world pixels per frame
+const GRAVITY = -0.6; // y decreases each frame when falling
+const JUMP_VELOCITY = 13;
+const FEET_PER_WORLD = 0.25;
 const HIGH_SCORE_KEY = 'cloud-climber-high-score';
+
+// ======================== Types ========================
+interface LandedBlock {
+  x: number;
+  width: number;
+  y: number; // bottom of the block in world-space (top surface is y + height)
+  height: number;
+  color: string;
+}
+
+interface FallingBlock {
+  x: number;
+  width: number;
+  y: number; // bottom of the falling block in world-space
+  height: number;
+  color: string;
+}
+
+interface InputState {
+  left: boolean;
+  right: boolean;
+}
 
 // ======================== Helpers ========================
 function readStoredHighScore(): number {
@@ -43,10 +66,60 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-interface FallingBlock {
-  lane: number;
-  y: number; // world Y, bottom-up, top of block
-  settled: boolean;
+function surfaceHeightAt(xStart: number, xEnd: number, landed: LandedBlock[]): number {
+  let maxY = 0; // the floor
+  for (const b of landed) {
+    if (b.x < xEnd && b.x + b.width > xStart) {
+      maxY = Math.max(maxY, b.y + b.height);
+    }
+  }
+  return maxY;
+}
+
+function randomRange(min: number, max: number) {
+  return min + Math.random() * (max - min);
+}
+
+const BLOCK_COLORS = [
+  '#f472b6', // pink/rose
+  '#60a5fa', // blue
+  '#22d3ee', // sky blue
+  '#fb923c', // coral/orange
+  '#34d399', // green
+  '#facc15', // tan-ish yellow
+  '#a8712a', // brown
+  '#818cf8', // indigo
+  '#9ca3af', // gray
+  '#f87171', // red
+];
+
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  const r = Math.min(radius, width / 2, height / 2);
+  const roundedCtx = ctx as CanvasRenderingContext2D & { roundRect: (x: number, y: number, w: number, h: number, r: number) => void };
+  if (typeof roundedCtx.roundRect === 'function') {
+    ctx.beginPath();
+    roundedCtx.roundRect(x, y, width, height, r);
+    ctx.closePath();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+    ctx.lineTo(x + r, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
 }
 
 export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) {
@@ -60,46 +133,55 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
   const [dustParticles, setDustParticles] = useState<{ id: number; x: number; y: number; color: string }[]>([]);
   const popIdRef = useRef(0);
   const dustIdRef = useRef(0);
-  const marshmallowPosRef = useRef({ x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT - 80 });
 
-  const laneStacksRef = useRef<number[]>(new Array(LANE_COUNT).fill(0));
-  const blocksRef = useRef<FallingBlock[]>([]);
-  const playerLaneRef = useRef(0);
-  const targetLaneRef = useRef(0);
-  const laneProgressRef = useRef(0.5); // 0 = previous lane, 1 = target lane
+  const gameStateRef = useRef(gameState);
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
+  const landedRef = useRef<LandedBlock[]>([]);
+  const fallingRef = useRef<FallingBlock[]>([]);
+  const charXRef = useRef(CANVAS_WIDTH / 2 - CHAR_WIDTH / 2);
+  const charYRef = useRef(0); // feet position
+  const charVyRef = useRef(0);
+  const groundedRef = useRef(true);
   const lavaYRef = useRef(-200);
   const cameraYRef = useRef(0);
   const lastSpawnRef = useRef(0);
   const scoreRef = useRef(0);
   const highScoreRef = useRef(readStoredHighScore());
-  const gameStateRef = useRef(gameState);
+  const highestHeadYRef = useRef(0);
+  const inputRef = useRef<InputState>({ left: false, right: false });
 
-  useEffect(() => {
-    gameStateRef.current = gameState;
-  }, [gameState]);
-
-  const saveHighScore = useCallback((value: number) => {
+  const updateHighScore = useCallback((value: number) => {
     if (value > highScoreRef.current) {
       highScoreRef.current = value;
       setHighScore(value);
-      try {
-        window.localStorage.setItem(HIGH_SCORE_KEY, String(value));
-      } catch {
-        // ignore storage errors
-      }
     }
   }, []);
 
+  const saveHighScore = useCallback((value: number) => {
+    updateHighScore(value);
+    try {
+      window.localStorage.setItem(HIGH_SCORE_KEY, String(highScoreRef.current));
+    } catch {
+      // ignore storage errors
+    }
+  }, [updateHighScore]);
+
   const resetGame = useCallback(() => {
-    laneStacksRef.current = new Array(LANE_COUNT).fill(0);
-    blocksRef.current = [];
-    playerLaneRef.current = 0;
-    targetLaneRef.current = 0;
-    laneProgressRef.current = 0.5;
+    landedRef.current = [];
+    fallingRef.current = [];
+    charXRef.current = CANVAS_WIDTH / 2 - CHAR_WIDTH / 2;
+    charYRef.current = 0;
+    charVyRef.current = 0;
+    groundedRef.current = true;
     lavaYRef.current = -200;
     cameraYRef.current = 0;
     lastSpawnRef.current = 0;
     scoreRef.current = 0;
+    highestHeadYRef.current = 0;
+    inputRef.current = { left: false, right: false };
     setScore(0);
     setGameState('playing');
     setPopEffects([]);
@@ -128,31 +210,33 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     }, 900);
   }, []);
 
-  const moveLeft = useCallback(() => {
+  const jump = useCallback(() => {
     if (gameStateRef.current !== 'playing') return;
-    const current = playerLaneRef.current;
-    const target = clamp(current - 1, 0, LANE_COUNT - 1);
-    if (target !== current) {
-      targetLaneRef.current = target;
-      laneProgressRef.current = 0;
+    if (groundedRef.current) {
+      charVyRef.current = JUMP_VELOCITY;
+      groundedRef.current = false;
       playPopSound();
-      const pos = marshmallowPosRef.current;
-      spawnPop(pos.x, pos.y);
+      const x = charXRef.current + CHAR_WIDTH / 2;
+      const y = CANVAS_HEIGHT - (charYRef.current - cameraYRef.current) - CHAR_HEIGHT / 2;
+      spawnPop(x, y);
     }
   }, [spawnPop]);
 
-  const moveRight = useCallback(() => {
-    if (gameStateRef.current !== 'playing') return;
-    const current = playerLaneRef.current;
-    const target = clamp(current + 1, 0, LANE_COUNT - 1);
-    if (target !== current) {
-      targetLaneRef.current = target;
-      laneProgressRef.current = 0;
-      playPopSound();
-      const pos = marshmallowPosRef.current;
-      spawnPop(pos.x, pos.y);
-    }
-  }, [spawnPop]);
+  const startLeft = useCallback(() => {
+    inputRef.current.left = true;
+  }, []);
+
+  const stopLeft = useCallback(() => {
+    inputRef.current.left = false;
+  }, []);
+
+  const startRight = useCallback(() => {
+    inputRef.current.right = true;
+  }, []);
+
+  const stopRight = useCallback(() => {
+    inputRef.current.right = false;
+  }, []);
 
   // ======================== Canvas game loop ========================
   useEffect(() => {
@@ -162,127 +246,94 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const draw = () => {
-      const now = performance.now();
-
-      // Update camera based on tallest stack
-      const maxStack = Math.max(...laneStacksRef.current);
-      const desiredCamera = Math.max(0, maxStack * BLOCK_SIZE - (CANVAS_HEIGHT - GROUND_BUFFER));
-      cameraYRef.current = desiredCamera;
-
-      // Update lava
-      lavaYRef.current += LAVA_RISE_SPEED;
-
-      // Spawn blocks
-      if (now - lastSpawnRef.current > BLOCK_SPAWN_INTERVAL_MS) {
-        lastSpawnRef.current = now;
-        const lane = Math.floor(Math.random() * LANE_COUNT);
-        blocksRef.current.push({
-          lane,
-          y: cameraYRef.current + CANVAS_HEIGHT + BLOCK_SIZE + Math.random() * 80,
-          settled: false,
-        });
-      }
-
-      // Update falling blocks
-      for (let i = blocksRef.current.length - 1; i >= 0; i -= 1) {
-        const block = blocksRef.current[i];
-        if (block.settled) continue;
-
-        block.y -= BLOCK_FALL_SPEED;
-        const stackTop = laneStacksRef.current[block.lane] * BLOCK_SIZE;
-
-        if (block.y <= stackTop) {
-          // Block lands
-          if (block.lane === playerLaneRef.current) {
-            // Crushed!
-            playPopSound();
-            spawnDust(15);
-            setGameState('gameover');
-            saveHighScore(scoreRef.current);
-            return;
-          }
-
-          block.y = stackTop;
-          block.settled = true;
-          laneStacksRef.current[block.lane] += 1;
-          const newScore = Math.max(
-            scoreRef.current,
-            laneStacksRef.current[block.lane]
-          );
-          scoreRef.current = newScore;
-          setScore(newScore);
-        }
-
-        // Remove blocks that fell far below camera
-        if (block.y < cameraYRef.current - BLOCK_SIZE) {
-          blocksRef.current.splice(i, 1);
-        }
-      }
-
-      // Clean settled blocks that are way off screen to avoid memory growth
-      blocksRef.current = blocksRef.current.filter(
-        (b) => !b.settled || b.y + BLOCK_SIZE >= cameraYRef.current - BLOCK_SIZE
-      );
-
-      // Move player between lanes
-      if (playerLaneRef.current !== targetLaneRef.current) {
-        laneProgressRef.current = clamp(
-          laneProgressRef.current + MOVE_SPEED,
-          0,
-          1
-        );
-        if (laneProgressRef.current >= 1) {
-          playerLaneRef.current = targetLaneRef.current;
-          laneProgressRef.current = 0.5;
-        }
-      }
-
-      // Lava death check
-      const playerStackTop = laneStacksRef.current[playerLaneRef.current] * BLOCK_SIZE;
-      if (playerStackTop <= lavaYRef.current) {
-        playPopSound();
-        spawnDust(15);
-        setGameState('gameover');
-        saveHighScore(scoreRef.current);
-        return;
-      }
-
-      // ======================== Draw ========================
-      // Sky / background
+    const drawSky = () => {
       const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-      gradient.addColorStop(0, '#2d1b4e');
-      gradient.addColorStop(1, '#4a1d4a');
+      gradient.addColorStop(0, '#1e3a8a');
+      gradient.addColorStop(0.5, '#0e7490');
+      gradient.addColorStop(1, '#115e59');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      // Draw lanes
-      ctx.strokeStyle = 'rgba(251, 207, 232, 0.15)';
-      ctx.lineWidth = 2;
-      for (let i = 0; i <= LANE_COUNT; i += 1) {
-        const x = i * LANE_WIDTH;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, CANVAS_HEIGHT);
-        ctx.stroke();
+      // Subtle horizontal bands
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+      for (let i = 0; i < 6; i += 1) {
+        const y = ((i * 97 + cameraYRef.current * 0.1) % (CANVAS_HEIGHT + 80)) - 40;
+        ctx.fillRect(0, y, CANVAS_WIDTH, 20);
       }
+    };
 
-      // Draw settled blocks
-      blocksRef.current.forEach((block) => {
-        if (!block.settled) return;
-        drawBlock(ctx, block.lane, block.y, false);
-      });
+    const drawBlock = (block: LandedBlock | FallingBlock, isFalling: boolean) => {
+      const topY = block.y + block.height;
+      const screenTop = CANVAS_HEIGHT - (topY - cameraYRef.current);
+      const { x, width, height } = block;
 
-      // Draw falling blocks
-      blocksRef.current.forEach((block) => {
-        if (block.settled) return;
-        drawBlock(ctx, block.lane, block.y, true);
-      });
+      // Body
+      ctx.fillStyle = block.color;
+      drawRoundedRect(ctx, x, screenTop, width, height, 8);
+      ctx.fill();
 
-      // Draw marshmallow
-      drawMarshmallow(ctx, now);
+      // Thick black outline
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 4;
+      drawRoundedRect(ctx, x, screenTop, width, height, 8);
+      ctx.stroke();
 
-      // Draw lava
+      // Centered ring/hole (unfilled bead-like outline)
+      const cx = x + width / 2;
+      const cy = screenTop + height / 2;
+      const ringRadius = Math.min(width, height) * 0.2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Sparkle dots near one corner
+      ctx.fillStyle = '#ffffff';
+      const sparkleBaseX = x + width * 0.15;
+      const sparkleBaseY = screenTop + height * 0.15;
+      const dotSize = Math.max(2, Math.min(width, height) * 0.04);
+      ctx.beginPath();
+      ctx.arc(sparkleBaseX, sparkleBaseY, dotSize, 0, Math.PI * 2);
+      ctx.arc(sparkleBaseX + dotSize * 2.5, sparkleBaseY + dotSize * 1.2, dotSize * 0.7, 0, Math.PI * 2);
+      ctx.arc(sparkleBaseX + dotSize * 1.2, sparkleBaseY - dotSize * 2, dotSize * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (isFalling) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+        drawRoundedRect(ctx, x + 4, screenTop + 4, width - 8, height / 3, 6);
+        ctx.fill();
+      }
+    };
+
+    const drawCharacter = () => {
+      const x = charXRef.current;
+      const y = charYRef.current;
+      const screenBottom = CANVAS_HEIGHT - (y - cameraYRef.current);
+      const screenTop = screenBottom - CHAR_HEIGHT;
+
+      // Cream body with black outline
+      ctx.fillStyle = '#000000';
+      drawRoundedRect(ctx, x - 2, screenTop - 2, CHAR_WIDTH + 4, CHAR_HEIGHT + 4, 8);
+      ctx.fill();
+
+      ctx.fillStyle = '#fdf4dc';
+      drawRoundedRect(ctx, x, screenTop, CHAR_WIDTH, CHAR_HEIGHT, 7);
+      ctx.fill();
+
+      // Simple face
+      ctx.fillStyle = '#1e1224';
+      const eyeY = screenTop + CHAR_HEIGHT * 0.35;
+      ctx.fillRect(x + CHAR_WIDTH * 0.25, eyeY, 4, 4);
+      ctx.fillRect(x + CHAR_WIDTH * 0.65, eyeY, 4, 4);
+      ctx.fillRect(x + CHAR_WIDTH * 0.35, eyeY + CHAR_HEIGHT * 0.25, CHAR_WIDTH * 0.3, 2);
+
+      // Highlight
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.fillRect(x + 5, screenTop + 5, CHAR_WIDTH * 0.25, 2);
+    };
+
+    const drawLava = () => {
       const lavaScreenY = CANVAS_HEIGHT - (lavaYRef.current - cameraYRef.current);
       if (lavaScreenY < CANVAS_HEIGHT) {
         const lavaGradient = ctx.createLinearGradient(0, lavaScreenY, 0, CANVAS_HEIGHT);
@@ -290,88 +341,160 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
         lavaGradient.addColorStop(1, 'rgba(180, 30, 0, 0.95)');
         ctx.fillStyle = lavaGradient;
         ctx.fillRect(0, lavaScreenY, CANVAS_WIDTH, CANVAS_HEIGHT - lavaScreenY);
-        // Pixel bubbles
         ctx.fillStyle = 'rgba(255, 200, 80, 0.8)';
-        const bubbleOffset = (now / 20) % 20;
+        const bubbleOffset = (performance.now() / 20) % 20;
         for (let x = bubbleOffset; x < CANVAS_WIDTH; x += 40) {
           ctx.fillRect(x, lavaScreenY - 4, 6, 4);
         }
       }
+    };
+
+    const drawHud = () => {
+      const current = Math.floor(highestHeadYRef.current * FEET_PER_WORLD);
+      const best = highScoreRef.current;
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+      ctx.shadowBlur = 4;
+      ctx.font = 'bold 28px sans-serif';
+      ctx.fillText(`${current}ft`, CANVAS_WIDTH - 12, 36);
+      ctx.font = '16px sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.fillText(`Best: ${best}ft`, CANVAS_WIDTH - 12, 58);
+      ctx.shadowBlur = 0;
+    };
+
+    const draw = () => {
+      const now = performance.now();
+
+      // Update camera based on character height
+      cameraYRef.current = Math.max(0, charYRef.current - (CANVAS_HEIGHT - GROUND_BUFFER));
+
+      // Update lava
+      lavaYRef.current += LAVA_RISE_SPEED;
+
+      // Spawn falling blocks
+      if (now - lastSpawnRef.current > BLOCK_SPAWN_INTERVAL_MS) {
+        lastSpawnRef.current = now;
+        const width = Math.round(randomRange(MIN_BLOCK_WIDTH, MAX_BLOCK_WIDTH));
+        const height = Math.round(width * randomRange(0.85, 1.15));
+        const x = Math.round(randomRange(0, CANVAS_WIDTH - width));
+        const color = BLOCK_COLORS[Math.floor(Math.random() * BLOCK_COLORS.length)] ?? '#f472b6';
+        fallingRef.current.push({
+          x,
+          width,
+          height,
+          y: cameraYRef.current + CANVAS_HEIGHT + height + Math.random() * 100,
+          color,
+        });
+      }
+
+      // Update falling blocks
+      for (let i = fallingRef.current.length - 1; i >= 0; i -= 1) {
+        const block = fallingRef.current[i];
+        if (!block) continue;
+
+        block.y -= BLOCK_FALL_SPEED;
+        const surface = surfaceHeightAt(block.x, block.x + block.width, landedRef.current);
+
+        if (block.y <= surface) {
+          block.y = surface;
+          landedRef.current.push({ ...block });
+          fallingRef.current.splice(i, 1);
+          playPopSound();
+        }
+      }
+
+      // Character horizontal movement
+      const input = inputRef.current;
+      if (input.left && !input.right) {
+        charXRef.current = clamp(charXRef.current - CHAR_SPEED, 0, CANVAS_WIDTH - CHAR_WIDTH);
+      }
+      if (input.right && !input.left) {
+        charXRef.current = clamp(charXRef.current + CHAR_SPEED, 0, CANVAS_WIDTH - CHAR_WIDTH);
+      }
+
+      // Character vertical physics
+      charVyRef.current += GRAVITY;
+      charYRef.current += charVyRef.current;
+
+      const ground = surfaceHeightAt(charXRef.current, charXRef.current + CHAR_WIDTH, landedRef.current);
+      if (charYRef.current <= ground) {
+        charYRef.current = ground;
+        charVyRef.current = 0;
+        groundedRef.current = true;
+      } else {
+        groundedRef.current = false;
+      }
+
+      highestHeadYRef.current = Math.max(highestHeadYRef.current, charYRef.current + CHAR_HEIGHT);
+
+      // Update score state (feet)
+      const currentFeet = Math.floor(highestHeadYRef.current * FEET_PER_WORLD);
+      if (currentFeet > scoreRef.current) {
+        scoreRef.current = currentFeet;
+        setScore(currentFeet);
+        updateHighScore(currentFeet);
+      }
+
+      // Crush check (falling blocks vs character)
+      const charLeft = charXRef.current;
+      const charRight = charXRef.current + CHAR_WIDTH;
+      const charBottom = charYRef.current;
+      const charTop = charYRef.current + CHAR_HEIGHT;
+      for (let i = 0; i < fallingRef.current.length; i += 1) {
+        const block = fallingRef.current[i];
+        if (!block) continue;
+        const blockTop = block.y + block.height;
+        const overlapX = block.x < charRight && block.x + block.width > charLeft;
+        const overlapY = block.y < charTop && blockTop > charBottom;
+        if (overlapX && overlapY) {
+          playPopSound();
+          spawnDust(15);
+          setGameState('gameover');
+          saveHighScore(scoreRef.current);
+          return;
+        }
+      }
+
+      // Lava death
+      if (charYRef.current <= lavaYRef.current) {
+        playPopSound();
+        spawnDust(15);
+        setGameState('gameover');
+        saveHighScore(scoreRef.current);
+        return;
+      }
+
+      // Prune blocks far below camera
+      const pruneThreshold = cameraYRef.current - CANVAS_HEIGHT;
+      landedRef.current = landedRef.current.filter((b) => b.y + b.height >= pruneThreshold);
+      fallingRef.current = fallingRef.current.filter((b) => b.y + b.height >= pruneThreshold);
+
+      // ======================== Draw ========================
+      drawSky();
+
+      // Draw landed blocks first, then falling
+      landedRef.current.forEach((block) => drawBlock(block, false));
+      fallingRef.current.forEach((block) => drawBlock(block, true));
+
+      drawCharacter();
+      drawLava();
+      drawHud();
 
       rafRef.current = requestAnimationFrame(draw);
-    };
-
-    const drawBlock = (context: CanvasRenderingContext2D, lane: number, worldY: number, falling: boolean) => {
-      const x = lane * LANE_WIDTH + (LANE_WIDTH - BLOCK_SIZE) / 2;
-      const y = CANVAS_HEIGHT - (worldY + BLOCK_SIZE - cameraYRef.current);
-
-      // Pastel fill
-      const hues = [250, 270, 290, 310, 330];
-      const hue = hues[lane % hues.length];
-      context.fillStyle = `hsl(${hue}, 70%, 75%)`;
-      context.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
-
-      // Pixel outline
-      context.strokeStyle = '#1e1224';
-      context.lineWidth = 2;
-      context.strokeRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
-
-      // Simple highlight
-      context.fillStyle = 'rgba(255, 255, 255, 0.3)';
-      context.fillRect(x + 4, y + 4, BLOCK_SIZE - 8, 4);
-
-      if (falling) {
-        context.fillStyle = 'rgba(255, 255, 255, 0.2)';
-        context.fillRect(x + 4, y + 12, BLOCK_SIZE - 8, 4);
-      }
-    };
-
-    const drawMarshmallow = (context: CanvasRenderingContext2D, time: number) => {
-      const fromLane = playerLaneRef.current;
-      const toLane = targetLaneRef.current;
-      let visualLane: number;
-      if (fromLane === toLane) {
-        visualLane = fromLane;
-      } else {
-        // Linear interpolation between lanes based on progress
-        visualLane = fromLane + (toLane - fromLane) * laneProgressRef.current;
-      }
-      const centerX = visualLane * LANE_WIDTH + LANE_WIDTH / 2;
-      const stackTop = laneStacksRef.current[playerLaneRef.current] * BLOCK_SIZE;
-      const bounce = Math.sin(time * BOUNCE_SPEED) * BOUNCE_AMPLITUDE;
-      const bottomY = stackTop + bounce;
-      const y = CANVAS_HEIGHT - (bottomY + MARSHMALLOW_SIZE - cameraYRef.current);
-      marshmallowPosRef.current = { x: centerX, y: y + MARSHMALLOW_SIZE / 2 };
-
-      const x = centerX - MARSHMALLOW_SIZE / 2;
-      const size = MARSHMALLOW_SIZE;
-
-      // Cream body with dark outline
-      context.fillStyle = '#1e1224';
-      context.fillRect(x - 1, y - 1, size + 2, size + 2);
-      context.fillStyle = '#fdf4dc';
-      context.fillRect(x, y, size, size);
-
-      // Cute face
-      context.fillStyle = '#1e1224';
-      context.fillRect(x + size * 0.25, y + size * 0.35, 4, 4);
-      context.fillRect(x + size * 0.65, y + size * 0.35, 4, 4);
-      context.fillRect(x + size * 0.35, y + size * 0.65, size * 0.3, 3);
-
-      // Highlight
-      context.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      context.fillRect(x + 4, y + 4, size * 0.3, 3);
     };
 
     rafRef.current = requestAnimationFrame(draw);
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [gameState, saveHighScore, spawnDust]);
+  }, [gameState, saveHighScore, spawnDust, updateHighScore]);
 
   // ======================== Keyboard controls ========================
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
       if (gameStateRef.current === 'gameover' && e.code === 'Space') {
         e.preventDefault();
         resetGame();
@@ -379,28 +502,42 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       }
       if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
         e.preventDefault();
-        moveLeft();
+        inputRef.current.left = true;
       }
       if (e.code === 'ArrowRight' || e.code === 'KeyD') {
         e.preventDefault();
-        moveRight();
+        inputRef.current.right = true;
+      }
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        jump();
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        e.preventDefault();
+        inputRef.current.left = false;
+      }
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        e.preventDefault();
+        inputRef.current.right = false;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [moveLeft, moveRight, resetGame]);
-
-  // The game starts automatically in the 'playing' state.
-  // resetGame() is available for restarting after game over.
+  }, [jump, resetGame]);
 
   return (
     <div className="flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-pink-300 bg-purple-950 p-6 shadow-[0_0_0_4px_#000]">
       <h2 className="font-vt323 text-3xl text-pink-200">Cloud Climber</h2>
       <p className="text-center font-vt323 text-lg text-pink-100/80">
-        ← / A and → / D to move · Avoid falling blocks and rising lava.
+        ← / A and → / D to move · Space / ↑ / W to jump · Avoid lava and falling blocks.
       </p>
 
       <div className="relative">
@@ -408,8 +545,15 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
           ref={canvasRef}
           width={CANVAS_WIDTH}
           height={CANVAS_HEIGHT}
+          onClick={() => {
+            if (gameStateRef.current === 'gameover') {
+              resetGame();
+            } else {
+              jump();
+            }
+          }}
           className="w-full max-w-[400px] cursor-pointer rounded bg-purple-900"
-          aria-label="Cloud Climber game canvas. Use left/right arrows or A/D to move between lanes."
+          aria-label="Cloud Climber game canvas. Use left/right arrows or A/D to move. Press space, up arrow, or W to jump."
         />
         {popEffects.map((effect) => (
           <PopBurst key={effect.id} id={effect.id} x={effect.x} y={effect.y} />
@@ -424,8 +568,8 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
         {gameState === 'gameover' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
             <p className="font-vt323 text-4xl text-pink-200">Game Over</p>
-            <p className="font-vt323 text-xl text-pink-100/80">Height: {score}</p>
-            <p className="font-vt323 text-lg text-pink-100/70">Best: {highScore}</p>
+            <p className="font-vt323 text-xl text-pink-100/80">Height: {score}ft</p>
+            <p className="font-vt323 text-lg text-pink-100/70">Best: {highScore}ft</p>
             <p className="font-vt323 text-sm text-pink-100/60">Press Space or click to restart</p>
           </div>
         )}
@@ -435,22 +579,38 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
         <div className="flex gap-3">
           <button
             type="button"
-            onPointerDown={moveLeft}
+            onPointerDown={startLeft}
+            onPointerUp={stopLeft}
+            onPointerLeave={stopLeft}
+            onPointerCancel={stopLeft}
             className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
           >
             ←
           </button>
           <button
             type="button"
-            onPointerDown={moveRight}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              jump();
+            }}
+            className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
+          >
+            Jump
+          </button>
+          <button
+            type="button"
+            onPointerDown={startRight}
+            onPointerUp={stopRight}
+            onPointerLeave={stopRight}
+            onPointerCancel={stopRight}
             className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
           >
             →
           </button>
         </div>
         <div className="flex items-center gap-4">
-          <p className="font-vt323 text-2xl text-pink-200">Height: {score}</p>
-          <p className="font-vt323 text-xl text-pink-100/70">Best: {highScore}</p>
+          <p className="font-vt323 text-2xl text-pink-200">Height: {score}ft</p>
+          <p className="font-vt323 text-xl text-pink-100/70">Best: {highScore}ft</p>
         </div>
       </div>
 
