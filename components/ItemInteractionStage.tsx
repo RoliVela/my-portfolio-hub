@@ -17,6 +17,7 @@ import KermitSimonSays from './KermitSimonSays';
 import VenusFlyTrapGame from './VenusFlyTrapGame';
 import CloudClimberGame from './CloudClimberGame';
 import BookshelfInteraction from './BookshelfInteraction';
+import LatteArtGame from './LatteArtGame';
 
 export type JukeboxTrack = {
   title: string;
@@ -81,6 +82,10 @@ export default function ItemInteractionStage({
 
     if (obj.id === 'OBJ_15') {
       return <NeeDohInteraction />;
+    }
+
+    if (obj.id === 'OBJ_19') {
+      return <LatteArtGame onComplete={onComplete} onToggle={onToggle} />;
     }
 
     if (obj.id === 'OBJ_03' || obj.id === 'OBJ_04' || obj.id === 'OBJ_06') {
