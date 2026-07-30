@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { playPopSound } from '@/lib/sfx';
-import { PopBurst, FallingDust, FallingDustOverlay } from '@/components/game/GameParticles';
+import { playPopSound, DinoAudioEngine } from '@/lib/sfx';
+import { PopBurst } from '@/components/game/GameParticles';
 
 interface DinoGameProps {
   onComplete?: () => void;
@@ -51,17 +51,17 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
   const [highScore, setHighScore] = useState<number>(() => readStoredDinoHighScore());
   const [isPlaying, setIsPlaying] = useState(true);
   const [popEffects, setPopEffects] = useState<{ id: number; x: number; y: number; particleColorClass?: string; ringColorClass?: string }[]>([]);
-  const [dustParticles, setDustParticles] = useState<{ id: number; x: number; y: number; color: string }[]>([]);
 
   const dinoYRef = useRef(GROUND_Y - DINO_SIZE);
   const popIdRef = useRef(0);
-  const dustIdRef = useRef(0);
   const dinoVyRef = useRef(0);
+  const audioEngineRef = useRef<DinoAudioEngine | null>(null);
   const isJumpingRef = useRef(false);
   const isDuckingRef = useRef(false);
   const landingTimerRef = useRef(0);
   const obstaclesRef = useRef<Obstacle[]>([]);
   const speedRef = useRef(BASE_SPEED);
+  const lastAudioSpeedRef = useRef(BASE_SPEED);
   const frameRef = useRef(0);
   const scoreRef = useRef(0);
   const gameOverRef = useRef(false);
@@ -74,6 +74,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     isDuckingRef.current = false;
     obstaclesRef.current = [];
     speedRef.current = BASE_SPEED;
+    lastAudioSpeedRef.current = BASE_SPEED;
     frameRef.current = 0;
     scoreRef.current = 0;
     gameOverRef.current = false;
@@ -81,7 +82,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     setGameOver(false);
     setIsPlaying(true);
     setPopEffects([]);
-    setDustParticles([]);
+    audioEngineRef.current?.start();
   }, []);
 
   const spawnPop = useCallback((x: number, y: number, particleColorClass?: string, ringColorClass?: string) => {
@@ -92,19 +93,6 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     }, 500);
   }, []);
 
-  const spawnDust = useCallback((x: number, count = 6) => {
-    const fresh = Array.from({ length: count }).map(() => ({
-      id: dustIdRef.current++,
-      x: (x / CANVAS_WIDTH) * 100 + (Math.random() - 0.5) * 10,
-      y: 70 + Math.random() * 20,
-      color: ['#fde047', '#f472b6', '#60a5fa', '#34d399', '#fb923c'][Math.floor(Math.random() * 5)] ?? '#fde047',
-    }));
-    setDustParticles((prev) => [...prev, ...fresh]);
-    setTimeout(() => {
-      setDustParticles((prev) => prev.filter((p) => !fresh.find((f) => f.id === p.id)));
-    }, 900);
-  }, []);
-
   const startJump = useCallback(() => {
     if (gameOverRef.current) {
       resetGame();
@@ -113,6 +101,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     if (!isJumpingRef.current) {
       dinoVyRef.current = JUMP_STRENGTH;
       isJumpingRef.current = true;
+      audioEngineRef.current?.start();
       spawnPop(DINO_X + DINO_SIZE / 2, GROUND_Y);
     }
   }, [resetGame, spawnPop]);
@@ -128,6 +117,14 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
   const jump = useCallback(() => {
     startJump();
   }, [startJump]);
+
+  useEffect(() => {
+    audioEngineRef.current = new DinoAudioEngine();
+    return () => {
+      audioEngineRef.current?.stop();
+      audioEngineRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -501,6 +498,10 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
         }
 
         speedRef.current = Math.min(MAX_SPEED, BASE_SPEED + scoreRef.current / 500);
+        if (Math.abs(speedRef.current - lastAudioSpeedRef.current) > 0.1) {
+          lastAudioSpeedRef.current = speedRef.current;
+          audioEngineRef.current?.setSpeed(speedRef.current);
+        }
 
         frameRef.current += 1;
         if (frameRef.current % Math.max(60, 150 - Math.floor(scoreRef.current / 20)) === 0) {
@@ -540,6 +541,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
           gameOverRef.current = true;
           setGameOver(true);
           setIsPlaying(false);
+          audioEngineRef.current?.stop();
           spawnPop(DINO_X + DINO_SIZE / 2, dinoYRef.current + DINO_SIZE / 2);
           if (scoreRef.current > highScoreRef.current) {
             highScoreRef.current = Math.floor(scoreRef.current);
@@ -562,7 +564,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [isPlaying, spawnDust, spawnPop]);
+  }, [isPlaying, spawnPop]);
 
   return (
     <div className="flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-pink-300 bg-purple-950 p-6 shadow-[0_0_0_4px_#000]">
@@ -601,11 +603,6 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
             ringColorClass={effect.ringColorClass}
           />
         ))}
-        <FallingDustOverlay>
-          {dustParticles.map((p) => (
-            <FallingDust key={p.id} id={p.id} x={p.x} y={p.y} color={p.color} />
-          ))}
-        </FallingDustOverlay>
       </div>
 
       <div className="flex w-full flex-wrap items-center justify-center gap-4">
