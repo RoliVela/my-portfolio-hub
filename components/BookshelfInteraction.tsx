@@ -30,21 +30,24 @@ const FAVORITE_BOOKS: BookEntry[] = [
 ];
 
 const SPINE_COLORS = [
-  'bg-rose-700',
-  'bg-sky-700',
-  'bg-emerald-700',
-  'bg-amber-700',
-  'bg-violet-700',
-  'bg-orange-700',
-  'bg-teal-700',
-  'bg-indigo-700',
+  'bg-gradient-to-b from-rose-700 to-rose-900',
+  'bg-gradient-to-b from-sky-700 to-sky-900',
+  'bg-gradient-to-b from-emerald-700 to-emerald-900',
+  'bg-gradient-to-b from-amber-700 to-amber-900',
+  'bg-gradient-to-b from-violet-700 to-violet-900',
+  'bg-gradient-to-b from-orange-700 to-orange-900',
+  'bg-gradient-to-b from-teal-700 to-teal-900',
+  'bg-gradient-to-b from-indigo-700 to-indigo-900',
 ];
+
+const HEADBAND_CLASS =
+  'bg-[repeating-linear-gradient(45deg,#fff,#fff_2px,#000_2px,#000_4px)] opacity-50';
 
 const MIN_HEIGHT = 180;
 const MAX_HEIGHT = 320;
 const PX_PER_CHAR = 10;
 function randomColor() {
-  return SPINE_COLORS[Math.floor(Math.random() * SPINE_COLORS.length)] ?? 'bg-rose-700';
+  return SPINE_COLORS[Math.floor(Math.random() * SPINE_COLORS.length)] ?? 'bg-gradient-to-b from-rose-700 to-rose-900';
 }
 
 function randomSpineHeight(title: string) {
@@ -207,23 +210,27 @@ export default function BookshelfInteraction() {
           The shelf rearranges itself every time you look. Add your own favorite to the empty slot.
         </p>
 
-        <div className="relative w-full rounded border-4 border-amber-900 bg-amber-900/30 p-4">
+        <div className="relative w-full rounded border-4 border-amber-900 bg-amber-950/80 p-4 shadow-[inset_0_10px_20px_rgba(0,0,0,0.8)]">
           <div className="flex min-h-[360px] items-end justify-center gap-3 px-4 pb-1">
             {shelfItems.map((item, index) =>
               item ? (
                 <div
                   key={`${item.title}-${index}`}
                   style={{ height: item.height }}
-                  className={`flex w-16 flex-col items-center border-2 border-black pt-1 pb-2 shadow-md ${item.color}`}
+                  className={`relative flex w-16 flex-col items-center rounded-sm border border-black/60 pt-2 pb-2 shadow-[2px_0_5px_rgba(0,0,0,0.5)] transition-all duration-300 hover:-translate-y-3 hover:shadow-[5px_15px_15px_rgba(0,0,0,0.5)] hover:z-10 ${item.color}`}
                 >
-                  <span className="w-full truncate px-1 text-center font-vt323 text-[10px] leading-none tracking-wide text-white/90">
+                  <div className={`absolute left-0 top-0 h-1 w-full ${HEADBAND_CLASS}`} />
+                  <div className={`absolute bottom-0 left-0 h-1 w-full ${HEADBAND_CLASS}`} />
+                  <div className="absolute right-1 top-2 h-[calc(100%_-_16px)] w-1 bg-amber-50/20" />
+                  <div className="pointer-events-none absolute inset-0 rounded-sm bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+                  <span className="relative z-10 w-full truncate px-1 text-center font-vt323 text-[10px] leading-none tracking-wide text-white/90">
                     {item.author}
                   </span>
-                  <div className="flex flex-1 w-full items-start justify-center overflow-hidden py-2">
+                  <div className="relative z-10 flex flex-1 w-full items-start justify-center overflow-hidden py-2">
                     <CenteredTitle
                       title={item.title}
                       fontSize={item.fontSize}
-                      availableHeight={item.height - TITLE_AREA_OVERHEAD}
+                      availableHeight={item.height - TITLE_AREA_OVERHEAD - 16}
                     />
                   </div>
                 </div>
@@ -233,22 +240,26 @@ export default function BookshelfInteraction() {
                   type="button"
                   onClick={() => handleAddClick(index)}
                   style={{ height: MIN_HEIGHT }}
-                  className={`flex w-16 flex-col items-center justify-center border-2 border-dashed border-pink-300/50 bg-purple-900/50 p-1 text-center font-vt323 text-sm text-pink-100 transition hover:text-white ${
+                  className={`relative flex w-16 flex-col items-center justify-center overflow-hidden border-2 border-dashed border-pink-300/30 bg-black/20 p-1 text-center font-vt323 text-sm text-pink-100/50 transition-all duration-300 hover:border-pink-300/80 hover:bg-purple-900/40 hover:text-white ${
                     addingIndex === index ? 'ring-2 ring-pink-300' : ''
                   }`}
                 >
-                  <span className="text-2xl">+</span>
-                  <span className="[writing-mode:vertical-rl]">Add yours</span>
+                  <div className="absolute inset-0 bg-pink-500/5 opacity-0 group-hover:opacity-100 animate-pulse" />
+                  <span className="relative z-10 text-2xl">+</span>
+                  <span className="relative z-10 [writing-mode:vertical-rl]">Add yours</span>
                 </button>
               )
             )}
           </div>
-          {/* Shelf ledge */}
-          <div className="h-3 w-full rounded-sm bg-amber-950 shadow" />
+          {/* 3D shelf ledge */}
+          <div className="relative z-10 w-full">
+            <div className="h-1.5 w-full rounded-t-sm bg-amber-700" />
+            <div className="h-4 w-full rounded-b-md bg-gradient-to-b from-amber-900 to-amber-950 shadow-[0_8px_15px_rgba(0,0,0,0.7)]" />
+          </div>
         </div>
 
         {addingIndex !== null && (
-          <div className="flex w-full max-w-md flex-col gap-2 rounded border-2 border-pink-300 bg-purple-900/50 p-3">
+          <div className="flex w-full max-w-md flex-col gap-2 rounded border-4 border-double border-pink-300 bg-purple-950/95 p-5 shadow-[0_0_20px_rgba(0,0,0,0.8),0_0_15px_rgba(244,114,182,0.3)] backdrop-blur-sm">
             <p className="text-center font-vt323 text-lg text-pink-100">Add your favorite book</p>
             <input
               type="text"
