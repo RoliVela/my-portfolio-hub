@@ -40,6 +40,16 @@ interface InputState {
   right: boolean;
 }
 
+interface PuffParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  size: number;
+}
+
 // ======================== Helpers ========================
 function readStoredHighScore(): number {
   if (typeof window === 'undefined') return 0;
@@ -131,6 +141,8 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
   const highScoreRef = useRef(readStoredHighScore());
   const highestHeadYRef = useRef(0);
   const inputRef = useRef<InputState>({ left: false, right: false });
+  const shakeRef = useRef({ frames: 0, intensity: 0 });
+  const puffsRef = useRef<PuffParticle[]>([]);
 
   const updateHighScore = useCallback((value: number) => {
     if (value > highScoreRef.current) {
@@ -161,6 +173,8 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     scoreRef.current = 0;
     highestHeadYRef.current = 0;
     inputRef.current = { left: false, right: false };
+    shakeRef.current = { frames: 0, intensity: 0 };
+    puffsRef.current = [];
     setScore(0);
     setGameState('playing');
     setPopEffects([]);
@@ -189,6 +203,22 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     }, 900);
   }, []);
 
+  const spawnPuffs = useCallback(() => {
+    const feetX = charXRef.current + CHAR_WIDTH / 2;
+    const feetY = charYRef.current;
+    for (let i = 0; i < 8; i += 1) {
+      puffsRef.current.push({
+        x: feetX + randomRange(-CHAR_WIDTH * 0.4, CHAR_WIDTH * 0.4),
+        y: feetY + randomRange(-2, 4),
+        vx: randomRange(-2, 2),
+        vy: randomRange(-3, -1),
+        life: 25,
+        maxLife: 25,
+        size: randomRange(2, 4),
+      });
+    }
+  }, []);
+
   const jump = useCallback(() => {
     if (gameStateRef.current !== 'playing') return;
     if (groundedRef.current) {
@@ -198,8 +228,9 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       const x = charXRef.current + CHAR_WIDTH / 2;
       const y = CANVAS_HEIGHT - (charYRef.current - cameraYRef.current) - CHAR_HEIGHT / 2;
       spawnPop(x, y);
+      spawnPuffs();
     }
-  }, [spawnPop]);
+  }, [spawnPop, spawnPuffs]);
 
   const startLeft = useCallback(() => {
     inputRef.current.left = true;
@@ -330,6 +361,19 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       }
     };
 
+    const drawPuffs = () => {
+      puffsRef.current.forEach((p) => {
+        const screenX = p.x;
+        const screenY = CANVAS_HEIGHT - (p.y - cameraYRef.current);
+        const alpha = p.life / p.maxLife;
+        const size = p.size * alpha;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.7})`;
+        ctx.fill();
+      });
+    };
+
     const drawCharacter = () => {
       const x = charXRef.current;
       const y = charYRef.current;
@@ -413,6 +457,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
 
     const draw = () => {
       const now = performance.now();
+      let gameOverThisFrame = false;
 
       // Update camera based on character height
       cameraYRef.current = Math.max(0, charYRef.current - (CANVAS_HEIGHT - GROUND_BUFFER));
@@ -498,19 +543,22 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
         if (rectsOverlap(charRect, blockRect)) {
           playPopSound();
           spawnDust(15);
+          shakeRef.current = { frames: 20, intensity: 8 };
           setGameState('gameover');
           saveHighScore(scoreRef.current);
-          return;
+          gameOverThisFrame = true;
+          break;
         }
       }
 
       // Lava death
-      if (charYRef.current <= lavaYRef.current) {
+      if (!gameOverThisFrame && charYRef.current <= lavaYRef.current) {
         playPopSound();
         spawnDust(15);
+        shakeRef.current = { frames: 20, intensity: 8 };
         setGameState('gameover');
         saveHighScore(scoreRef.current);
-        return;
+        gameOverThisFrame = true;
       }
 
       // Prune blocks far below camera
@@ -518,16 +566,41 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       landedRef.current = landedRef.current.filter((b) => b.y + b.height >= pruneThreshold);
       fallingRef.current = fallingRef.current.filter((b) => b.y + b.height >= pruneThreshold);
 
+      // Update puff particles
+      puffsRef.current = puffsRef.current.filter((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += GRAVITY;
+        p.life -= 1;
+        return p.life > 0;
+      });
+
       // ======================== Draw ========================
+      ctx.save();
+
+      // Apply screen shake
+      if (shakeRef.current.frames > 0) {
+        const sx = (Math.random() - 0.5) * shakeRef.current.intensity;
+        const sy = (Math.random() - 0.5) * shakeRef.current.intensity;
+        ctx.translate(sx, sy);
+        shakeRef.current.frames -= 1;
+        shakeRef.current.intensity *= 0.9;
+      }
+
       drawSky();
 
       // Draw landed blocks first, then falling
       landedRef.current.forEach((block) => drawBlock(block, false));
       fallingRef.current.forEach((block) => drawBlock(block, true));
 
+      drawPuffs();
       drawCharacter();
       drawLava(now);
       drawHud();
+
+      ctx.restore();
+
+      if (gameOverThisFrame) return;
 
       rafRef.current = requestAnimationFrame(draw);
     };
