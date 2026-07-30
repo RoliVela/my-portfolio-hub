@@ -25,6 +25,57 @@ const GRAVITY = 0.6;
 const JUMP_STRENGTH = -12;
 const BASE_SPEED = 4;
 const MAX_SPEED = 12;
+const DAY_NIGHT_PERIOD = 60 * 60; // frames for a full day/night cycle (60s at 60fps)
+
+function hexToRgb(hex: string): [number, number, number] {
+  const clean = hex.replace('#', '');
+  return [
+    parseInt(clean.substring(0, 2), 16),
+    parseInt(clean.substring(2, 4), 16),
+    parseInt(clean.substring(4, 6), 16),
+  ];
+}
+
+function lerpColor(a: string, b: string, t: number): string {
+  const [ar, ag, ab] = hexToRgb(a);
+  const [br, bg, bl] = hexToRgb(b);
+  const r = Math.round(ar + (br - ar) * t);
+  const g = Math.round(ag + (bg - ag) * t);
+  const blVal = Math.round(ab + (bl - ab) * t);
+  return `rgb(${r}, ${g}, ${blVal})`;
+}
+
+interface DayNightColors {
+  topColor: string;
+  bottomColor: string;
+  starOpacity: number;
+  phase: number;
+  dayness: number;
+}
+
+function getDayNightColors(frame: number): DayNightColors {
+  const phase = (frame % DAY_NIGHT_PERIOD) / DAY_NIGHT_PERIOD;
+  const stops = [
+    { at: 0.0, top: '#0f0826', bottom: '#1a0b2e' },
+    { at: 0.25, top: '#2c1445', bottom: '#5a3b4d' },
+    { at: 0.5, top: '#60a5fa', bottom: '#f9a8d4' },
+    { at: 0.75, top: '#4a2b4d', bottom: '#2c1445' },
+    { at: 1.0, top: '#0f0826', bottom: '#1a0b2e' },
+  ];
+  let i = 0;
+  while (i < stops.length - 1 && phase > stops[i + 1].at) {
+    i += 1;
+  }
+  const start = stops[i]!;
+  const end = stops[i + 1] ?? start;
+  const t = end.at === start.at ? 0 : (phase - start.at) / (end.at - start.at);
+
+  const topColor = lerpColor(start.top, end.top, t);
+  const bottomColor = lerpColor(start.bottom, end.bottom, t);
+  const dayness = (Math.sin((phase - 0.25) * Math.PI * 2) + 1) / 2;
+  const starOpacity = 1 - dayness;
+  return { topColor, bottomColor, starOpacity, phase, dayness };
+}
 
 function readStoredDinoHighScore(): number {
   if (typeof window === 'undefined') return 0;
@@ -157,21 +208,33 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    let cachedDayNight: DayNightColors | null = null;
+    const getCurrentDayNight = () => {
+      if (!cachedDayNight) {
+        cachedDayNight = getDayNightColors(frameRef.current);
+      }
+      return cachedDayNight;
+    };
+
     const drawSky = () => {
+      const { topColor, bottomColor, starOpacity } = getCurrentDayNight();
+
       const gradient = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
-      gradient.addColorStop(0, '#2c1445');
-      gradient.addColorStop(1, '#1a0b2e');
+      gradient.addColorStop(0, topColor);
+      gradient.addColorStop(1, bottomColor);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, CANVAS_WIDTH, GROUND_Y);
 
-      // Twinkling, slow-scrolling stars
-      ctx.fillStyle = '#fbcfe8';
-      for (let i = 0; i < 30; i += 1) {
-        const starX = ((i * 47 - frameRef.current * 0.2) % CANVAS_WIDTH);
-        const x = starX < 0 ? starX + CANVAS_WIDTH : starX;
-        const y = (i * 93) % (GROUND_Y - 40);
-        if (Math.sin(frameRef.current * 0.05 + i) > -0.5) {
-          ctx.fillRect(x, y, 2, 2);
+      // Stars fade out during the day and shine at night
+      if (starOpacity > 0.01) {
+        ctx.fillStyle = `rgba(251, 207, 232, ${starOpacity})`;
+        for (let j = 0; j < 30; j += 1) {
+          const starX = (j * 47 - frameRef.current * 0.2) % CANVAS_WIDTH;
+          const x = starX < 0 ? starX + CANVAS_WIDTH : starX;
+          const y = (j * 93) % (GROUND_Y - 40);
+          if (Math.sin(frameRef.current * 0.05 + j) > -0.5) {
+            ctx.fillRect(x, y, 2, 2);
+          }
         }
       }
     };
@@ -181,17 +244,27 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       const cy = 60;
       const radius = 30;
 
-      // Synthwave gradient sun
+      const { topColor, dayness } = getCurrentDayNight();
+
+      // Synthwave gradient sun; smoothly transitions from warm dawn/dusk to bright midday,
+      // and dims at night so it doesn't glow against a dark sky.
+      const sunLerp = Math.max(0, Math.min(1, (dayness - 0.2) / 0.8));
+      const sunTop = lerpColor('#f97316', '#f9a8d4', sunLerp);
+      const sunBottom = lerpColor('#fb923c', '#fde047', sunLerp);
+      const sunOpacity = 0.4 + dayness * 0.6;
+
       const sunGrad = ctx.createLinearGradient(0, cy - radius, 0, cy + radius);
-      sunGrad.addColorStop(0, '#f9a8d4');
-      sunGrad.addColorStop(1, '#fde047');
+      sunGrad.addColorStop(0, sunTop);
+      sunGrad.addColorStop(1, sunBottom);
       ctx.fillStyle = sunGrad;
+      ctx.globalAlpha = sunOpacity;
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.fill();
+      ctx.globalAlpha = 1;
 
-      // Horizontal retro cuts
-      ctx.fillStyle = '#2c1445';
+      // Horizontal retro cuts (blend with current sky top)
+      ctx.fillStyle = topColor;
       for (let i = 0; i < 5; i += 1) {
         const yCut = cy + 5 + i * 6;
         const cutHeight = i + 1;
