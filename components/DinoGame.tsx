@@ -274,15 +274,26 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
 
     const drawClouds = () => {
       ctx.fillStyle = 'rgba(251, 207, 232, 0.15)';
-      const cloud1X = 120 + Math.sin(frameRef.current * 0.005) * 10;
-      const cloud2X = 350 + Math.sin(frameRef.current * 0.004) * 12;
-      [cloud1X, cloud2X].forEach((cx, i) => {
-        const cy = i === 0 ? 45 : 70;
-        // Blocky cloud silhouette made of stacked rectangles
-        ctx.fillRect(cx - 10, cy + 6, 68, 14);
-        ctx.fillRect(cx + 2, cy - 6, 48, 18);
-        ctx.fillRect(cx + 16, cy - 14, 24, 14);
-      });
+      // Slow parallax drift; the whole cloud band scrolls left and wraps seamlessly.
+      const spacing = 500;
+      const cloudSpeed = 0.3;
+      const offset = (frameRef.current * cloudSpeed) % spacing;
+
+      for (let xBase = -offset; xBase < CANVAS_WIDTH + spacing; xBase += spacing) {
+        // Cloud A with gentle vertical bob
+        const cloud1X = xBase + 80 + Math.sin(frameRef.current * 0.005) * 10;
+        const cloud1Y = 45 + Math.sin(frameRef.current * 0.003 + 1) * 5;
+        ctx.fillRect(cloud1X - 10, cloud1Y + 6, 68, 14);
+        ctx.fillRect(cloud1X + 2, cloud1Y - 6, 48, 18);
+        ctx.fillRect(cloud1X + 16, cloud1Y - 14, 24, 14);
+
+        // Cloud B with its own offset and bob
+        const cloud2X = xBase + 300 + Math.sin(frameRef.current * 0.004) * 12;
+        const cloud2Y = 70 + Math.sin(frameRef.current * 0.003) * 6;
+        ctx.fillRect(cloud2X - 10, cloud2Y + 6, 68, 14);
+        ctx.fillRect(cloud2X + 2, cloud2Y - 6, 48, 18);
+        ctx.fillRect(cloud2X + 16, cloud2Y - 14, 24, 14);
+      }
     };
 
     const drawCitySkyline = () => {
