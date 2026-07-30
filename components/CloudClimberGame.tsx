@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { playPopSound } from '@/lib/sfx';
 import { PopBurst, FallingDust, FallingDustOverlay } from '@/components/game/GameParticles';
-import { clamp, surfaceHeightAt, rectsOverlap, type LandedBlock } from '@/lib/cloudClimberPhysics';
+import {
+  clamp,
+  surfaceHeightAt,
+  rectsOverlap,
+  resolveHorizontalMove,
+  type LandedBlock,
+} from '@/lib/cloudClimberPhysics';
 
 interface CloudClimberGameProps {
   onComplete?: () => void;
@@ -12,7 +18,6 @@ interface CloudClimberGameProps {
 // ======================== Tunables ========================
 const CANVAS_WIDTH = 400;
 const CANVAS_HEIGHT = 600;
-const GROUND_BUFFER = 120;
 const MIN_BLOCK_WIDTH = 50;
 const MAX_BLOCK_WIDTH = 140;
 const BLOCK_FALL_SPEED = 4; // world pixels per frame (y decreases)
@@ -23,6 +28,11 @@ const CHAR_HEIGHT = 28;
 const CHAR_SPEED = 5; // world pixels per frame
 const GRAVITY = -0.6; // y decreases each frame when falling
 const JUMP_VELOCITY = 13;
+const WALL_JUMP_VELOCITY = JUMP_VELOCITY * 0.7;
+const WALL_JUMP_KICK = 6;
+const WALL_JUMP_KICK_DECAY = 0.88;
+const WALL_SLIDE_SPEED = -2;
+const CAMERA_THRESHOLD_SCREEN_Y = CANVAS_HEIGHT * 0.5;
 const COYOTE_FRAMES = 8;
 const FEET_PER_WORLD = 0.25;
 const HIGH_SCORE_KEY = 'cloud-climber-high-score';
@@ -146,6 +156,8 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
   const puffsRef = useRef<PuffParticle[]>([]);
   const squashRef = useRef(1);
   const coyoteTimeRef = useRef(0);
+  const wallSideRef = useRef<'left' | 'right' | null>(null);
+  const charKickVxRef = useRef(0);
 
   const updateHighScore = useCallback((value: number) => {
     if (value > highScoreRef.current) {
@@ -180,6 +192,8 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     puffsRef.current = [];
     squashRef.current = 1;
     coyoteTimeRef.current = 0;
+    wallSideRef.current = null;
+    charKickVxRef.current = 0;
     setScore(0);
     setGameState('playing');
     setPopEffects([]);
@@ -252,6 +266,17 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       const y = CANVAS_HEIGHT - (charYRef.current - cameraYRef.current) - CHAR_HEIGHT / 2;
       spawnPop(x, y);
       spawnPuffs();
+    } else if (wallSideRef.current) {
+      charVyRef.current = WALL_JUMP_VELOCITY;
+      charKickVxRef.current = wallSideRef.current === 'right' ? -WALL_JUMP_KICK : WALL_JUMP_KICK;
+      wallSideRef.current = null;
+      groundedRef.current = false;
+      squashRef.current = 1.25;
+      playPopSound();
+      const x = charXRef.current + CHAR_WIDTH / 2;
+      const y = CANVAS_HEIGHT - (charYRef.current - cameraYRef.current) - CHAR_HEIGHT / 2;
+      spawnPop(x, y);
+      spawnPuffs();
     }
   }, [spawnPop, spawnPuffs]);
 
@@ -261,6 +286,9 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
 
   const stopLeft = useCallback(() => {
     inputRef.current.left = false;
+    if (wallSideRef.current === 'left') {
+      wallSideRef.current = null;
+    }
   }, []);
 
   const startRight = useCallback(() => {
@@ -269,6 +297,9 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
 
   const stopRight = useCallback(() => {
     inputRef.current.right = false;
+    if (wallSideRef.current === 'right') {
+      wallSideRef.current = null;
+    }
   }, []);
 
   // ======================== Canvas game loop ========================
@@ -493,8 +524,9 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       const now = performance.now();
       let gameOverThisFrame = false;
 
-      // Update camera based on character height
-      cameraYRef.current = Math.max(0, charYRef.current - (CANVAS_HEIGHT - GROUND_BUFFER));
+      // Update camera (deadzone: keep character in lower half, only scroll up)
+      const desiredCameraY = charYRef.current - (CANVAS_HEIGHT - CAMERA_THRESHOLD_SCREEN_Y);
+      cameraYRef.current = Math.max(cameraYRef.current, desiredCameraY, 0);
 
       // Update lava
       lavaYRef.current += LAVA_RISE_SPEED;
@@ -533,16 +565,50 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
 
       // Character horizontal movement
       const input = inputRef.current;
+      let nextX = charXRef.current;
       if (input.left && !input.right) {
-        charXRef.current = clamp(charXRef.current - CHAR_SPEED, 0, CANVAS_WIDTH - CHAR_WIDTH);
+        nextX -= CHAR_SPEED;
       }
       if (input.right && !input.left) {
-        charXRef.current = clamp(charXRef.current + CHAR_SPEED, 0, CANVAS_WIDTH - CHAR_WIDTH);
+        nextX += CHAR_SPEED;
       }
+      nextX += charKickVxRef.current;
+      charKickVxRef.current *= WALL_JUMP_KICK_DECAY;
+      if (Math.abs(charKickVxRef.current) < 0.1) {
+        charKickVxRef.current = 0;
+      }
+
+      const prevX = charXRef.current;
+      const rawX = clamp(nextX, 0, CANVAS_WIDTH - CHAR_WIDTH);
+      const resolvedX = resolveHorizontalMove(
+        prevX,
+        rawX,
+        charYRef.current,
+        CHAR_WIDTH,
+        CHAR_HEIGHT,
+        landedRef.current
+      );
+
+      if (!groundedRef.current && input.right && rawX > prevX && resolvedX < rawX) {
+        wallSideRef.current = 'right';
+      } else if (!groundedRef.current && input.left && rawX < prevX && resolvedX > rawX) {
+        wallSideRef.current = 'left';
+      } else if (groundedRef.current) {
+        wallSideRef.current = null;
+      } else if (wallSideRef.current) {
+        wallSideRef.current = null;
+      }
+      charXRef.current = resolvedX;
 
       // Character vertical physics
       const wasGrounded = groundedRef.current;
       charVyRef.current += GRAVITY;
+
+      // Wall slide: clamp fall speed when sliding against a wall
+      if (wallSideRef.current && charVyRef.current < WALL_SLIDE_SPEED) {
+        charVyRef.current = WALL_SLIDE_SPEED;
+      }
+
       charYRef.current += charVyRef.current;
 
       const ground = surfaceHeightAt(charXRef.current, charXRef.current + CHAR_WIDTH, landedRef.current);
@@ -554,6 +620,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
           spawnLandingDust();
         }
         groundedRef.current = true;
+        wallSideRef.current = null;
         coyoteTimeRef.current = COYOTE_FRAMES;
       } else {
         groundedRef.current = false;
@@ -684,10 +751,16 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
         e.preventDefault();
         inputRef.current.left = false;
+        if (wallSideRef.current === 'left') {
+          wallSideRef.current = null;
+        }
       }
       if (e.code === 'ArrowRight' || e.code === 'KeyD') {
         e.preventDefault();
         inputRef.current.right = false;
+        if (wallSideRef.current === 'right') {
+          wallSideRef.current = null;
+        }
       }
     };
 

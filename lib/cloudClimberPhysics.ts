@@ -45,3 +45,29 @@ export function rectsOverlap(a: Rect, b: Rect): boolean {
   const bTop = b.y + b.height;
   return a.x < bRight && aRight > b.x && a.y < bTop && b.y < aTop;
 }
+
+/**
+ * Resolve horizontal movement against landed block sides.
+ * A block acts as a wall only when the character's feet are below the block's top surface
+ * (i.e., the character is not already standing on it) and the character vertically overlaps
+ * the block. Returns the clamped x position.
+ */
+export function resolveHorizontalMove(
+  currentX: number,
+  nextX: number,
+  charY: number,
+  charWidth: number,
+  charHeight: number,
+  landed: LandedBlock[]
+): number {
+  let resolvedX = nextX;
+  for (const b of landed) {
+    const blockTop = b.y + b.height;
+    if (charY >= blockTop) continue; // standing on/above it — not a wall
+    if (charY + charHeight <= b.y) continue; // fully below it — no vertical overlap
+    const overlapsX = resolvedX < b.x + b.width && resolvedX + charWidth > b.x;
+    if (!overlapsX) continue;
+    resolvedX = nextX > currentX ? b.x - charWidth : b.x + b.width;
+  }
+  return resolvedX;
+}

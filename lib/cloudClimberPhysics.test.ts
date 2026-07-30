@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clamp, surfaceHeightAt, rectsOverlap, type LandedBlock } from './cloudClimberPhysics';
+import { clamp, surfaceHeightAt, rectsOverlap, resolveHorizontalMove, type LandedBlock } from './cloudClimberPhysics';
 
 describe('clamp', () => {
   it('returns the value when inside the range', () => {
@@ -98,5 +98,37 @@ describe('rectsOverlap', () => {
   it('returns true for identical rectangles', () => {
     const a = { x: 3, y: 3, width: 7, height: 7 };
     expect(rectsOverlap(a, a)).toBe(true);
+  });
+});
+
+describe('resolveHorizontalMove', () => {
+  it('stops rightward movement at the left edge of a wall block', () => {
+    const landed: LandedBlock[] = [{ x: 50, y: 10, width: 40, height: 60, color: '#f472b6' }];
+    // Character (width 10, height 10, feet at y=5) is below the block top (y=10+60=70) and moving right into it.
+    expect(resolveHorizontalMove(30, 42, 5, 10, 10, landed)).toBe(40);
+  });
+
+  it('stops leftward movement at the right edge of a wall block', () => {
+    const landed: LandedBlock[] = [{ x: 10, y: 10, width: 40, height: 60, color: '#f472b6' }];
+    // Character is below the block top and moving left into it.
+    expect(resolveHorizontalMove(52, 40, 5, 10, 10, landed)).toBe(50);
+  });
+
+  it('does not block movement across a block the character is standing on', () => {
+    const landed: LandedBlock[] = [{ x: 50, y: 10, width: 40, height: 60, color: '#f472b6' }];
+    const blockTop = 70;
+    // Character's feet are at or above the block top, so it is standing on it.
+    expect(resolveHorizontalMove(55, 65, blockTop, 10, 10, landed)).toBe(65);
+    expect(resolveHorizontalMove(85, 75, blockTop, 10, 10, landed)).toBe(75);
+  });
+
+  it('does not block movement when the character is fully below the block', () => {
+    const landed: LandedBlock[] = [{ x: 50, y: 100, width: 40, height: 60, color: '#f472b6' }];
+    // Character feet at y=0, head at y=10, block bottom at 100 — no vertical overlap.
+    expect(resolveHorizontalMove(30, 60, 0, 10, 10, landed)).toBe(60);
+  });
+
+  it('returns the raw nextX when there are no landed blocks', () => {
+    expect(resolveHorizontalMove(10, 30, 0, 10, 10, [])).toBe(30);
   });
 });
