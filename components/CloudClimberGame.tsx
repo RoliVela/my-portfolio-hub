@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { playPopSound } from '@/lib/sfx';
 import { PopBurst, FallingDust, FallingDustOverlay } from '@/components/game/GameParticles';
+import { clamp, surfaceHeightAt, rectsOverlap, type LandedBlock } from '@/lib/cloudClimberPhysics';
 
 interface CloudClimberGameProps {
   onComplete?: () => void;
@@ -26,14 +27,6 @@ const FEET_PER_WORLD = 0.25;
 const HIGH_SCORE_KEY = 'cloud-climber-high-score';
 
 // ======================== Types ========================
-interface LandedBlock {
-  x: number;
-  width: number;
-  y: number; // bottom of the block in world-space (top surface is y + height)
-  height: number;
-  color: string;
-}
-
 interface FallingBlock {
   x: number;
   width: number;
@@ -60,20 +53,6 @@ function readStoredHighScore(): number {
     // ignore storage errors
   }
   return 0;
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function surfaceHeightAt(xStart: number, xEnd: number, landed: LandedBlock[]): number {
-  let maxY = 0; // the floor
-  for (const b of landed) {
-    if (b.x < xEnd && b.x + b.width > xStart) {
-      maxY = Math.max(maxY, b.y + b.height);
-    }
-  }
-  return maxY;
 }
 
 function randomRange(min: number, max: number) {
@@ -438,17 +417,17 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       }
 
       // Crush check (falling blocks vs character)
-      const charLeft = charXRef.current;
-      const charRight = charXRef.current + CHAR_WIDTH;
-      const charBottom = charYRef.current;
-      const charTop = charYRef.current + CHAR_HEIGHT;
+      const charRect = {
+        x: charXRef.current,
+        y: charYRef.current,
+        width: CHAR_WIDTH,
+        height: CHAR_HEIGHT,
+      };
       for (let i = 0; i < fallingRef.current.length; i += 1) {
         const block = fallingRef.current[i];
         if (!block) continue;
-        const blockTop = block.y + block.height;
-        const overlapX = block.x < charRight && block.x + block.width > charLeft;
-        const overlapY = block.y < charTop && blockTop > charBottom;
-        if (overlapX && overlapY) {
+        const blockRect = { x: block.x, y: block.y, width: block.width, height: block.height };
+        if (rectsOverlap(charRect, blockRect)) {
           playPopSound();
           spawnDust(15);
           setGameState('gameover');
