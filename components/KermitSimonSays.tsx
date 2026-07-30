@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAssetPath } from '@/lib/assets';
 import { playMeowSound } from '@/lib/sfx';
+import { PopBurst, FallingDust, FallingDustOverlay } from '@/components/game/GameParticles';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 type Phase = 'intro' | 'playing' | 'input' | 'success' | 'failure';
@@ -107,6 +108,11 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
   const [highScore, setHighScore] = useState(readStoredHighScore);
   const [celebrating, setCelebrating] = useState(false);
   const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
+  const [popEffects, setPopEffects] = useState<{ id: number; x: number; y: number }[]>([]);
+  const [dustParticles, setDustParticles] = useState<{ id: number; x: number; y: number; color: string }[]>([]);
+  const popIdRef = useRef(0);
+  const dustIdRef = useRef(0);
+  const kermitRef = useRef<HTMLDivElement>(null);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const round = Math.max(1, sequence.length);
@@ -174,6 +180,27 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
     return () => clearAllTimeouts();
   }, []);
 
+  const spawnPop = useCallback((x: number, y: number) => {
+    const id = popIdRef.current++;
+    setPopEffects((prev) => [...prev, { id, x, y }]);
+    setTimeout(() => {
+      setPopEffects((prev) => prev.filter((p) => p.id !== id));
+    }, 500);
+  }, []);
+
+  const spawnSuccessDust = useCallback(() => {
+    const fresh = Array.from({ length: 8 }).map(() => ({
+      id: dustIdRef.current++,
+      x: 20 + Math.random() * 60,
+      y: 10 + Math.random() * 30,
+      color: ['#fcd34d', '#f472b6', '#60a5fa', '#34d399', '#fb923c'][Math.floor(Math.random() * 5)] ?? '#fcd34d',
+    }));
+    setDustParticles((prev) => [...prev, ...fresh]);
+    setTimeout(() => {
+      setDustParticles((prev) => prev.filter((p) => !fresh.find((f) => f.id === p.id)));
+    }, 900);
+  }, []);
+
   const handleUserPress = useCallback(
     (direction: Direction) => {
       playMeowSound();
@@ -187,14 +214,17 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
         setConfetti([]);
         setMessage('Oops! Kermit got confused.');
         return;
-      }
-
-      setBounceKey((prev) => prev + 1);
-      setActiveDirection(direction);
-      queueTimeout(() => setActiveDirection(null), 550);
+      }        setBounceKey((prev) => prev + 1);
+        setActiveDirection(direction);
+        const container = kermitRef.current;
+        if (container) {
+          spawnPop(container.clientWidth / 2, container.clientHeight / 2);
+        }
+        queueTimeout(() => setActiveDirection(null), 550);
 
       const nextIndex = inputIndex + 1;
       if (nextIndex >= sequence.length) {
+        spawnSuccessDust();
         const nextSequence: Direction[] = [...sequence, getRandomDirection()];
         const nextRound = nextSequence.length;
         setSequence(nextSequence);
@@ -211,7 +241,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
         setInputIndex(nextIndex);
       }
     },
-    [phase, inputIndex, sequence, playSequence]
+    [phase, inputIndex, sequence, playSequence, spawnPop, spawnSuccessDust]
   );
 
   useEffect(() => {
@@ -253,6 +283,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
 
       <div className="relative">
         <motion.div
+          ref={kermitRef}
           key={bounceKey}
           className="relative h-48 w-48 will-change-transform md:h-64 md:w-64"
           initial={{ x: 0, y: 0 }}
@@ -295,6 +326,14 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
               </div>
             )}
           </AnimatePresence>
+          {popEffects.map((effect) => (
+            <PopBurst key={effect.id} id={effect.id} x={effect.x} y={effect.y} />
+          ))}
+          <FallingDustOverlay>
+            {dustParticles.map((p) => (
+              <FallingDust key={p.id} id={p.id} x={p.x} y={p.y} color={p.color} />
+            ))}
+          </FallingDustOverlay>
         </motion.div>
 
         <AnimatePresence>

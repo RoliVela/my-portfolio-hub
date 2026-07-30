@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { playPopSound } from '@/lib/sfx';
 import FlyTrapMouth from '@/components/game/FlyTrapMouth';
-import { PopBurst, FallingDust, FallingDustOverlay, GameParticleStyles } from '@/components/game/GameParticles';
+import { PopBurst, FallingDust, FallingDustOverlay } from '@/components/game/GameParticles';
 
 interface VenusFlyTrapGameProps {
   onComplete?: () => void;
@@ -486,7 +486,6 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
         </div>
       )}
 
-      <GameParticleStyles />
     </div>
   );
 }

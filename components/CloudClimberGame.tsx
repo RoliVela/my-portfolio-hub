@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { playPopSound } from '@/lib/sfx';
+import { PopBurst, FallingDust, FallingDustOverlay } from '@/components/game/GameParticles';
 
 interface CloudClimberGameProps {
   onComplete?: () => void;
@@ -55,6 +56,11 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
   const [gameState, setGameState] = useState<'playing' | 'gameover'>('playing');
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(readStoredHighScore);
+  const [popEffects, setPopEffects] = useState<{ id: number; x: number; y: number }[]>([]);
+  const [dustParticles, setDustParticles] = useState<{ id: number; x: number; y: number; color: string }[]>([]);
+  const popIdRef = useRef(0);
+  const dustIdRef = useRef(0);
+  const marshmallowPosRef = useRef({ x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT - 80 });
 
   const laneStacksRef = useRef<number[]>(new Array(LANE_COUNT).fill(0));
   const blocksRef = useRef<FallingBlock[]>([]);
@@ -96,7 +102,30 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     scoreRef.current = 0;
     setScore(0);
     setGameState('playing');
+    setPopEffects([]);
+    setDustParticles([]);
     playPopSound();
+  }, []);
+
+  const spawnPop = useCallback((x: number, y: number) => {
+    const id = popIdRef.current++;
+    setPopEffects((prev) => [...prev, { id, x, y }]);
+    setTimeout(() => {
+      setPopEffects((prev) => prev.filter((p) => p.id !== id));
+    }, 500);
+  }, []);
+
+  const spawnDust = useCallback((count = 12) => {
+    const fresh = Array.from({ length: count }).map(() => ({
+      id: dustIdRef.current++,
+      x: Math.random() * 100,
+      y: Math.random() * 10,
+      color: ['#fde047', '#f472b6', '#60a5fa', '#34d399', '#fb923c'][Math.floor(Math.random() * 5)] ?? '#fde047',
+    }));
+    setDustParticles((prev) => [...prev, ...fresh]);
+    setTimeout(() => {
+      setDustParticles((prev) => prev.filter((p) => !fresh.find((f) => f.id === p.id)));
+    }, 900);
   }, []);
 
   const moveLeft = useCallback(() => {
@@ -107,8 +136,10 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       targetLaneRef.current = target;
       laneProgressRef.current = 0;
       playPopSound();
+      const pos = marshmallowPosRef.current;
+      spawnPop(pos.x, pos.y);
     }
-  }, []);
+  }, [spawnPop]);
 
   const moveRight = useCallback(() => {
     if (gameStateRef.current !== 'playing') return;
@@ -118,8 +149,10 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       targetLaneRef.current = target;
       laneProgressRef.current = 0;
       playPopSound();
+      const pos = marshmallowPosRef.current;
+      spawnPop(pos.x, pos.y);
     }
-  }, []);
+  }, [spawnPop]);
 
   // ======================== Canvas game loop ========================
   useEffect(() => {
@@ -164,6 +197,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
           if (block.lane === playerLaneRef.current) {
             // Crushed!
             playPopSound();
+            spawnDust(15);
             setGameState('gameover');
             saveHighScore(scoreRef.current);
             return;
@@ -208,6 +242,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       const playerStackTop = laneStacksRef.current[playerLaneRef.current] * BLOCK_SIZE;
       if (playerStackTop <= lavaYRef.current) {
         playPopSound();
+        spawnDust(15);
         setGameState('gameover');
         saveHighScore(scoreRef.current);
         return;
@@ -306,6 +341,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       const bounce = Math.sin(time * BOUNCE_SPEED) * BOUNCE_AMPLITUDE;
       const bottomY = stackTop + bounce;
       const y = CANVAS_HEIGHT - (bottomY + MARSHMALLOW_SIZE - cameraYRef.current);
+      marshmallowPosRef.current = { x: centerX, y: y + MARSHMALLOW_SIZE / 2 };
 
       const x = centerX - MARSHMALLOW_SIZE / 2;
       const size = MARSHMALLOW_SIZE;
@@ -331,7 +367,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [gameState, saveHighScore]);
+  }, [gameState, saveHighScore, spawnDust]);
 
   // ======================== Keyboard controls ========================
   useEffect(() => {
@@ -375,6 +411,16 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
           className="w-full max-w-[400px] cursor-pointer rounded bg-purple-900"
           aria-label="Cloud Climber game canvas. Use left/right arrows or A/D to move between lanes."
         />
+        {popEffects.map((effect) => (
+          <PopBurst key={effect.id} id={effect.id} x={effect.x} y={effect.y} />
+        ))}
+        {gameState === 'gameover' && (
+          <FallingDustOverlay>
+            {dustParticles.map((p) => (
+              <FallingDust key={p.id} id={p.id} x={p.x} y={p.y} color={p.color} />
+            ))}
+          </FallingDustOverlay>
+        )}
         {gameState === 'gameover' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
             <p className="font-vt323 text-4xl text-pink-200">Game Over</p>

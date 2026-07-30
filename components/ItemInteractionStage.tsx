@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { RoomObject } from '@/lib/roomData';
+import { GameParticleStyles } from './game/GameParticles';
 import CalculatorInteraction from './CalculatorInteraction';
 import ClockInteraction from './ClockInteraction';
 import ComputerUnlockedInteraction from './ComputerUnlockedInteraction';
@@ -63,61 +64,6 @@ export default function ItemInteractionStage({
     onComplete?.();
   };
 
-  if (obj.id === 'OBJ_14' && selectedTimezone && onTimezoneChange) {
-    return <ClockInteraction selectedTimezone={selectedTimezone} onTimezoneChange={onTimezoneChange} />;
-  }
-
-  if (obj.id === 'OBJ_15') {
-    return <NeeDohInteraction />;
-  }
-
-  if (obj.id === 'OBJ_03' || obj.id === 'OBJ_04' || obj.id === 'OBJ_06') {
-    return <WateringGame onComplete={onComplete} onSuccess={onToggle} plantName={obj.assetName} />;
-  }
-
-  if (obj.id === 'OBJ_05') {
-    return <VenusFlyTrapGame onComplete={onComplete} onSuccess={onToggle} />;
-  }
-
-  if (obj.id === 'OBJ_21') {
-    return <CloudClimberGame onComplete={onComplete} />;
-  }
-
-  if (obj.id === 'OBJ_11') {
-    return <CalculatorInteraction onComplete={onComplete} onUnlock={onUnlockComputer} />;
-  }
-
-  if (obj.id === 'OBJ_16') {
-    return isComputerUnlocked ? <ComputerUnlockedInteraction /> : <DinoGame onComplete={onComplete} />;
-  }
-
-  if (obj.id === 'OBJ_17') {
-    return <SuggestionBoxInteraction onComplete={handleInteract} />;
-  }
-
-  if (obj.id === 'OBJ_20') {
-    return <PosterboardInteraction />;
-  }
-
-  if (obj.id === 'OBJ_22') {
-    return <BookshelfInteraction />;
-  }
-
-  if (obj.id === 'OBJ_13') {
-    return <KermitSimonSays onComplete={handleInteract} />;
-  }
-
-  if (obj.id === 'OBJ_18') {
-    return (
-      <JukeboxInteraction
-        currentTrack={currentJukeboxTrack ?? null}
-        isPlaying={isJukeboxPlaying ?? false}
-        onTrackSelect={onJukeboxTrackSelect ?? (() => {})}
-        onTogglePlay={onJukeboxToggle ?? (() => {})}
-      />
-    );
-  }
-
   const handleActivate = () => {
     onToggle?.();
     setActivated(true);
@@ -127,33 +73,97 @@ export default function ItemInteractionStage({
     handleInteract();
   };
 
+  const renderContent = () => {
+    if (obj.id === 'OBJ_14' && selectedTimezone && onTimezoneChange) {
+      return <ClockInteraction selectedTimezone={selectedTimezone} onTimezoneChange={onTimezoneChange} />;
+    }
+
+    if (obj.id === 'OBJ_15') {
+      return <NeeDohInteraction />;
+    }
+
+    if (obj.id === 'OBJ_03' || obj.id === 'OBJ_04' || obj.id === 'OBJ_06') {
+      return <WateringGame onComplete={onComplete} onSuccess={onToggle} plantName={obj.assetName} />;
+    }
+
+    if (obj.id === 'OBJ_05') {
+      return <VenusFlyTrapGame onComplete={onComplete} onSuccess={onToggle} />;
+    }
+
+    if (obj.id === 'OBJ_21') {
+      return <CloudClimberGame onComplete={onComplete} />;
+    }
+
+    if (obj.id === 'OBJ_11') {
+      return <CalculatorInteraction onComplete={onComplete} onUnlock={onUnlockComputer} />;
+    }
+
+    if (obj.id === 'OBJ_16') {
+      return isComputerUnlocked ? <ComputerUnlockedInteraction /> : <DinoGame onComplete={onComplete} />;
+    }
+
+    if (obj.id === 'OBJ_17') {
+      return <SuggestionBoxInteraction onComplete={handleInteract} />;
+    }
+
+    if (obj.id === 'OBJ_20') {
+      return <PosterboardInteraction />;
+    }
+
+    if (obj.id === 'OBJ_22') {
+      return <BookshelfInteraction />;
+    }
+
+    if (obj.id === 'OBJ_13') {
+      return <KermitSimonSays onComplete={handleInteract} />;
+    }
+
+    if (obj.id === 'OBJ_18') {
+      return (
+        <JukeboxInteraction
+          currentTrack={currentJukeboxTrack ?? null}
+          isPlaying={isJukeboxPlaying ?? false}
+          onTrackSelect={onJukeboxTrackSelect ?? (() => {})}
+          onTogglePlay={onJukeboxToggle ?? (() => {})}
+        />
+      );
+    }
+
+    return (
+      <div className="flex flex-col items-center gap-4">
+        <p className="font-vt323 text-xl text-white/80">
+          {obj.toggleKey ? `Use the ${obj.assetName}?` : `Nothing more to do with the ${obj.assetName}.`}
+        </p>
+        {obj.toggleKey ? (
+          <button
+            type="button"
+            onClick={handleActivate}
+            disabled={activated}
+            className={`rounded px-6 py-2 font-vt323 text-xl text-black transition ${
+              activated
+                ? 'bg-gray-500/50 text-white/70 opacity-60'
+                : 'bg-white hover:bg-gray-200'
+            }`}
+          >
+            {activated ? 'Activated' : 'Activate'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleDone}
+            className="rounded bg-white px-6 py-2 font-vt323 text-xl text-black transition hover:bg-gray-200"
+          >
+            Done
+          </button>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div className="flex flex-col items-center gap-4">
-      <p className="font-vt323 text-xl text-white/80">
-        {obj.toggleKey ? `Use the ${obj.assetName}?` : `Nothing more to do with the ${obj.assetName}.`}
-      </p>
-      {obj.toggleKey ? (
-        <button
-          type="button"
-          onClick={handleActivate}
-          disabled={activated}
-          className={`rounded px-6 py-2 font-vt323 text-xl text-black transition ${
-            activated
-              ? 'bg-gray-500/50 text-white/70 opacity-60'
-              : 'bg-white hover:bg-gray-200'
-          }`}
-        >
-          {activated ? 'Activated' : 'Activate'}
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={handleDone}
-          className="rounded bg-white px-6 py-2 font-vt323 text-xl text-black transition hover:bg-gray-200"
-        >
-          Done
-        </button>
-      )}
-    </div>
+    <>
+      <GameParticleStyles />
+      {renderContent()}
+    </>
   );
 }

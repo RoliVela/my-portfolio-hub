@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { playPopSound } from '@/lib/sfx';
+import { PopBurst, FallingDust, FallingDustOverlay } from '@/components/game/GameParticles';
 
 interface DinoGameProps {
   onComplete?: () => void;
@@ -49,8 +50,12 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState<number>(() => readStoredDinoHighScore());
   const [isPlaying, setIsPlaying] = useState(true);
+  const [popEffects, setPopEffects] = useState<{ id: number; x: number; y: number }[]>([]);
+  const [dustParticles, setDustParticles] = useState<{ id: number; x: number; y: number; color: string }[]>([]);
 
   const dinoYRef = useRef(GROUND_Y - DINO_SIZE);
+  const popIdRef = useRef(0);
+  const dustIdRef = useRef(0);
   const dinoVyRef = useRef(0);
   const isJumpingRef = useRef(false);
   const isDuckingRef = useRef(false);
@@ -74,6 +79,29 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     setScore(0);
     setGameOver(false);
     setIsPlaying(true);
+    setPopEffects([]);
+    setDustParticles([]);
+  }, []);
+
+  const spawnPop = useCallback((x: number, y: number) => {
+    const id = popIdRef.current++;
+    setPopEffects((prev) => [...prev, { id, x, y }]);
+    setTimeout(() => {
+      setPopEffects((prev) => prev.filter((p) => p.id !== id));
+    }, 500);
+  }, []);
+
+  const spawnDust = useCallback((x: number, count = 6) => {
+    const fresh = Array.from({ length: count }).map(() => ({
+      id: dustIdRef.current++,
+      x: (x / CANVAS_WIDTH) * 100 + (Math.random() - 0.5) * 10,
+      y: 70 + Math.random() * 20,
+      color: ['#fde047', '#f472b6', '#60a5fa', '#34d399', '#fb923c'][Math.floor(Math.random() * 5)] ?? '#fde047',
+    }));
+    setDustParticles((prev) => [...prev, ...fresh]);
+    setTimeout(() => {
+      setDustParticles((prev) => prev.filter((p) => !fresh.find((f) => f.id === p.id)));
+    }, 900);
   }, []);
 
   const startJump = useCallback(() => {
@@ -84,8 +112,9 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     if (!isJumpingRef.current) {
       dinoVyRef.current = JUMP_STRENGTH;
       isJumpingRef.current = true;
+      spawnPop(DINO_X + DINO_SIZE / 2, GROUND_Y);
     }
-  }, [resetGame]);
+  }, [resetGame, spawnPop]);
 
   const startDuck = useCallback(() => {
     isDuckingRef.current = true;
@@ -341,6 +370,9 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
         dinoYRef.current += dinoVyRef.current;
 
         if (dinoYRef.current >= GROUND_Y - DINO_SIZE) {
+          if (isJumpingRef.current) {
+            spawnDust(DINO_X + DINO_SIZE / 2, 6);
+          }
           dinoYRef.current = GROUND_Y - DINO_SIZE;
           dinoVyRef.current = 0;
           isJumpingRef.current = false;
@@ -386,6 +418,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
           gameOverRef.current = true;
           setGameOver(true);
           setIsPlaying(false);
+          spawnPop(DINO_X + DINO_SIZE / 2, dinoYRef.current + DINO_SIZE / 2);
           if (scoreRef.current > highScoreRef.current) {
             highScoreRef.current = Math.floor(scoreRef.current);
             setHighScore(highScoreRef.current);
@@ -407,7 +440,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [isPlaying]);
+  }, [isPlaying, spawnDust, spawnPop]);
 
   return (
     <div className="flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-pink-300 bg-purple-950 p-6 shadow-[0_0_0_4px_#000]">
@@ -436,6 +469,14 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
             <p className="font-vt323 text-sm text-pink-100/60">Press Space or click to restart</p>
           </div>
         )}
+        {popEffects.map((effect) => (
+          <PopBurst key={effect.id} id={effect.id} x={effect.x} y={effect.y} />
+        ))}
+        <FallingDustOverlay>
+          {dustParticles.map((p) => (
+            <FallingDust key={p.id} id={p.id} x={p.x} y={p.y} color={p.color} />
+          ))}
+        </FallingDustOverlay>
       </div>
 
       <div className="flex w-full flex-wrap items-center justify-center gap-4">
