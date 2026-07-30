@@ -110,7 +110,7 @@ function saveVisitorBook(entry: BookEntry) {
   }
 }
 
-function StretchedTitle({
+function CenteredTitle({
   title,
   fontSize,
   availableHeight,
@@ -120,7 +120,7 @@ function StretchedTitle({
   availableHeight: number;
 }) {
   const spanRef = useRef<HTMLSpanElement>(null);
-  const [letterSpacing, setLetterSpacing] = useState(0);
+  const [offset, setOffset] = useState(0);
 
   useLayoutEffect(() => {
     const el = spanRef.current;
@@ -128,15 +128,14 @@ function StretchedTitle({
     el.style.letterSpacing = '0px';
     const naturalHeight = el.scrollHeight;
     const extra = Math.max(0, availableHeight - naturalHeight);
-    const gaps = Math.max(1, title.length - 1);
-    setLetterSpacing(extra / gaps);
+    setOffset(extra / 2);
   }, [title, fontSize, availableHeight]);
 
   return (
     <span
       ref={spanRef}
       className="truncate font-vt323 leading-none text-white [writing-mode:vertical-rl]"
-      style={{ fontSize, letterSpacing }}
+      style={{ fontSize, display: 'inline-block', marginTop: offset }}
       title={title}
     >
       {title}
@@ -221,7 +220,7 @@ export default function BookshelfInteraction() {
                     {item.author}
                   </span>
                   <div className="flex flex-1 w-full items-start justify-center overflow-hidden py-2">
-                    <StretchedTitle
+                    <CenteredTitle
                       title={item.title}
                       fontSize={item.fontSize}
                       availableHeight={item.height - TITLE_AREA_OVERHEAD}
