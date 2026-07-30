@@ -62,6 +62,21 @@ describe('surfaceHeightAt', () => {
     expect(surfaceHeightAt(0, 0, blocks)).toBe(0);
     expect(surfaceHeightAt(100, 100, blocks)).toBe(0);
   });
+
+  it('ignores blocks that only barely graze the query interval horizontally', () => {
+    const blocks: LandedBlock[] = [{ x: 50, y: 20, width: 60, height: 30, color: '#f472b6' }];
+    // Query [49, 50] touches the block edge (overlap 0)
+    expect(surfaceHeightAt(49, 50, blocks)).toBe(0);
+    // Query [48, 50] still touches the block edge (overlap 0)
+    expect(surfaceHeightAt(48, 50, blocks)).toBe(0);
+    // Query [47, 53] overlaps the block by 3px -> counted
+    expect(surfaceHeightAt(47, 53, blocks)).toBe(50);
+  });
+
+  it('still counts blocks with meaningful horizontal overlap', () => {
+    const blocks: LandedBlock[] = [{ x: 50, y: 20, width: 60, height: 30, color: '#f472b6' }];
+    expect(surfaceHeightAt(55, 90, blocks)).toBe(50);
+  });
 });
 
 describe('rectsOverlap', () => {

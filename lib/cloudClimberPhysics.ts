@@ -17,6 +17,8 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+const MIN_SURFACE_OVERLAP = 2; // px: ignore blocks that barely graze the character horizontally
+
 /**
  * Returns the highest surface (top) among all landed blocks that overlap the
  * horizontal interval [xStart, xEnd]. Falls back to 0 (the floor).
@@ -26,9 +28,10 @@ export function surfaceHeightAt(xStart: number, xEnd: number, landed: LandedBloc
   if (xStart >= xEnd) return 0;
   let maxY = 0; // the floor
   for (const b of landed) {
-    if (b.x < xEnd && b.x + b.width > xStart) {
-      maxY = Math.max(maxY, b.y + b.height);
-    }
+    const overlapLeft = Math.max(b.x, xStart);
+    const overlapRight = Math.min(b.x + b.width, xEnd);
+    if (overlapRight - overlapLeft <= MIN_SURFACE_OVERLAP) continue;
+    maxY = Math.max(maxY, b.y + b.height);
   }
   return maxY;
 }
