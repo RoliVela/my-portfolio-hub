@@ -161,34 +161,44 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
 
     const drawSky = () => {
       const gradient = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
-      gradient.addColorStop(0, '#4a1d4a');
-      gradient.addColorStop(1, '#2d1b4e');
+      gradient.addColorStop(0, '#2c1445');
+      gradient.addColorStop(1, '#1a0b2e');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, CANVAS_WIDTH, GROUND_Y);
+
+      // Twinkling, slow-scrolling stars
+      ctx.fillStyle = '#fbcfe8';
+      for (let i = 0; i < 30; i += 1) {
+        const starX = ((i * 47 - frameRef.current * 0.2) % CANVAS_WIDTH);
+        const x = starX < 0 ? starX + CANVAS_WIDTH : starX;
+        const y = (i * 93) % (GROUND_Y - 40);
+        if (Math.sin(frameRef.current * 0.05 + i) > -0.5) {
+          ctx.fillRect(x, y, 2, 2);
+        }
+      }
     };
 
     const drawSun = () => {
-      const cx = CANVAS_WIDTH - 60;
-      const cy = 40;
-      const px = 4;
+      const cx = CANVAS_WIDTH - 80;
+      const cy = 60;
+      const radius = 30;
 
-      ctx.fillStyle = '#f9a8d4';
-      // Stepped blocky core
-      ctx.fillRect(cx - px * 3, cy - px * 4, px * 6, px * 8);
-      ctx.fillRect(cx - px * 4, cy - px * 3, px * 8, px * 6);
-      ctx.fillRect(cx - px * 2, cy - px * 2, px * 4, px * 4);
+      // Synthwave gradient sun
+      const sunGrad = ctx.createLinearGradient(0, cy - radius, 0, cy + radius);
+      sunGrad.addColorStop(0, '#f9a8d4');
+      sunGrad.addColorStop(1, '#fde047');
+      ctx.fillStyle = sunGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fill();
 
-      // Rays as small squares
-      ctx.fillStyle = '#fbcfe8';
-      const rays = [
-        { x: 0, y: -5 }, { x: 0, y: 4 },
-        { x: -5, y: 0 }, { x: 4, y: 0 },
-        { x: -4, y: -4 }, { x: 4, y: -4 },
-        { x: -4, y: 3 }, { x: 4, y: 3 },
-      ];
-      rays.forEach((r) => {
-        ctx.fillRect(cx + r.x * px, cy + r.y * px, px, px);
-      });
+      // Horizontal retro cuts
+      ctx.fillStyle = '#2c1445';
+      for (let i = 0; i < 5; i += 1) {
+        const yCut = cy + 5 + i * 6;
+        const cutHeight = i + 1;
+        ctx.fillRect(cx - radius, yCut, radius * 2, cutHeight);
+      }
     };
 
     const drawClouds = () => {
@@ -204,27 +214,41 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       });
     };
 
+    const drawMountains = () => {
+      ctx.fillStyle = '#3a1c4a';
+      const mountOffset = (frameRef.current * speedRef.current * 0.3) % 100;
+      for (let x = -mountOffset; x < CANVAS_WIDTH; x += 100) {
+        ctx.beginPath();
+        ctx.moveTo(x, GROUND_Y);
+        ctx.lineTo(x + 50, GROUND_Y - 40);
+        ctx.lineTo(x + 100, GROUND_Y);
+        ctx.fill();
+      }
+    };
+
     const drawGround = () => {
-      ctx.fillStyle = '#1e1224';
+      ctx.fillStyle = '#100914';
       ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y);
-      ctx.strokeStyle = '#701a75';
-      ctx.lineWidth = 2;
+
+      // Neon horizon line
+      ctx.strokeStyle = '#c026d3';
+      ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(0, GROUND_Y);
       ctx.lineTo(CANVAS_WIDTH, GROUND_Y);
       ctx.stroke();
 
-      ctx.fillStyle = '#701a75';
+      // Scrolling ground texture
+      ctx.fillStyle = '#a21caf';
       const offset = (frameRef.current * speedRef.current) % 40;
       for (let x = -offset; x < CANVAS_WIDTH; x += 40) {
-        ctx.fillRect(x + 20, GROUND_Y + 10, 6, 3);
+        ctx.fillRect(x + 10, GROUND_Y + 5, 8, 2);
+        ctx.fillRect(x + 25, GROUND_Y + 15, 4, 2);
+        ctx.fillRect(x + 5, GROUND_Y + 25, 12, 2);
       }
     };
 
-    const drawDino = () => {
-      const x = DINO_X;
-      const y = dinoYRef.current;
-      const ducking = isDuckingRef.current;
+    const drawDinoSprite = (x: number, y: number, ducking: boolean) => {
       const bodyHeight = ducking ? DINO_SIZE * 0.6 : DINO_SIZE;
       const yOffset = DINO_SIZE - bodyHeight;
 
@@ -258,6 +282,12 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       drawBlock(x, y + 16 + yOffset, 8, 8, SKIN_SHADOW);
       drawBlock(x - 6, y + 18 + yOffset, 6, 6, SKIN_SHADOW);
 
+      // Back spikes
+      ctx.fillStyle = SKIN_SHADOW;
+      ctx.fillRect(x + 10, y + 6 + yOffset, 4, 4);
+      ctx.fillRect(x + 14, y + 8 + yOffset, 4, 4);
+      ctx.fillRect(x + 18, y + 6 + yOffset, 4, 4);
+
       // Legs
       const legOffset = Math.floor(frameRef.current / 10) % 2 === 0 ? 0 : 4;
       if (ducking) {
@@ -269,17 +299,50 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       }
     };
 
+    const drawDino = () => {
+      const x = DINO_X;
+      const y = dinoYRef.current;
+      const ducking = isDuckingRef.current;
+
+      // Speed trail ghosts
+      if (speedRef.current > BASE_SPEED + 2 && !gameOverRef.current) {
+        ctx.save();
+        ctx.globalAlpha = 0.25;
+        const trailOffset = speedRef.current * 1.5;
+        drawDinoSprite(x - trailOffset, y, ducking);
+        ctx.restore();
+      }
+
+      drawDinoSprite(x, y, ducking);
+    };
+
     const drawCactus = (obstacle: Obstacle) => {
       const { x, y, width, height } = obstacle;
-      ctx.fillStyle = '#a21caf';
+      const OUTLINE = '#1e1224';
+      const MAIN = '#a21caf';
+      const SHADOW = '#701a75';
+      const HIGHLIGHT = '#d946ef';
 
-      ctx.fillRect(x + width * 0.35, y, width * 0.3, height);
-      ctx.fillRect(x, y + height * 0.3, width * 0.35, height * 0.15);
-      ctx.fillRect(x, y + height * 0.2, width * 0.15, height * 0.3);
-      ctx.fillRect(x + width * 0.65, y + height * 0.4, width * 0.35, height * 0.15);
-      ctx.fillRect(x + width * 0.85, y + height * 0.3, width * 0.15, height * 0.3);
+      const drawBlock = (bx: number, by: number, bw: number, bh: number, color: string) => {
+        ctx.fillStyle = OUTLINE;
+        ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+        ctx.fillStyle = color;
+        ctx.fillRect(bx, by, bw, bh);
+      };
 
-      ctx.fillStyle = '#701a75';
+      // Main trunk with highlight
+      drawBlock(x + width * 0.35, y, width * 0.3, height, MAIN);
+      ctx.fillStyle = HIGHLIGHT;
+      ctx.fillRect(x + width * 0.35 + 2, y + 2, width * 0.1, height - 4);
+
+      // Arms
+      drawBlock(x, y + height * 0.3, width * 0.35, height * 0.15, MAIN);
+      drawBlock(x, y + height * 0.2, width * 0.15, height * 0.3, MAIN);
+      drawBlock(x + width * 0.65, y + height * 0.4, width * 0.35, height * 0.15, MAIN);
+      drawBlock(x + width * 0.85, y + height * 0.3, width * 0.15, height * 0.3, MAIN);
+
+      // Ground shadow
+      ctx.fillStyle = SHADOW;
       ctx.fillRect(x + width * 0.35, y + height, width * 0.3, 3);
     };
 
@@ -364,6 +427,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
         drawSky();
         drawSun();
         drawClouds();
+        drawMountains();
         drawGround();
 
         dinoVyRef.current += GRAVITY;
