@@ -158,6 +158,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
   const coyoteTimeRef = useRef(0);
   const wallSideRef = useRef<'left' | 'right' | null>(null);
   const charKickVxRef = useRef(0);
+  const wallSlideDustTimerRef = useRef(0);
 
   const updateHighScore = useCallback((value: number) => {
     if (value > highScoreRef.current) {
@@ -194,6 +195,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     coyoteTimeRef.current = 0;
     wallSideRef.current = null;
     charKickVxRef.current = 0;
+    wallSlideDustTimerRef.current = 0;
     setScore(0);
     setGameState('playing');
     setPopEffects([]);
@@ -250,6 +252,25 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
         life: 18,
         maxLife: 18,
         size: randomRange(2, 5),
+      });
+    }
+  }, []);
+
+  const spawnWallSlideDust = useCallback(() => {
+    const sideX = wallSideRef.current === 'right'
+      ? charXRef.current + CHAR_WIDTH
+      : charXRef.current;
+    const sideY = charYRef.current + CHAR_HEIGHT * 0.5;
+    const outward = wallSideRef.current === 'right' ? 1 : -1;
+    for (let i = 0; i < 4; i += 1) {
+      puffsRef.current.push({
+        x: sideX + randomRange(-3, 3),
+        y: sideY + randomRange(-CHAR_HEIGHT * 0.3, CHAR_HEIGHT * 0.3),
+        vx: randomRange(0, 2) * outward,
+        vy: randomRange(-1, 1),
+        life: 12,
+        maxLife: 12,
+        size: randomRange(1.5, 3),
       });
     }
   }, []);
@@ -609,6 +630,17 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
         charVyRef.current = WALL_SLIDE_SPEED;
       }
 
+      // Spawn dust trail while wall-sliding
+      if (wallSideRef.current && !groundedRef.current) {
+        wallSlideDustTimerRef.current -= 1;
+        if (wallSlideDustTimerRef.current <= 0) {
+          spawnWallSlideDust();
+          wallSlideDustTimerRef.current = 6;
+        }
+      } else {
+        wallSlideDustTimerRef.current = 0;
+      }
+
       charYRef.current += charVyRef.current;
 
       const ground = surfaceHeightAt(charXRef.current, charXRef.current + CHAR_WIDTH, landedRef.current);
@@ -722,7 +754,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [gameState, saveHighScore, spawnDust, spawnLandingDust, updateHighScore]);
+  }, [gameState, saveHighScore, spawnDust, spawnLandingDust, spawnWallSlideDust, updateHighScore]);
 
   // ======================== Keyboard controls ========================
   useEffect(() => {
