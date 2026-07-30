@@ -17,11 +17,11 @@ const WATER_TARGET_MAX = 80;
 const TARGET_BUG_COUNT = 5;
 const BUG_SPAWN_INTERVAL_MS = 1200;
 const BUG_LIFETIME_MS = 8000;
+const BUG_WARNING_MS = 1500;
 const BUG_SPEED = 0.7;
 
 const NUTRIENT_TARGET = 30;
 const NUTRIENT_MASH_AMOUNT = 1;
-const NUTRIENT_DECAY = 0.15; // per frame at 60fps
 
 // ======================== Types ========================
 type Phase = 'water' | 'bugs' | 'nutrients' | 'result';
@@ -34,11 +34,29 @@ interface Bug {
   vx: number;
   vy: number;
   bornAt: number;
+  warning: boolean;
+}
+
+interface PopEffect {
+  id: number;
+  x: number;
+  y: number;
+}
+
+interface DustParticle {
+  id: number;
+  x: number;
+  y: number;
+  color: string;
 }
 
 // ======================== Helpers ========================
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
+}
+
+function randomRange(min: number, max: number) {
+  return Math.random() * (max - min) + min;
 }
 
 export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrapGameProps) {
@@ -61,7 +79,12 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
   // Nutrients phase
   const [nutrientLevel, setNutrientLevel] = useState(0);
   const nutrientRef = useRef(0);
-  const nutrientRafRef = useRef<number | null>(null);
+
+  // Visual FX
+  const [popEffects, setPopEffects] = useState<PopEffect[]>([]);
+  const popIdRef = useRef(0);
+  const [dustParticles, setDustParticles] = useState<DustParticle[]>([]);
+  const dustIdRef = useRef(0);
 
   // Success is reported only once so the toggle isn't flipped back and forth
   const successReportedRef = useRef(false);
@@ -131,6 +154,7 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
       vx: Math.cos(angle) * BUG_SPEED,
       vy: Math.sin(angle) * BUG_SPEED * 0.4,
       bornAt: Date.now(),
+      warning: false,
     };
     bugsRef.current = [...bugsRef.current, bug];
     setBugs(bugsRef.current);
@@ -141,20 +165,36 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
     setBugs(bugsRef.current);
   }, []);
 
-  const catchNearestBug = useCallback(() => {
-    if (phase !== 'bugs' || bugsRef.current.length === 0) return;
-    const area = bugsAreaRef.current;
-    const width = area?.clientWidth ?? 320;
-    const centerX = width / 2;
-    const nearest = bugsRef.current.reduce((closest, bug) => {
-      const closestDist = Math.abs(closest.x - centerX);
-      const bugDist = Math.abs(bug.x - centerX);
-      return bugDist < closestDist ? bug : closest;
-    }, bugsRef.current[0]);
+  const spawnPop = useCallback((x: number, y: number) => {
+    const id = popIdRef.current++;
+    const effect = { id, x, y };
+    setPopEffects((prev) => [...prev, effect]);
+    window.setTimeout(() => {
+      setPopEffects((prev) => prev.filter((p) => p.id !== id));
+    }, 500);
+  }, []);
 
-    if (nearest) {
-      removeBugById(nearest.id);
+  const spawnDust = useCallback((count: number) => {
+    const fresh: DustParticle[] = [];
+    for (let i = 0; i < count; i += 1) {
+      fresh.push({
+        id: dustIdRef.current++,
+        x: randomRange(15, 85),
+        y: randomRange(0, 20),
+        color: ['#fcd34d', '#fbbf24', '#f59e0b', '#d97706'][Math.floor(Math.random() * 4)] ?? '#fbbf24',
+      });
+    }
+    setDustParticles((prev) => [...prev, ...fresh]);
+    window.setTimeout(() => {
+      setDustParticles((prev) => prev.filter((p) => !fresh.find((f) => f.id === p.id)));
+    }, 900);
+  }, []);
+
+  const handleCatchBug = useCallback(
+    (bug: Bug) => {
+      removeBugById(bug.id);
       playPopSound();
+      spawnPop(bug.x + 12, bug.y + 12);
       setCaughtBugs((prev) => {
         const next = prev + 1;
         caughtBugsRef.current = next;
@@ -163,8 +203,9 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
         }
         return next;
       });
-    }
-  }, [phase, removeBugById]);
+    },
+    [removeBugById, spawnPop]
+  );
 
   useEffect(() => {
     if (phase !== 'bugs') return;
@@ -188,27 +229,32 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
 
       bugsRef.current = bugsRef.current
         .map((bug) => {
-          let nextX = bug.x + bug.vx;
-          let nextY = bug.y + bug.vy;
-          let nextVx = bug.vx;
-          let nextVy = bug.vy;
+          // Constant subtle jitter
+          let nextVx = bug.vx + (Math.random() - 0.5) * 0.35;
+          let nextVy = bug.vy + (Math.random() - 0.5) * 0.2;
+          nextVx = clamp(nextVx, -BUG_SPEED * 1.5, BUG_SPEED * 1.5);
+          nextVy = clamp(nextVy, -BUG_SPEED * 1, BUG_SPEED * 1);
 
-          if (nextX <= 0 || nextX >= width - 24) {
+          let nextX = bug.x + nextVx;
+          let nextY = bug.y + nextVy;
+
+          if (nextX <= 0 || nextX >= width - 28) {
             nextVx = -nextVx;
-            nextX = clamp(nextX, 0, width - 24);
+            nextX = clamp(nextX, 0, width - 28);
           }
-          if (nextY <= 0 || nextY >= height - 24) {
+          if (nextY <= 0 || nextY >= height - 28) {
             nextVy = -nextVy;
-            nextY = clamp(nextY, 0, height - 24);
+            nextY = clamp(nextY, 0, height - 28);
           }
 
-          // Erratic wobble
-          if (Math.random() < 0.02) {
-            nextVx += (Math.random() - 0.5) * 0.5;
-            nextVy += (Math.random() - 0.5) * 0.2;
-          }
-
-          return { ...bug, x: nextX, y: nextY, vx: nextVx, vy: nextVy };
+          return {
+            ...bug,
+            x: nextX,
+            y: nextY,
+            vx: nextVx,
+            vy: nextVy,
+            warning: now - bug.bornAt > BUG_LIFETIME_MS - BUG_WARNING_MS,
+          };
         })
         .filter((bug) => now - bug.bornAt < BUG_LIFETIME_MS);
 
@@ -235,38 +281,20 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
   }, [phase, spawnBug]);
 
   // ======================== Nutrients phase ========================
-  useEffect(() => {
-    if (phase !== 'nutrients') return;
-    let active = true;
-
-    const loop = () => {
-      if (!active) return;
-      nutrientRef.current = clamp(nutrientRef.current - NUTRIENT_DECAY, 0, NUTRIENT_TARGET);
-      setNutrientLevel(nutrientRef.current);
-      if (nutrientRef.current >= NUTRIENT_TARGET) {
-        setPhase('result');
-        if (!successReportedRef.current) {
-          successReportedRef.current = true;
-          onSuccess?.();
-        }
-        return;
-      }
-      nutrientRafRef.current = requestAnimationFrame(loop);
-    };
-
-    nutrientRafRef.current = requestAnimationFrame(loop);
-    return () => {
-      active = false;
-      if (nutrientRafRef.current) cancelAnimationFrame(nutrientRafRef.current);
-    };
-  }, [phase, onSuccess]);
-
   const mashNutrients = useCallback(() => {
     if (phase !== 'nutrients') return;
     nutrientRef.current = clamp(nutrientRef.current + NUTRIENT_MASH_AMOUNT, 0, NUTRIENT_TARGET);
     setNutrientLevel(nutrientRef.current);
     playPopSound();
-  }, [phase]);
+    spawnDust(5);
+    if (nutrientRef.current >= NUTRIENT_TARGET) {
+      setPhase('result');
+      if (!successReportedRef.current) {
+        successReportedRef.current = true;
+        onSuccess?.();
+      }
+    }
+  }, [phase, onSuccess, spawnDust]);
 
   // ======================== Keyboard controls ========================
   useEffect(() => {
@@ -274,7 +302,6 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
       if (e.code === 'Space') {
         e.preventDefault();
         if (phase === 'water') startHolding();
-        if (phase === 'bugs') catchNearestBug();
         if (phase === 'nutrients') mashNutrients();
       }
     };
@@ -292,7 +319,7 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [phase, startHolding, stopHolding, catchNearestBug, mashNutrients]);
+  }, [phase, startHolding, stopHolding, mashNutrients]);
 
   // ======================== Result helpers ========================
   const trapReaction = () => {
@@ -309,27 +336,107 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
     setBugs([]);
     bugsRef.current = [];
     setCaughtBugs(0);
+    caughtBugsRef.current = 0;
     setNutrientLevel(0);
     nutrientRef.current = 0;
+    setPopEffects([]);
+    setDustParticles([]);
     successReportedRef.current = false;
   };
 
+  // ======================== Visual helpers ========================
+  const waterPercent = (waterLevel / WATER_MAX) * 100;
+  const nutrientPercent = (nutrientLevel / NUTRIENT_TARGET) * 100;
+
+  const trapJaw = (
+    <div className="relative mx-auto h-44 w-60">
+      {/* Back of the trap belly */}
+      <div className="absolute inset-x-6 top-16 bottom-6 rounded-b-full bg-rose-900/40" />
+      {/* Water fill */}
+      <div
+        className="absolute inset-x-8 bottom-7 rounded-b-full bg-sky-400/70 transition-all"
+        style={{ height: `${phase === 'water' ? waterPercent : waterQuality === 'too little' ? 0 : 100}%` }}
+      />
+      {/* Belly contents: bugs + nutrients */}
+      <div className="pointer-events-none absolute inset-x-8 bottom-7 top-16 overflow-hidden rounded-b-full">
+        {/* Caught bug icons */}
+        {Array.from({ length: caughtBugs }).map((_, i) => (
+          <div
+            key={`cbug-${i}`}
+            className="absolute text-lime-300"
+            style={{
+              left: `${10 + ((i * 17) % 80)}%`,
+              bottom: `${5 + ((i * 11) % 50)}%`,
+              transform: 'scale(0.6)',
+            }}
+          >
+            🐛
+          </div>
+        ))}
+        {/* Nutrient specks */}
+        {Array.from({ length: Math.floor(nutrientLevel / 2) }).map((_, i) => (
+          <div
+            key={`speck-${i}`}
+            className="absolute h-1.5 w-1.5 rounded-full bg-amber-300"
+            style={{
+              left: `${15 + ((i * 13) % 70)}%`,
+              bottom: `${10 + ((i * 9) % 55)}%`,
+            }}
+          />
+        ))}
+      </div>
+      {/* Wavy water surface during water phase */}
+      {phase === 'water' && waterLevel > 5 && (
+        <div
+          className="absolute left-8 right-8 rounded-full bg-sky-300/80"
+          style={{ bottom: `calc(1.75rem + ${waterPercent}% - 8px)`, height: '10px' }}
+        >
+          <div className="h-full w-full animate-pulse rounded-full" />
+        </div>
+      )}
+      {/* Upper jaw */}
+      <div className="absolute -top-4 left-1/2 h-20 w-44 -translate-x-1/2 rounded-t-full border-4 border-pink-300 bg-rose-700">
+        <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-3">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="h-3 w-3 -rotate-45 transform bg-pink-100"
+              style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }}
+            />
+          ))}
+        </div>
+      </div>
+      {/* Lower jaw */}
+      <div className="absolute -bottom-4 left-1/2 h-24 w-44 -translate-x-1/2 rounded-b-full border-4 border-pink-300 bg-rose-700">
+        <div className="absolute top-2 left-0 right-0 flex justify-center gap-3">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="h-3 w-3 rotate-[135deg] transform bg-pink-100"
+              style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   // ======================== Render ========================
   return (
-    <div className="flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-pink-300 bg-purple-950 p-6 shadow-[0_0_0_4px_#000]">
+    <div className="relative flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-pink-300 bg-purple-950 p-6 shadow-[0_0_0_4px_#000]">
       <h2 className="font-vt323 text-3xl text-pink-200">Feed the Venus Fly Trap</h2>
-      <p className="text-center font-vt323 text-lg text-pink-100/80">
-        Space / on-screen button · Help this hungry plant get a full meal.
-      </p>
+      <p className="text-center font-vt323 text-lg text-pink-100/80">Help this hungry plant get a full meal.</p>
+
+      {trapJaw}
 
       {phase === 'water' && (
         <div className="flex w-full flex-col items-center gap-4">
-          <p className="font-vt323 text-xl text-pink-100">Hold Space to fill with water, release in the green zone.</p>
+          <p className="font-vt323 text-xl text-pink-100">Hold Space or tap the button to fill with water, release in the green zone.</p>
           <div className="flex items-end gap-6">
             <div className="relative h-64 w-12 rounded border-2 border-pink-300/50 bg-purple-900/50 p-1">
               <div
                 className="absolute bottom-1 left-1 right-1 bg-sky-400 transition-[height]"
-                style={{ height: `${(waterLevel / WATER_MAX) * 100}%` }}
+                style={{ height: `${waterPercent}%` }}
               />
               <div
                 className="absolute left-0 right-0 border-y-2 border-dashed border-green-400 bg-green-400/20"
@@ -356,7 +463,7 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
 
       {phase === 'bugs' && (
         <div className="flex w-full flex-col items-center gap-4">
-          <p className="font-vt323 text-xl text-pink-100">Tap bugs to drop them in, or press Space to catch the nearest one.</p>
+          <p className="font-vt323 text-xl text-pink-100">Click the bugs to catch them!</p>
           <div
             ref={bugsAreaRef}
             className="relative h-48 w-full max-w-md overflow-hidden rounded border-2 border-pink-300/50 bg-purple-900/50"
@@ -365,47 +472,80 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
               <button
                 key={bug.id}
                 type="button"
-                onClick={() => {
-                  removeBugById(bug.id);
-                  playPopSound();
-                  setCaughtBugs((prev) => {
-                    const next = prev + 1;
-                    caughtBugsRef.current = next;
-                    if (next >= TARGET_BUG_COUNT) {
-                      setPhase('nutrients');
-                    }
-                    return next;
-                  });
-                }}
+                onClick={() => handleCatchBug(bug)}
                 style={{ left: bug.x, top: bug.y }}
-                className="absolute h-6 w-6 -translate-x-0 -translate-y-0 rounded-full border-2 border-black bg-lime-400 transition hover:scale-110"
+                className={`absolute transition hover:scale-110 ${bug.warning ? 'animate-pulse opacity-70' : ''}`}
                 aria-label="Bug"
-              />
+              >
+                {/* Wings */}
+                <div className="absolute -left-2 top-1/2 h-4 w-5 -translate-y-1/2 rounded-full bg-lime-200/50" />
+                <div className="absolute -right-2 top-1/2 h-4 w-5 -translate-y-1/2 rounded-full bg-lime-200/50" />
+                {/* Body */}
+                <div className="relative h-6 w-8 rounded-full border-2 border-black bg-lime-400">
+                  {/* Eyes */}
+                  <div className="absolute top-1 left-1.5 h-1 w-1 rounded-full bg-black" />
+                  <div className="absolute top-1 right-1.5 h-1 w-1 rounded-full bg-black" />
+                </div>
+              </button>
+            ))}
+            {popEffects.map((effect) => (
+              <div
+                key={effect.id}
+                className="pointer-events-none absolute"
+                style={{ left: effect.x, top: effect.y }}
+              >
+                {/* Expanding ring */}
+                <div className="absolute h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-lime-300 bg-lime-300/40 animate-[ping_0.5s_ease-out_forwards]" />
+                {/* Particle burst */}
+                {Array.from({ length: 6 }).map((_, i) => {
+                  const angle = (i * Math.PI) / 3;
+                  const dist = 14;
+                  return (
+                    <div
+                      key={i}
+                      className="absolute h-1.5 w-1.5 rounded-full bg-lime-300"
+                      style={{
+                        animation: `pop-fly 0.5s ease-out forwards`,
+                        transform: `translate(-50%, -50%)`,
+                        ['--pop-x' as string]: `${Math.cos(angle) * dist}px`,
+                        ['--pop-y' as string]: `${Math.sin(angle) * dist}px`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
             ))}
           </div>
           <p className="font-vt323 text-xl text-pink-200">
             Caught: {caughtBugs} / {TARGET_BUG_COUNT}
           </p>
-          <button
-            type="button"
-            onClick={catchNearestBug}
-            className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
-          >
-            Catch nearest (Space)
-          </button>
         </div>
       )}
 
       {phase === 'nutrients' && (
-        <div className="flex w-full flex-col items-center gap-4">
+        <div className="relative flex w-full flex-col items-center gap-4">
           <p className="font-vt323 text-xl text-pink-100">Mash Space or tap to sprinkle nutrients!</p>
           <div className="w-full max-w-md rounded border-2 border-pink-300/50 bg-purple-900/50 p-2">
             <div className="h-6 rounded bg-purple-800">
               <div
                 className="h-full rounded bg-amber-400 transition-[width]"
-                style={{ width: `${(nutrientLevel / NUTRIENT_TARGET) * 100}%` }}
+                style={{ width: `${nutrientPercent}%` }}
               />
             </div>
+          </div>
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg">
+            {dustParticles.map((p) => (
+              <div
+                key={p.id}
+                className="absolute h-2 w-2 rounded-full"
+                style={{
+                  left: `${p.x}%`,
+                  top: `${p.y}%`,
+                  backgroundColor: p.color,
+                  animation: 'dust-fall 0.8s ease-in forwards',
+                }}
+              />
+            ))}
           </div>
           <button
             type="button"
@@ -423,7 +563,7 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
           <div className="text-center font-vt323 text-xl text-pink-100">
             <p>Water: {waterQuality}</p>
             <p>Bugs caught: {caughtBugs} / {TARGET_BUG_COUNT}</p>
-            <p>Nutrients: {Math.round((nutrientLevel / NUTRIENT_TARGET) * 100)}%</p>
+            <p>Nutrients: {Math.round(nutrientPercent)}%</p>
           </div>
           <p className="font-vt323 text-2xl text-yellow-300">{trapReaction()}</p>
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -444,6 +584,33 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
           </div>
         </div>
       )}
+
+      <style jsx>{`
+        @keyframes pop-fly {
+          0% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(
+                calc(-50% + var(--pop-x)),
+                calc(-50% + var(--pop-y))
+              )
+              scale(0);
+            opacity: 0;
+          }
+        }
+        @keyframes dust-fall {
+          0% {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(120px) scale(0.5);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 }
