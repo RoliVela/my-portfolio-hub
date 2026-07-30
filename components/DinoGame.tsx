@@ -117,6 +117,8 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
   const scoreRef = useRef(0);
   const gameOverRef = useRef(false);
   const highScoreRef = useRef<number>(readStoredDinoHighScore());
+  const freezeFramesRef = useRef(0);
+  const shakeFramesRef = useRef(0);
 
   const resetGame = useCallback(() => {
     dinoYRef.current = GROUND_Y - DINO_SIZE;
@@ -129,6 +131,8 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     frameRef.current = 0;
     scoreRef.current = 0;
     gameOverRef.current = false;
+    freezeFramesRef.current = 0;
+    shakeFramesRef.current = 0;
     setScore(0);
     setGameOver(false);
     setIsPlaying(true);
@@ -590,15 +594,30 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     };
 
     const gameLoop = () => {
-      if (!gameOverRef.current && isPlaying) {
-        drawSky();
-        drawSun();
-        drawClouds();
-        drawCitySkyline();
-        drawTrees();
-        drawMountains();
-        drawGround();
+      // Keep rendering briefly after game over to show freeze/shake impact.
+      const active = !gameOverRef.current || shakeFramesRef.current > 0 || freezeFramesRef.current > 0;
+      if (!active) return;
 
+      // Apply screen shake with decaying intensity.
+      ctx.save();
+      if (shakeFramesRef.current > 0) {
+        shakeFramesRef.current -= 1;
+        const intensity = shakeFramesRef.current * 0.4;
+        ctx.translate((Math.random() - 0.5) * intensity, (Math.random() - 0.5) * intensity);
+      }
+
+      drawSky();
+      drawSun();
+      drawClouds();
+      drawCitySkyline();
+      drawTrees();
+      drawMountains();
+      drawGround();
+
+      // Freeze frame: skip physics updates but keep drawing the last frame.
+      if (freezeFramesRef.current > 0) {
+        freezeFramesRef.current -= 1;
+      } else if (!gameOverRef.current) {
         dinoVyRef.current += GRAVITY;
         dinoYRef.current += dinoVyRef.current;
 
@@ -653,31 +672,34 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
 
         scoreRef.current += 0.1;
         setScore(Math.floor(scoreRef.current));
-
-        drawDino();
-        drawObstacles();
-
-        if (checkCollision()) {
-          gameOverRef.current = true;
-          setGameOver(true);
-          setIsPlaying(false);
-          audioEngineRef.current?.stop();
-          spawnPop(DINO_X + DINO_SIZE / 2, dinoYRef.current + DINO_SIZE / 2);
-          if (scoreRef.current > highScoreRef.current) {
-            highScoreRef.current = Math.floor(scoreRef.current);
-            setHighScore(highScoreRef.current);
-            try {
-              localStorage.setItem('dino-high-score', String(highScoreRef.current));
-            } catch {
-              // ignore storage errors
-            }
-          }
-          if (rafRef.current) cancelAnimationFrame(rafRef.current);
-          return;
-        }
-
-        rafRef.current = requestAnimationFrame(gameLoop);
       }
+
+      drawDino();
+      drawObstacles();
+
+      if (checkCollision()) {
+        gameOverRef.current = true;
+        setGameOver(true);
+        setIsPlaying(false);
+        audioEngineRef.current?.stop();
+        spawnPop(DINO_X + DINO_SIZE / 2, dinoYRef.current + DINO_SIZE / 2);
+        if (scoreRef.current > highScoreRef.current) {
+          highScoreRef.current = Math.floor(scoreRef.current);
+          setHighScore(highScoreRef.current);
+          try {
+            localStorage.setItem('dino-high-score', String(highScoreRef.current));
+          } catch {
+            // ignore storage errors
+          }
+        }
+        // Brief hit-stop and screen shake for impact.
+        freezeFramesRef.current = 10;
+        shakeFramesRef.current = 20;
+      }
+
+      ctx.restore();
+
+      rafRef.current = requestAnimationFrame(gameLoop);
     };
 
     rafRef.current = requestAnimationFrame(gameLoop);
