@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { playPopSound } from '@/lib/sfx';
 import { PopBurst, FallingDust, FallingDustOverlay } from '@/components/game/GameParticles';
 import {
@@ -806,7 +807,12 @@ export default function CloudClimberGame() {
   }, [jump, resetGame]);
 
   return (
-    <div className="flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-pink-300 bg-purple-950 p-6 shadow-[0_0_0_4px_#000]">
+    <motion.div
+      initial={{ opacity: 0, y: 12, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      className="flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-pink-300 bg-purple-950 p-6 shadow-[0_0_0_4px_#000]"
+    >
       <h2 className="font-vt323 text-3xl text-pink-200">Cloud Climber</h2>
       <p className="text-center font-vt323 text-lg text-pink-100/80">
         ← / A and → / D to move · Space / ↑ / W to jump · Avoid lava and falling blocks.
@@ -895,6 +901,6 @@ export default function CloudClimberGame() {
           Restart (Space)
         </button>
       )}
-    </div>
+    </motion.div>
   );
 }
