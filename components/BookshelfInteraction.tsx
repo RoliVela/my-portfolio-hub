@@ -2,16 +2,13 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
-interface BookshelfInteractionProps {
-  onComplete?: () => void;
-}
-
 interface Book {
   title: string;
   author: string;
   color: string;
   height: number;
   fontSize: number;
+  letterSpacing: number;
 }
 
 interface BookEntry {
@@ -44,9 +41,6 @@ const SPINE_COLORS = [
 const MIN_HEIGHT = 180;
 const MAX_HEIGHT = 320;
 const PX_PER_CHAR = 10;
-const MIN_FONT = 10;
-const MAX_FONT = 36;
-
 function randomColor() {
   return SPINE_COLORS[Math.floor(Math.random() * SPINE_COLORS.length)] ?? 'bg-rose-700';
 }
@@ -57,17 +51,26 @@ function randomSpineHeight(title: string) {
   return Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, base + variation));
 }
 
-function spineFontSize(title: string, height: number) {
-  return Math.max(MIN_FONT, Math.min(MAX_FONT, (height - 50) / title.length));
+const TITLE_AREA_OVERHEAD = 60; // rough space used by the author line + padding
+
+function titleTextStyle(title: string, spineHeight: number) {
+  const fontSize = Math.max(12, Math.min(20, 220 / Math.max(title.length, 1)));
+  const availableHeight = Math.max(40, spineHeight - TITLE_AREA_OVERHEAD);
+  const naturalHeight = title.length * fontSize;
+  const letterSpacing =
+    title.length > 1 ? Math.max(0, (availableHeight - naturalHeight) / (title.length - 1)) : 0;
+  return { fontSize, letterSpacing };
 }
 
 function createBook(entry: BookEntry): Book {
   const height = randomSpineHeight(entry.title);
+  const { fontSize, letterSpacing } = titleTextStyle(entry.title, height);
   return {
     ...entry,
     color: randomColor(),
     height,
-    fontSize: spineFontSize(entry.title, height),
+    fontSize,
+    letterSpacing,
   };
 }
 
@@ -106,7 +109,7 @@ function saveVisitorBook(entry: BookEntry) {
   }
 }
 
-export default function BookshelfInteraction({ onComplete }: BookshelfInteractionProps) {
+export default function BookshelfInteraction() {
   const [shelfItems, setShelfItems] = useState<(Book | null)[]>(() => {
     const visitor = loadVisitorBook();
     const base = FAVORITE_BOOKS.map(createBook);
@@ -174,7 +177,7 @@ export default function BookshelfInteraction({ onComplete }: BookshelfInteractio
                   <div className="flex flex-1 w-full items-start justify-center overflow-hidden py-2">
                     <span
                       className="truncate font-vt323 leading-none text-white [writing-mode:vertical-rl]"
-                      style={{ fontSize: item.fontSize }}
+                      style={{ fontSize: item.fontSize, letterSpacing: item.letterSpacing }}
                       title={item.title}
                     >
                       {item.title}
@@ -237,20 +240,11 @@ export default function BookshelfInteraction({ onComplete }: BookshelfInteractio
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          {!slotFilled && (
-            <p className="text-center font-vt323 text-sm text-pink-100/70">
-              Click the empty slot to add your favorite book.
-            </p>
-          )}
-          <button
-            type="button"
-            onClick={onComplete}
-            className="rounded border-2 border-white/50 bg-black px-6 py-2 font-vt323 text-xl text-white transition hover:border-white hover:bg-white/10"
-          >
-            Walk Away
-          </button>
-        </div>
+        {!slotFilled && (
+          <p className="text-center font-vt323 text-sm text-pink-100/70">
+            Click the empty slot to add your favorite book.
+          </p>
+        )}
       </div>
     </div>
   );

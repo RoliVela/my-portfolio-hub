@@ -16,6 +16,8 @@ export interface RoomObject {
   toggleKey?: string;
   /** Optional path to a real pixel-art asset in /public/assets. */
   imageSrc?: string;
+  /** Optional image shown only in the enlarged/inspected view (falls back to imageSrc if unset). */
+  zoomedImageSrc?: string;
   /** Optional alternate image shown when the alt-state condition is true. */
   imageSrcAlt?: string;
   /** Optional state key to check for the alternate image; defaults to toggleKey if omitted. */
@@ -412,7 +414,8 @@ export const roomObjects: RoomObject[] = [
     assetName: 'Sticky Note',
     type: 'Click / Inspect',
     initialState: {},
-    imageSrc: '/assets/sticky-note-code.png',
+    imageSrc: '/assets/sticky-note-code-obscured.png',
+    zoomedImageSrc: '/assets/sticky-note-code.png',
     dialogue: {
       free: [{ speaker: 'Snippy', text: "Ooh, a sticky note! Better take a closer look..." }],
       paid: 'N/A',

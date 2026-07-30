@@ -86,17 +86,15 @@ export default function DialogueBox({ entries, onClose }: DialogueBoxProps) {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50 flex items-end justify-center p-4"
+      className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center gap-2 p-4"
       onClick={handleClick}
       role="button"
       aria-label="Dialogue box"
     >
+      <div className="self-start ml-1 rounded bg-white px-3 py-1 text-lg text-black font-vt323 shadow-lg">
+        {currentEntry?.speaker}
+      </div>
       <div className="relative w-full max-w-4xl cursor-pointer select-none rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000]">
-        {/* Speaker name tag */}
-        <div className="absolute -top-5 left-4 rounded bg-white px-3 py-1 text-lg text-black font-vt323">
-          {currentEntry?.speaker}
-        </div>
-
         {/* Dialogue text - key remounts TypewriterText on page change */}
         <TypewriterText key={pageIndex} text={fullText} />
       </div>

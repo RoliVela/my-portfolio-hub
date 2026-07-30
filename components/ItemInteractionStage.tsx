@@ -96,11 +96,11 @@ export default function ItemInteractionStage({
   }
 
   if (obj.id === 'OBJ_20') {
-    return <PosterboardInteraction onComplete={handleInteract} />;
+    return <PosterboardInteraction />;
   }
 
   if (obj.id === 'OBJ_22') {
-    return <BookshelfInteraction onComplete={handleInteract} />;
+    return <BookshelfInteraction />;
   }
 
   if (obj.id === 'OBJ_13') {

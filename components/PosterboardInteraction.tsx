@@ -10,9 +10,7 @@ interface PinnedImage {
   pinColor: string;
 }
 
-interface PosterboardInteractionProps {
-  onComplete?: () => void;
-}
+
 
 interface PermanentPhoto {
   id: string;
@@ -89,7 +87,7 @@ function saveImages(images: PinnedImage[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(images));
 }
 
-export default function PosterboardInteraction({ onComplete }: PosterboardInteractionProps) {
+export default function PosterboardInteraction() {
   const [images, setImages] = useState<PinnedImage[]>(() => loadImages());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -203,13 +201,6 @@ export default function PosterboardInteraction({ onComplete }: PosterboardIntera
           className="rounded border-2 border-white bg-white px-6 py-2 font-vt323 text-xl text-black transition hover:border-gray-200 hover:bg-gray-200"
         >
           Pin New Photo
-        </button>
-        <button
-          type="button"
-          onClick={onComplete}
-          className="rounded border-2 border-white/50 bg-black px-6 py-2 font-vt323 text-xl text-white transition hover:border-white hover:bg-white/10"
-        >
-          Walk Away
         </button>
       </div>
     </div>

@@ -29,7 +29,7 @@ function InspectedItemImage({
   obj: RoomObject;
   objectState: ObjectState;
 }) {
-  const src = getObjectImageSrc(obj, state[obj.id] ?? {});
+  const src = obj.zoomedImageSrc ?? getObjectImageSrc(obj, state[obj.id] ?? {});
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -67,9 +67,13 @@ export default function Home() {
   const [roomObjects, setRoomObjects] = useState<RoomObject[]>(initialRoomObjects);
   const [repositionMode, setRepositionMode] = useState(false);
   const [objectState, setObjectState] = useState<ObjectState>(getInitialState);
-  const [activeObject, setActiveObject] = useState<RoomObject | null>(
-    () => initialRoomObjects.find((obj) => obj.id === 'OBJ_01') ?? null
-  );
+  const [activeObject, setActiveObject] = useState<RoomObject | null>(() => {
+    if (typeof window !== 'undefined' && window.sessionStorage.getItem('skip-intro-dialogue')) {
+      window.sessionStorage.removeItem('skip-intro-dialogue');
+      return null;
+    }
+    return initialRoomObjects.find((obj) => obj.id === 'OBJ_01') ?? null;
+  });
   const [inspectionPhase, setInspectionPhase] = useState<InspectionPhase>('closed');
   const [inspectedObject, setInspectedObject] = useState<RoomObject | null>(null);
 
@@ -81,8 +85,11 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [panelCollapsed, setPanelCollapsed] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [musicOn, setMusicOn] = useState(false);
-  const [currentJukeboxTrack, setCurrentJukeboxTrack] = useState<JukeboxTrack | null>(null);
+  const [musicOn, setMusicOn] = useState(true);
+  const [currentJukeboxTrack, setCurrentJukeboxTrack] = useState<JukeboxTrack | null>({
+    title: 'Default Audio',
+    src: getAssetPath('/assets/bg-music.mp3'),
+  });
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Live clock state shared between the idle-room overlay and the clock interaction.
@@ -164,6 +171,40 @@ export default function Home() {
       audio.pause();
     }
   }, [currentJukeboxTrack, musicOn, isMuted]);
+
+  // One-time fallback: try to start music on the first user interaction if autoplay was blocked.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!currentJukeboxTrack) return;
+
+    const tryPlay = () => {
+      if (!audioRef.current) return;
+      if (audioRef.current.paused) {
+        audioRef.current.play().catch((err) => {
+          if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
+            console.error('Audio playback failed:', err);
+          }
+        });
+      }
+    };
+
+    const handleFirstInteraction = () => {
+      tryPlay();
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+    };
+
+    window.addEventListener('click', handleFirstInteraction);
+    window.addEventListener('keydown', handleFirstInteraction);
+    window.addEventListener('touchstart', handleFirstInteraction);
+
+    return () => {
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+    };
+  }, [currentJukeboxTrack]);
 
   // Pre-load alpha maps for all object images (including alt states) so
   // pixel-perfect hit detection is ready before the user clicks.
@@ -496,6 +537,7 @@ export default function Home() {
         type="button"
         onClick={() => {
           window.localStorage.clear();
+          window.sessionStorage.setItem('skip-intro-dialogue', 'true');
           window.location.reload();
         }}
         aria-label="Reset saved progress"
@@ -739,11 +781,11 @@ export default function Home() {
 
       {/* Choice prompt after dialogue */}
       {inspectedObject && inspectionPhase === 'choice' && !repositionMode && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-end justify-center p-4">
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center gap-2 p-4">
+          <div className="self-start ml-1 rounded bg-white px-3 py-1 text-lg text-black font-vt323 shadow-lg">
+            {inspectedObject.assetName}
+          </div>
           <div className="relative w-full max-w-4xl select-none rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000]">
-            <div className="absolute -top-5 left-4 rounded bg-white px-3 py-1 text-lg text-black font-vt323">
-              {inspectedObject.assetName}
-            </div>
             <div className="flex items-center justify-center gap-4 pt-2">
               <button
                 type="button"
@@ -766,15 +808,15 @@ export default function Home() {
 
       {/* Interaction stage (extensible mini-game hook) */}
       {inspectedObject && inspectionPhase === 'interacting' && !repositionMode && (
-        <div className="fixed bottom-0 left-0 right-0 top-0 z-50 flex items-end justify-center p-4">
+        <div className="fixed bottom-0 left-0 right-0 top-0 z-50 flex flex-col items-center justify-end gap-2 p-4">
+          <div className="self-start ml-1 rounded bg-white px-3 py-1 text-lg font-vt323 text-black shadow-lg">
+            {inspectedObject.assetName}
+          </div>
           <div
-            className={`relative flex w-full select-none flex-col rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000] max-h-[calc(100%-4rem)] overflow-y-auto ${
+            className={`relative flex w-full select-none flex-col rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000] max-h-[calc(100%-6rem)] overflow-y-auto ${
               inspectedObject.id === 'OBJ_20' ? 'h-full max-w-7xl' : 'max-w-4xl'
             }`}
           >
-            <div className="absolute -top-5 left-4 rounded bg-white px-3 py-1 text-lg font-vt323 text-black">
-              {inspectedObject.assetName}
-            </div>
             <div className="flex h-full flex-col items-center gap-4 pt-2">
               <ItemInteractionStage
                 obj={inspectedObject}
