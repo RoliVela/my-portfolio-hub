@@ -481,10 +481,71 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       ctx.restore();
     };
 
+    const drawDinoDeathSprite = (x: number, y: number) => {
+      ctx.save();
+      // Tilt the dino backward to show it's been knocked over.
+      ctx.translate(x + DINO_SIZE / 2, y + DINO_SIZE);
+      ctx.rotate(-Math.PI / 4);
+      ctx.translate(-(x + DINO_SIZE / 2), -(y + DINO_SIZE));
+
+      const OUTLINE = '#1e1224';
+      const SKIN = '#e879f9';
+      const SKIN_SHADOW = '#c026d3';
+      const HIGHLIGHT = '#f5a6fd';
+      const TONGUE = '#ef4444';
+      const bodyHeight = DINO_SIZE;
+
+      // Body
+      drawBlock(x + 8, y + 10, 28, bodyHeight - 10, SKIN, OUTLINE);
+      ctx.fillStyle = HIGHLIGHT;
+      ctx.fillRect(x + 9, y + 11, 8, bodyHeight - 14);
+
+      // Head & Snout
+      drawBlock(x + 28, y + 4, 16, 12, SKIN, OUTLINE);
+      ctx.fillStyle = HIGHLIGHT;
+      ctx.fillRect(x + 29, y + 5, 8, 4);
+      drawBlock(x + 36, y + 6, 8, 8, SKIN, OUTLINE);
+
+      // Dead "X" eye
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x + 33, y + 5);
+      ctx.lineTo(x + 38, y + 10);
+      ctx.moveTo(x + 38, y + 5);
+      ctx.lineTo(x + 33, y + 10);
+      ctx.stroke();
+
+      // Tongue hanging out
+      drawBlock(x + 40, y + 10, 4, 6, TONGUE, OUTLINE);
+
+      // Tail
+      drawBlock(x, y + 16, 8, 8, SKIN_SHADOW, OUTLINE);
+      drawBlock(x - 6, y + 18, 6, 6, SKIN_SHADOW, OUTLINE);
+
+      // Back spikes
+      ctx.fillStyle = SKIN_SHADOW;
+      ctx.fillRect(x + 10, y + 6, 4, 4);
+      ctx.fillRect(x + 14, y + 8, 4, 4);
+      ctx.fillRect(x + 18, y + 6, 4, 4);
+
+      // Stiff legs
+      drawBlock(x + 10, y + bodyHeight - 2, 8, 8, SKIN_SHADOW, OUTLINE);
+      drawBlock(x + 24, y + bodyHeight - 2, 8, 8, SKIN_SHADOW, OUTLINE);
+
+      ctx.restore();
+    };
+
     const drawDino = () => {
       const x = DINO_X;
       const y = dinoYRef.current;
       const ducking = isDuckingRef.current;
+
+      // Render death frame on game over.
+      if (gameOverRef.current) {
+        drawDinoDeathSprite(x, y);
+        return;
+      }
 
       // Speed trail ghosts
       if (speedRef.current > BASE_SPEED + 2 && !gameOverRef.current) {
