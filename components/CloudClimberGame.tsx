@@ -143,6 +143,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
   const inputRef = useRef<InputState>({ left: false, right: false });
   const shakeRef = useRef({ frames: 0, intensity: 0 });
   const puffsRef = useRef<PuffParticle[]>([]);
+  const squashRef = useRef(1);
 
   const updateHighScore = useCallback((value: number) => {
     if (value > highScoreRef.current) {
@@ -175,6 +176,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     inputRef.current = { left: false, right: false };
     shakeRef.current = { frames: 0, intensity: 0 };
     puffsRef.current = [];
+    squashRef.current = 1;
     setScore(0);
     setGameState('playing');
     setPopEffects([]);
@@ -219,11 +221,28 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     }
   }, []);
 
+  const spawnLandingDust = useCallback(() => {
+    const feetX = charXRef.current + CHAR_WIDTH / 2;
+    const feetY = charYRef.current;
+    for (let i = 0; i < 10; i += 1) {
+      puffsRef.current.push({
+        x: feetX + randomRange(-CHAR_WIDTH * 0.5, CHAR_WIDTH * 0.5),
+        y: feetY + randomRange(-2, 2),
+        vx: randomRange(-3, 3),
+        vy: randomRange(1, 3),
+        life: 18,
+        maxLife: 18,
+        size: randomRange(2, 5),
+      });
+    }
+  }, []);
+
   const jump = useCallback(() => {
     if (gameStateRef.current !== 'playing') return;
     if (groundedRef.current) {
       charVyRef.current = JUMP_VELOCITY;
       groundedRef.current = false;
+      squashRef.current = 1.25;
       playPopSound();
       const x = charXRef.current + CHAR_WIDTH / 2;
       const y = CANVAS_HEIGHT - (charYRef.current - cameraYRef.current) - CHAR_HEIGHT / 2;
@@ -380,6 +399,16 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       const screenBottom = CANVAS_HEIGHT - (y - cameraYRef.current);
       const screenTop = screenBottom - CHAR_HEIGHT;
 
+      const centerX = x + CHAR_WIDTH / 2;
+      const centerY = screenTop + CHAR_HEIGHT / 2;
+      const scaleY = squashRef.current;
+      const scaleX = 1 / squashRef.current;
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.scale(scaleX, scaleY);
+      ctx.translate(-centerX, -centerY);
+
       // Cream body with black outline
       ctx.fillStyle = '#000000';
       drawRoundedRect(ctx, x - 2, screenTop - 2, CHAR_WIDTH + 4, CHAR_HEIGHT + 4, 8);
@@ -399,6 +428,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       // Highlight
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.fillRect(x + 5, screenTop + 5, CHAR_WIDTH * 0.25, 2);
+      ctx.restore();
     };
 
     const drawLava = (now: number) => {
@@ -507,6 +537,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       }
 
       // Character vertical physics
+      const wasGrounded = groundedRef.current;
       charVyRef.current += GRAVITY;
       charYRef.current += charVyRef.current;
 
@@ -514,6 +545,10 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       if (charYRef.current <= ground) {
         charYRef.current = ground;
         charVyRef.current = 0;
+        if (!wasGrounded) {
+          squashRef.current = 0.75;
+          spawnLandingDust();
+        }
         groundedRef.current = true;
       } else {
         groundedRef.current = false;
@@ -593,6 +628,9 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       landedRef.current.forEach((block) => drawBlock(block, false));
       fallingRef.current.forEach((block) => drawBlock(block, true));
 
+      // Update squash/stretch animation
+      squashRef.current += (1 - squashRef.current) * 0.15;
+
       drawPuffs();
       drawCharacter();
       drawLava(now);
@@ -609,7 +647,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [gameState, saveHighScore, spawnDust, updateHighScore]);
+  }, [gameState, saveHighScore, spawnDust, spawnLandingDust, updateHighScore]);
 
   // ======================== Keyboard controls ========================
   useEffect(() => {
