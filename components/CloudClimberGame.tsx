@@ -225,6 +225,48 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    interface CloudLayer {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      speed: number;
+      alpha: number;
+    }
+
+    const cloudLayers: CloudLayer[] = [
+      { x: 50, y: 80, width: 120, height: 40, speed: 0.15, alpha: 0.12 },
+      { x: 250, y: 150, width: 160, height: 50, speed: 0.25, alpha: 0.1 },
+      { x: 140, y: 260, width: 100, height: 35, speed: 0.35, alpha: 0.08 },
+      { x: 320, y: 40, width: 90, height: 30, speed: 0.2, alpha: 0.1 },
+    ];
+
+    const drawCloud = (cloud: CloudLayer) => {
+      // Parallax offset: clouds drift horizontally as the camera rises
+      const parallaxOffset = (cameraYRef.current * cloud.speed) % (CANVAS_WIDTH + cloud.width);
+      const baseX = cloud.x - parallaxOffset;
+      const wrap = CANVAS_WIDTH + cloud.width;
+      let x = baseX;
+      while (x < -cloud.width) x += wrap;
+
+      // Draw the cloud twice to seamlessly wrap across the screen
+      for (let i = 0; i < 2; i += 1) {
+        const drawX = x + i * wrap;
+        if (drawX > CANVAS_WIDTH + cloud.width) continue;
+
+        ctx.fillStyle = `rgba(255, 255, 255, ${cloud.alpha})`;
+        // Main puff
+        ctx.beginPath();
+        ctx.ellipse(drawX, cloud.y, cloud.width / 2, cloud.height / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Extra puffs for fluffiness
+        ctx.beginPath();
+        ctx.ellipse(drawX - cloud.width * 0.25, cloud.y + cloud.height * 0.1, cloud.width * 0.25, cloud.height * 0.35, 0, 0, Math.PI * 2);
+        ctx.ellipse(drawX + cloud.width * 0.25, cloud.y + cloud.height * 0.1, cloud.width * 0.25, cloud.height * 0.35, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+
     const drawSky = () => {
       const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
       gradient.addColorStop(0, '#1e3a8a');
@@ -239,6 +281,9 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
         const y = ((i * 97 + cameraYRef.current * 0.1) % (CANVAS_HEIGHT + 80)) - 40;
         ctx.fillRect(0, y, CANVAS_WIDTH, 20);
       }
+
+      // Parallax cloud layers
+      cloudLayers.forEach((cloud) => drawCloud(cloud));
     };
 
     const drawBlock = (block: LandedBlock | FallingBlock, isFalling: boolean) => {
@@ -312,20 +357,43 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       ctx.fillRect(x + 5, screenTop + 5, CHAR_WIDTH * 0.25, 2);
     };
 
-    const drawLava = () => {
+    const drawLava = (now: number) => {
       const lavaScreenY = CANVAS_HEIGHT - (lavaYRef.current - cameraYRef.current);
-      if (lavaScreenY < CANVAS_HEIGHT) {
-        const lavaGradient = ctx.createLinearGradient(0, lavaScreenY, 0, CANVAS_HEIGHT);
-        lavaGradient.addColorStop(0, 'rgba(255, 100, 50, 0.9)');
-        lavaGradient.addColorStop(1, 'rgba(180, 30, 0, 0.95)');
-        ctx.fillStyle = lavaGradient;
-        ctx.fillRect(0, lavaScreenY, CANVAS_WIDTH, CANVAS_HEIGHT - lavaScreenY);
-        ctx.fillStyle = 'rgba(255, 200, 80, 0.8)';
-        const bubbleOffset = (performance.now() / 20) % 20;
-        for (let x = bubbleOffset; x < CANVAS_WIDTH; x += 40) {
-          ctx.fillRect(x, lavaScreenY - 4, 6, 4);
-        }
+      if (lavaScreenY >= CANVAS_HEIGHT) return;
+
+      // Base lava gradient
+      const lavaGradient = ctx.createLinearGradient(0, lavaScreenY, 0, CANVAS_HEIGHT);
+      lavaGradient.addColorStop(0, 'rgba(255, 100, 50, 0.95)');
+      lavaGradient.addColorStop(0.3, 'rgba(255, 80, 30, 0.9)');
+      lavaGradient.addColorStop(1, 'rgba(180, 30, 0, 0.95)');
+      ctx.fillStyle = lavaGradient;
+      ctx.fillRect(0, lavaScreenY, CANVAS_WIDTH, CANVAS_HEIGHT - lavaScreenY);
+
+      // Shimmering surface highlight
+      const shimmer = (Math.sin(now / 400) + 1) / 2; // 0..1 pulse
+      ctx.fillStyle = `rgba(255, 220, 120, ${0.25 + shimmer * 0.25})`;
+      ctx.fillRect(0, lavaScreenY, CANVAS_WIDTH, 4);
+
+      // Horizontal shimmer bands moving upward
+      ctx.fillStyle = `rgba(255, 160, 60, ${0.1 + shimmer * 0.1})`;
+      const bandOffset = (now / 60) % 40;
+      for (let y = lavaScreenY + 10 + bandOffset; y < CANVAS_HEIGHT; y += 40) {
+        ctx.fillRect(0, y, CANVAS_WIDTH, 2);
       }
+
+      // Glowing bubbles along the surface
+      ctx.fillStyle = 'rgba(255, 220, 120, 0.85)';
+      const bubbleOffset = (now / 20) % 40;
+      for (let x = bubbleOffset; x < CANVAS_WIDTH; x += 40) {
+        ctx.fillRect(x, lavaScreenY - 4, 6, 4);
+      }
+
+      // Soft glow above the surface
+      const glowGradient = ctx.createLinearGradient(0, lavaScreenY - 30, 0, lavaScreenY);
+      glowGradient.addColorStop(0, 'rgba(255, 80, 30, 0)');
+      glowGradient.addColorStop(1, `rgba(255, 100, 40, ${0.15 + shimmer * 0.1})`);
+      ctx.fillStyle = glowGradient;
+      ctx.fillRect(0, lavaScreenY - 30, CANVAS_WIDTH, 30);
     };
 
     const drawHud = () => {
@@ -458,7 +526,7 @@ export default function CloudClimberGame({ onComplete }: CloudClimberGameProps) 
       fallingRef.current.forEach((block) => drawBlock(block, true));
 
       drawCharacter();
-      drawLava();
+      drawLava(now);
       drawHud();
 
       rafRef.current = requestAnimationFrame(draw);
