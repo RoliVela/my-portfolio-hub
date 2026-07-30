@@ -214,6 +214,34 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       });
     };
 
+    const drawCitySkyline = () => {
+      ctx.fillStyle = '#241038';
+      const width = 140;
+      const offset = (frameRef.current * speedRef.current * 0.1) % width;
+      for (let x = -offset; x < CANVAS_WIDTH; x += width) {
+        ctx.fillRect(x + 10, GROUND_Y - 70, 20, 70);
+        ctx.fillRect(x + 35, GROUND_Y - 45, 30, 45);
+        ctx.fillRect(x + 70, GROUND_Y - 85, 25, 85);
+        ctx.fillRect(x + 105, GROUND_Y - 35, 20, 35);
+      }
+    };
+
+    const drawTrees = () => {
+      ctx.fillStyle = '#2d1445';
+      const width = 90;
+      const offset = (frameRef.current * speedRef.current * 0.2) % width;
+      for (let x = -offset; x < CANVAS_WIDTH; x += width) {
+        // Tall tree
+        ctx.fillRect(x + 15, GROUND_Y - 25, 8, 25);
+        ctx.fillRect(x + 5, GROUND_Y - 45, 28, 20);
+        ctx.fillRect(x + 10, GROUND_Y - 55, 18, 10);
+        // Small tree
+        ctx.fillRect(x + 60, GROUND_Y - 15, 6, 15);
+        ctx.fillRect(x + 52, GROUND_Y - 30, 22, 15);
+        ctx.fillRect(x + 56, GROUND_Y - 40, 14, 10);
+      }
+    };
+
     const drawMountains = () => {
       ctx.fillStyle = '#3a1c4a';
       const mountOffset = (frameRef.current * speedRef.current * 0.3) % 100;
@@ -427,6 +455,8 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
         drawSky();
         drawSun();
         drawClouds();
+        drawCitySkyline();
+        drawTrees();
         drawMountains();
         drawGround();
 
