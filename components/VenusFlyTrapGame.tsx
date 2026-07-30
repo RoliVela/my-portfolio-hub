@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { playPopSound } from '@/lib/sfx';
+import FlyTrapMouth from '@/components/game/FlyTrapMouth';
+import { PopBurst, FallingDust, FallingDustOverlay, GameParticleStyles } from '@/components/game/GameParticles';
 
 interface VenusFlyTrapGameProps {
   onComplete?: () => void;
@@ -348,86 +350,18 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
   const waterPercent = (waterLevel / WATER_MAX) * 100;
   const nutrientPercent = (nutrientLevel / NUTRIENT_TARGET) * 100;
 
-  const trapJaw = (
-    <div className="relative mx-auto h-44 w-60">
-      {/* Back of the trap belly */}
-      <div className="absolute inset-x-6 top-16 bottom-6 rounded-b-full bg-rose-900/40" />
-      {/* Water fill */}
-      <div
-        className="absolute inset-x-8 bottom-7 rounded-b-full bg-sky-400/70 transition-all"
-        style={{ height: `${phase === 'water' ? waterPercent : waterQuality === 'too little' ? 0 : 100}%` }}
-      />
-      {/* Belly contents: bugs + nutrients */}
-      <div className="pointer-events-none absolute inset-x-8 bottom-7 top-16 overflow-hidden rounded-b-full">
-        {/* Caught bug icons */}
-        {Array.from({ length: caughtBugs }).map((_, i) => (
-          <div
-            key={`cbug-${i}`}
-            className="absolute text-lime-300"
-            style={{
-              left: `${10 + ((i * 17) % 80)}%`,
-              bottom: `${5 + ((i * 11) % 50)}%`,
-              transform: 'scale(0.6)',
-            }}
-          >
-            🐛
-          </div>
-        ))}
-        {/* Nutrient specks */}
-        {Array.from({ length: Math.floor(nutrientLevel / 2) }).map((_, i) => (
-          <div
-            key={`speck-${i}`}
-            className="absolute h-1.5 w-1.5 rounded-full bg-amber-300"
-            style={{
-              left: `${15 + ((i * 13) % 70)}%`,
-              bottom: `${10 + ((i * 9) % 55)}%`,
-            }}
-          />
-        ))}
-      </div>
-      {/* Wavy water surface during water phase */}
-      {phase === 'water' && waterLevel > 5 && (
-        <div
-          className="absolute left-8 right-8 rounded-full bg-sky-300/80"
-          style={{ bottom: `calc(1.75rem + ${waterPercent}% - 8px)`, height: '10px' }}
-        >
-          <div className="h-full w-full animate-pulse rounded-full" />
-        </div>
-      )}
-      {/* Upper jaw */}
-      <div className="absolute -top-4 left-1/2 h-20 w-44 -translate-x-1/2 rounded-t-full border-4 border-pink-300 bg-rose-700">
-        <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-3">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="h-3 w-3 -rotate-45 transform bg-pink-100"
-              style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }}
-            />
-          ))}
-        </div>
-      </div>
-      {/* Lower jaw */}
-      <div className="absolute -bottom-4 left-1/2 h-24 w-44 -translate-x-1/2 rounded-b-full border-4 border-pink-300 bg-rose-700">
-        <div className="absolute top-2 left-0 right-0 flex justify-center gap-3">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="h-3 w-3 rotate-[135deg] transform bg-pink-100"
-              style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
   // ======================== Render ========================
   return (
     <div className="relative flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-pink-300 bg-purple-950 p-6 shadow-[0_0_0_4px_#000]">
       <h2 className="font-vt323 text-3xl text-pink-200">Feed the Venus Fly Trap</h2>
       <p className="text-center font-vt323 text-lg text-pink-100/80">Help this hungry plant get a full meal.</p>
 
-      {trapJaw}
+      <FlyTrapMouth
+        waterPercent={phase === 'water' ? waterPercent : waterQuality === 'too little' ? 0 : 100}
+        showWaterSurface={phase === 'water' && waterLevel > 5}
+        caughtItems={caughtBugs}
+        nutrientSpecks={Math.floor(nutrientLevel / 2)}
+      />
 
       {phase === 'water' && (
         <div className="flex w-full flex-col items-center gap-4">
@@ -489,31 +423,7 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
               </button>
             ))}
             {popEffects.map((effect) => (
-              <div
-                key={effect.id}
-                className="pointer-events-none absolute"
-                style={{ left: effect.x, top: effect.y }}
-              >
-                {/* Expanding ring */}
-                <div className="absolute h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-lime-300 bg-lime-300/40 animate-[ping_0.5s_ease-out_forwards]" />
-                {/* Particle burst */}
-                {Array.from({ length: 6 }).map((_, i) => {
-                  const angle = (i * Math.PI) / 3;
-                  const dist = 14;
-                  return (
-                    <div
-                      key={i}
-                      className="absolute h-1.5 w-1.5 rounded-full bg-lime-300"
-                      style={{
-                        animation: `pop-fly 0.5s ease-out forwards`,
-                        transform: `translate(-50%, -50%)`,
-                        ['--pop-x' as string]: `${Math.cos(angle) * dist}px`,
-                        ['--pop-y' as string]: `${Math.sin(angle) * dist}px`,
-                      }}
-                    />
-                  );
-                })}
-              </div>
+              <PopBurst key={effect.id} id={effect.id} x={effect.x} y={effect.y} />
             ))}
           </div>
           <p className="font-vt323 text-xl text-pink-200">
@@ -533,20 +443,11 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
               />
             </div>
           </div>
-          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg">
+          <FallingDustOverlay>
             {dustParticles.map((p) => (
-              <div
-                key={p.id}
-                className="absolute h-2 w-2 rounded-full"
-                style={{
-                  left: `${p.x}%`,
-                  top: `${p.y}%`,
-                  backgroundColor: p.color,
-                  animation: 'dust-fall 0.8s ease-in forwards',
-                }}
-              />
+              <FallingDust key={p.id} id={p.id} x={p.x} y={p.y} color={p.color} />
             ))}
-          </div>
+          </FallingDustOverlay>
           <button
             type="button"
             onPointerDown={mashNutrients}
@@ -585,32 +486,7 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
         </div>
       )}
 
-      <style jsx>{`
-        @keyframes pop-fly {
-          0% {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 1;
-          }
-          100% {
-            transform: translate(
-                calc(-50% + var(--pop-x)),
-                calc(-50% + var(--pop-y))
-              )
-              scale(0);
-            opacity: 0;
-          }
-        }
-        @keyframes dust-fall {
-          0% {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(120px) scale(0.5);
-            opacity: 0;
-          }
-        }
-      `}</style>
+      <GameParticleStyles />
     </div>
   );
 }
