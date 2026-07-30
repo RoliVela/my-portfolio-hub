@@ -23,8 +23,8 @@ const DINO_SIZE = 40;
 const DINO_X = 50;
 const GRAVITY = 0.6;
 const JUMP_STRENGTH = -12;
-const BASE_SPEED = 4;
-const MAX_SPEED = 12;
+const BASE_SPEED = 3.5;
+const MAX_SPEED = 10;
 const DAY_NIGHT_PERIOD = 60 * 60; // frames for a full day/night cycle (60s at 60fps)
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -701,7 +701,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
         }
 
         frameRef.current += 1;
-        if (frameRef.current % Math.max(60, 150 - Math.floor(scoreRef.current / 20)) === 0) {
+        if (frameRef.current % Math.max(80, 180 - Math.floor(scoreRef.current / 20)) === 0) {
           const isFlying = Math.random() < 0.35;
           if (isFlying) {
             // Tall flying cats that block jumps; the player must duck under them.
