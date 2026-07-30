@@ -50,7 +50,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState<number>(() => readStoredDinoHighScore());
   const [isPlaying, setIsPlaying] = useState(true);
-  const [popEffects, setPopEffects] = useState<{ id: number; x: number; y: number }[]>([]);
+  const [popEffects, setPopEffects] = useState<{ id: number; x: number; y: number; particleColorClass?: string; ringColorClass?: string }[]>([]);
   const [dustParticles, setDustParticles] = useState<{ id: number; x: number; y: number; color: string }[]>([]);
 
   const dinoYRef = useRef(GROUND_Y - DINO_SIZE);
@@ -59,6 +59,7 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
   const dinoVyRef = useRef(0);
   const isJumpingRef = useRef(false);
   const isDuckingRef = useRef(false);
+  const landingTimerRef = useRef(0);
   const obstaclesRef = useRef<Obstacle[]>([]);
   const speedRef = useRef(BASE_SPEED);
   const frameRef = useRef(0);
@@ -83,9 +84,9 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     setDustParticles([]);
   }, []);
 
-  const spawnPop = useCallback((x: number, y: number) => {
+  const spawnPop = useCallback((x: number, y: number, particleColorClass?: string, ringColorClass?: string) => {
     const id = popIdRef.current++;
-    setPopEffects((prev) => [...prev, { id, x, y }]);
+    setPopEffects((prev) => [...prev, { id, x, y, particleColorClass, ringColorClass }]);
     setTimeout(() => {
       setPopEffects((prev) => prev.filter((p) => p.id !== id));
     }, 500);
@@ -280,6 +281,25 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
       const bodyHeight = ducking ? DINO_SIZE * 0.6 : DINO_SIZE;
       const yOffset = DINO_SIZE - bodyHeight;
 
+      // Squish / stretch based on landing and velocity
+      let scaleX = 1;
+      let scaleY = 1;
+      if (landingTimerRef.current > 0) {
+        scaleX = 1.25;
+        scaleY = 0.75;
+      } else if (dinoVyRef.current < -3) {
+        scaleX = 0.85;
+        scaleY = 1.15;
+      } else if (dinoVyRef.current > 3) {
+        scaleX = 0.9;
+        scaleY = 1.1;
+      }
+
+      ctx.save();
+      ctx.translate(x + DINO_SIZE / 2, y + DINO_SIZE);
+      ctx.scale(scaleX, scaleY);
+      ctx.translate(-(x + DINO_SIZE / 2), -(y + DINO_SIZE));
+
       const OUTLINE = '#1e1224';
       const SKIN = '#e879f9';
       const SKIN_SHADOW = '#c026d3';
@@ -325,6 +345,8 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
         drawBlock(x + 10 + legOffset, y + bodyHeight - 2, 8, 8, SKIN_SHADOW);
         drawBlock(x + 24 - legOffset, y + bodyHeight - 2, 8, 8, SKIN_SHADOW);
       }
+
+      ctx.restore();
     };
 
     const drawDino = () => {
@@ -465,11 +487,17 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
 
         if (dinoYRef.current >= GROUND_Y - DINO_SIZE) {
           if (isJumpingRef.current) {
-            spawnDust(DINO_X + DINO_SIZE / 2, 6);
+            landingTimerRef.current = 8;
+            spawnPop(DINO_X + DINO_SIZE / 2, GROUND_Y, 'bg-gray-300', 'border-gray-300 bg-gray-300/40');
           }
           dinoYRef.current = GROUND_Y - DINO_SIZE;
           dinoVyRef.current = 0;
           isJumpingRef.current = false;
+        }
+
+        // Decrement landing squish timer
+        if (landingTimerRef.current > 0) {
+          landingTimerRef.current -= 1;
         }
 
         speedRef.current = Math.min(MAX_SPEED, BASE_SPEED + scoreRef.current / 500);
@@ -564,7 +592,14 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
           </div>
         )}
         {popEffects.map((effect) => (
-          <PopBurst key={effect.id} id={effect.id} x={effect.x} y={effect.y} />
+          <PopBurst
+            key={effect.id}
+            id={effect.id}
+            x={effect.x}
+            y={effect.y}
+            particleColorClass={effect.particleColorClass}
+            ringColorClass={effect.ringColorClass}
+          />
         ))}
         <FallingDustOverlay>
           {dustParticles.map((p) => (
