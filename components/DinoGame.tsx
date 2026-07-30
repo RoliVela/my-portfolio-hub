@@ -704,7 +704,8 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
         if (frameRef.current % Math.max(60, 150 - Math.floor(scoreRef.current / 20)) === 0) {
           const isFlying = Math.random() < 0.35;
           if (isFlying) {
-            const height = 28 + Math.random() * 24;
+            // Tall flying cats that block jumps; the player must duck under them.
+            const height = 110 + Math.random() * 20;
             obstaclesRef.current.push({
               x: CANVAS_WIDTH,
               y: GROUND_Y - height - 20,
