@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { RoomObject } from '@/lib/roomData';
 import { GameParticleStyles } from './game/GameParticles';
 import CalculatorInteraction from './CalculatorInteraction';
@@ -163,7 +164,14 @@ export default function ItemInteractionStage({
   return (
     <>
       <GameParticleStyles />
-      {renderContent()}
+      <motion.div
+        initial={{ opacity: 0, y: 12, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="w-full"
+      >
+        {renderContent()}
+      </motion.div>
     </>
   );
 }
