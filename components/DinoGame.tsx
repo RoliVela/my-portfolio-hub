@@ -286,14 +286,50 @@ export default function DinoGame({ onComplete }: DinoGameProps) {
     };
 
     const drawCitySkyline = () => {
-      ctx.fillStyle = '#241038';
       const width = 140;
       const offset = (frameRef.current * speedRef.current * 0.1) % width;
+
+      const drawWindow = (wx: number, wy: number, color = 'rgba(255, 248, 180, 0.95)') => {
+        // Soft glow behind the window
+        ctx.fillStyle = 'rgba(255, 248, 180, 0.22)';
+        ctx.fillRect(wx - 1, wy - 1, 6, 6);
+        // Bright window core
+        ctx.fillStyle = color;
+        ctx.fillRect(wx, wy, 4, 4);
+      };
+
       for (let x = -offset; x < CANVAS_WIDTH; x += width) {
+        // Buildings
+        ctx.fillStyle = '#241038';
         ctx.fillRect(x + 10, GROUND_Y - 70, 20, 70);
         ctx.fillRect(x + 35, GROUND_Y - 45, 30, 45);
         ctx.fillRect(x + 70, GROUND_Y - 85, 25, 85);
         ctx.fillRect(x + 105, GROUND_Y - 35, 20, 35);
+
+        // Glowing windows (fixed positions so they don't flicker)
+        // Tall building 1
+        drawWindow(x + 14, GROUND_Y - 64);
+        drawWindow(x + 22, GROUND_Y - 52);
+        drawWindow(x + 16, GROUND_Y - 40);
+        drawWindow(x + 20, GROUND_Y - 26);
+
+        // Mid building 2
+        drawWindow(x + 40, GROUND_Y - 36);
+        drawWindow(x + 50, GROUND_Y - 36);
+        drawWindow(x + 42, GROUND_Y - 22);
+        drawWindow(x + 52, GROUND_Y - 22);
+
+        // Tall building 3
+        drawWindow(x + 76, GROUND_Y - 76);
+        drawWindow(x + 84, GROUND_Y - 62);
+        drawWindow(x + 76, GROUND_Y - 48);
+        drawWindow(x + 84, GROUND_Y - 34);
+        drawWindow(x + 80, GROUND_Y - 20);
+
+        // Small building 4
+        drawWindow(x + 112, GROUND_Y - 28);
+        drawWindow(x + 120, GROUND_Y - 28);
+        drawWindow(x + 112, GROUND_Y - 16);
       }
     };
 
