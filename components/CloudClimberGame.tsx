@@ -6,8 +6,8 @@ import { PopBurst, FallingDust, FallingDustOverlay } from '@/components/game/Gam
 import {
   clamp,
   surfaceHeightAt,
-  rectsOverlap,
   resolveHorizontalMove,
+  isCrushedByFallingBlock,
   type LandedBlock,
 } from '@/lib/cloudClimberPhysics';
 
@@ -32,7 +32,6 @@ const WALL_SLIDE_SPEED = -2;
 const CAMERA_THRESHOLD_SCREEN_Y = CANVAS_HEIGHT * 0.5;
 const COYOTE_FRAMES = 8;
 const FEET_PER_WORLD = 0.25;
-const CRUSH_TOP_TOLERANCE = 10; // px: feet can be this close to a falling block's top without dying
 const HIGH_SCORE_KEY = 'cloud-climber-high-score';
 
 // ======================== Types ========================
@@ -141,6 +140,7 @@ export default function CloudClimberGame() {
   const fallingRef = useRef<FallingBlock[]>([]);
   const charXRef = useRef(CANVAS_WIDTH / 2 - CHAR_WIDTH / 2);
   const charYRef = useRef(0); // feet position
+  const prevCharYRef = useRef(0);
   const charVyRef = useRef(0);
   const groundedRef = useRef(true);
   const lavaYRef = useRef(-200);
@@ -179,6 +179,7 @@ export default function CloudClimberGame() {
     fallingRef.current = [];
     charXRef.current = CANVAS_WIDTH / 2 - CHAR_WIDTH / 2;
     charYRef.current = 0;
+    prevCharYRef.current = 0;
     charVyRef.current = 0;
     groundedRef.current = true;
     lavaYRef.current = -200;
@@ -642,7 +643,8 @@ export default function CloudClimberGame() {
       charYRef.current += charVyRef.current;
 
       const ground = surfaceHeightAt(charXRef.current, charXRef.current + CHAR_WIDTH, landedRef.current);
-      if (charYRef.current <= ground) {
+      const canLand = wasGrounded || (charVyRef.current <= 0 && prevCharYRef.current >= ground);
+      if (canLand && charYRef.current <= ground) {
         charYRef.current = ground;
         charVyRef.current = 0;
         if (!wasGrounded) {
@@ -676,14 +678,12 @@ export default function CloudClimberGame() {
         width: CHAR_WIDTH,
         height: CHAR_HEIGHT,
       };
+      const groundHeight = surfaceHeightAt(charXRef.current, charXRef.current + CHAR_WIDTH, landedRef.current);
       for (let i = 0; i < fallingRef.current.length; i += 1) {
         const block = fallingRef.current[i];
         if (!block) continue;
         const blockRect = { x: block.x, y: block.y, width: block.width, height: block.height };
-        // Allow landing on top of falling blocks without dying (feet near/above block top)
-        const feetNearBlockTop = charRect.y >= blockRect.y + blockRect.height - CRUSH_TOP_TOLERANCE;
-        if (feetNearBlockTop) continue;
-        if (rectsOverlap(charRect, blockRect)) {
+        if (!isCrushedByFallingBlock(charRect, blockRect, groundHeight)) {
           playPopSound();
           spawnDust(15);
           shakeRef.current = { frames: 20, intensity: 8 };
@@ -708,6 +708,9 @@ export default function CloudClimberGame() {
       const pruneThreshold = cameraYRef.current - CANVAS_HEIGHT;
       landedRef.current = landedRef.current.filter((b) => b.y + b.height >= pruneThreshold);
       fallingRef.current = fallingRef.current.filter((b) => b.y + b.height >= pruneThreshold);
+
+      // Remember feet position before next frame so we can tell if we came from above the ground.
+      prevCharYRef.current = charYRef.current;
 
       // Update puff particles
       puffsRef.current = puffsRef.current.filter((p) => {

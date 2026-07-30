@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clamp, surfaceHeightAt, rectsOverlap, resolveHorizontalMove, type LandedBlock } from './cloudClimberPhysics';
+import { clamp, surfaceHeightAt, rectsOverlap, resolveHorizontalMove, isCrushedByFallingBlock, type LandedBlock } from './cloudClimberPhysics';
 
 describe('clamp', () => {
   it('returns the value when inside the range', () => {
@@ -69,8 +69,8 @@ describe('surfaceHeightAt', () => {
     expect(surfaceHeightAt(49, 50, blocks)).toBe(0);
     // Query [48, 50] still touches the block edge (overlap 0)
     expect(surfaceHeightAt(48, 50, blocks)).toBe(0);
-    // Query [47, 53] overlaps the block by 3px -> counted
-    expect(surfaceHeightAt(47, 53, blocks)).toBe(50);
+    // Query [47, 61] overlaps the block by 11px -> counted
+    expect(surfaceHeightAt(47, 61, blocks)).toBe(50);
   });
 
   it('still counts blocks with meaningful horizontal overlap', () => {
@@ -145,5 +145,37 @@ describe('resolveHorizontalMove', () => {
 
   it('returns the raw nextX when there are no landed blocks', () => {
     expect(resolveHorizontalMove(10, 30, 0, 10, 10, [])).toBe(30);
+  });
+});
+
+describe('isCrushedByFallingBlock', () => {
+  it('returns true when a falling block pins the character against the ground', () => {
+    const charRect = { x: 100, y: 0, width: 28, height: 28 };
+    const blockRect = { x: 90, y: 25, width: 50, height: 30 }; // bottom just above character head
+    expect(isCrushedByFallingBlock(charRect, blockRect, 0)).toBe(true);
+  });
+
+  it('returns false when the character is jumping and only touches the bottom of the block', () => {
+    const charRect = { x: 100, y: 50, width: 28, height: 28 };
+    const blockRect = { x: 90, y: 75, width: 50, height: 30 }; // bottom at character head, character is mid-air
+    expect(isCrushedByFallingBlock(charRect, blockRect, 0)).toBe(false);
+  });
+
+  it('returns false when the block is below the character', () => {
+    const charRect = { x: 100, y: 100, width: 28, height: 28 };
+    const blockRect = { x: 90, y: 50, width: 50, height: 30 }; // entirely below character
+    expect(isCrushedByFallingBlock(charRect, blockRect, 0)).toBe(false);
+  });
+
+  it('returns false when the block is to the side and not overlapping', () => {
+    const charRect = { x: 100, y: 0, width: 28, height: 28 };
+    const blockRect = { x: 200, y: 25, width: 50, height: 30 }; // far to the right
+    expect(isCrushedByFallingBlock(charRect, blockRect, 0)).toBe(false);
+  });
+
+  it('returns true when the character is pinned against a landed block below them', () => {
+    const charRect = { x: 100, y: 60, width: 28, height: 28 };
+    const blockRect = { x: 90, y: 85, width: 50, height: 30 }; // descending onto character
+    expect(isCrushedByFallingBlock(charRect, blockRect, 60)).toBe(true);
   });
 });

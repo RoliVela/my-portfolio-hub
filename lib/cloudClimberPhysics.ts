@@ -17,7 +17,7 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-const MIN_SURFACE_OVERLAP = 2; // px: ignore blocks that barely graze the character horizontally
+const MIN_SURFACE_OVERLAP = 10; // px: ignore blocks that barely graze the character horizontally
 
 /**
  * Returns the highest surface (top) among all landed blocks that overlap the
@@ -73,4 +73,26 @@ export function resolveHorizontalMove(
     resolvedX = nextX > currentX ? b.x - charWidth : b.x + b.width;
   }
   return resolvedX;
+}
+
+const PIN_TOLERANCE = 2; // px: feet can be this far above the ground and still count as pinned
+const FROM_ABOVE_TOLERANCE = 4; // px: block bottom can be this far below character head and still count as "from above"
+
+/**
+ * Returns true when a falling block is actually crushing the character against the
+ * ground or another landed block. The block must be descending from above the
+ * character's head while the character is pinned to a surface below.
+ * This prevents unfair deaths when the player merely brushes the bottom of a
+ * falling block while jumping.
+ */
+export function isCrushedByFallingBlock(
+  charRect: Rect,
+  blockRect: Rect,
+  groundHeight: number,
+  pinTolerance: number = PIN_TOLERANCE,
+  fromAboveTolerance: number = FROM_ABOVE_TOLERANCE
+): boolean {
+  const isPinned = charRect.y <= groundHeight + pinTolerance;
+  const fromAbove = blockRect.y >= charRect.y + charRect.height - fromAboveTolerance;
+  return isPinned && fromAbove && rectsOverlap(charRect, blockRect);
 }
