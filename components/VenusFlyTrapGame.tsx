@@ -78,11 +78,11 @@ function WateringCan({ pouring }: { pouring: boolean }) {
         {/* Handle */}
         <path d="M 54,16 C 66,4 66,-2 54,-2 L 42,-2" stroke="#0284c7" strokeWidth="3.5" fill="none" strokeLinecap="round" />
         {/* Spout */}
-        <path d="M 18,22 L 3,12 L 0,16 L 15,26" fill="#38bdf8" stroke="#0284c7" strokeWidth="1.5" strokeLinejoin="round" />
+        <path d="M 18,38 L 3,48 L 0,44 L 15,34" fill="#38bdf8" stroke="#0284c7" strokeWidth="1.5" strokeLinejoin="round" />
         {/* Spout holes */}
-        <circle cx="3" cy="14" r="1.2" fill="#0284c7" />
-        <circle cx="5.5" cy="13" r="1" fill="#0284c7" />
-        <circle cx="8" cy="12" r="1" fill="#0284c7" />
+        <circle cx="3" cy="46" r="1.2" fill="#0284c7" />
+        <circle cx="5.5" cy="47" r="1" fill="#0284c7" />
+        <circle cx="8" cy="48" r="1" fill="#0284c7" />
       </svg>
       {/* Water drops when pouring */}
       {pouring && (
