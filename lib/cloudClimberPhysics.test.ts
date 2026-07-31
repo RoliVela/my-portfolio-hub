@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clamp, surfaceHeightAt, rectsOverlap, resolveHorizontalMove, isCrushedByFallingBlock, type LandedBlock } from './cloudClimberPhysics';
+import { clamp, surfaceHeightAt, ceilingHeightAt, rectsOverlap, resolveHorizontalMove, isCrushedByFallingBlock, type LandedBlock } from './cloudClimberPhysics';
 
 describe('clamp', () => {
   it('returns the value when inside the range', () => {
@@ -177,5 +177,74 @@ describe('isCrushedByFallingBlock', () => {
     const charRect = { x: 100, y: 60, width: 28, height: 28 };
     const blockRect = { x: 90, y: 85, width: 50, height: 30 }; // descending onto character
     expect(isCrushedByFallingBlock(charRect, blockRect, 60)).toBe(true);
+  });
+});
+
+describe('ceilingHeightAt', () => {
+  it('returns null for an empty world', () => {
+    expect(ceilingHeightAt(0, 100, 0, [])).toBeNull();
+  });
+
+  it('returns the underside of a single overlapping block above the reference point', () => {
+    const blocks: LandedBlock[] = [{ x: 10, width: 50, y: 100, height: 30, color: '#f472b6' }];
+    // Block bottom is y=100. Reference point at y=80 (below block underside).
+    expect(ceilingHeightAt(15, 35, 80, blocks)).toBe(100);
+  });
+
+  it('returns null when all blocks are below the reference point', () => {
+    const blocks: LandedBlock[] = [{ x: 10, width: 50, y: 50, height: 30, color: '#f472b6' }];
+    // Block bottom is y=50. Reference point at y=60 (above block underside).
+    expect(ceilingHeightAt(15, 35, 60, blocks)).toBeNull();
+  });
+
+  it('returns the nearest (lowest) underside among multiple overlapping blocks', () => {
+    const blocks: LandedBlock[] = [
+      { x: 0, width: 100, y: 200, height: 20, color: '#f472b6' },
+      { x: 30, width: 40, y: 150, height: 25, color: '#60a5fa' },
+    ];
+    // Both blocks overlap horizontally with [35, 60].
+    // Block 1 underside: y=200. Block 2 underside: y=150.
+    // Nearest (lowest) above ref point y=100 is 150.
+    expect(ceilingHeightAt(35, 60, 100, blocks)).toBe(150);
+  });
+
+  it('ignores blocks that do not overlap the queried interval', () => {
+    const blocks: LandedBlock[] = [
+      { x: 0, width: 20, y: 100, height: 10, color: '#f472b6' },
+      { x: 200, width: 50, y: 80, height: 30, color: '#60a5fa' },
+    ];
+    expect(ceilingHeightAt(50, 150, 0, blocks)).toBeNull();
+  });
+
+  it('ignores blocks that barely graze the query interval', () => {
+    const blocks: LandedBlock[] = [{ x: 50, y: 100, width: 60, height: 30, color: '#f472b6' }];
+    expect(ceilingHeightAt(49, 50, 0, blocks)).toBeNull();
+    expect(ceilingHeightAt(47, 61, 0, blocks)).toBe(100);
+  });
+});
+
+describe('resolveHorizontalMove — multi-block', () => {
+  it('produces the same result regardless of block iteration order', () => {
+    // Two adjacent blocks sharing a boundary at x=100.
+    // Character moving right into the boundary from the left block.
+    const blockA: LandedBlock = { x: 50, y: 10, width: 50, height: 60, color: '#f472b6' };
+    const blockB: LandedBlock = { x: 100, y: 10, width: 50, height: 60, color: '#60a5fa' };
+
+    const resultAB = resolveHorizontalMove(80, 95, 5, 10, 10, [blockA, blockB]);
+    const resultBA = resolveHorizontalMove(80, 95, 5, 10, 10, [blockB, blockA]);
+
+    expect(resultAB).toBe(resultBA);
+  });
+
+  it('resolves correctly with three adjacent blocks', () => {
+    const blockA: LandedBlock = { x: 0, y: 10, width: 40, height: 60, color: '#f472b6' };
+    const blockB: LandedBlock = { x: 40, y: 10, width: 40, height: 60, color: '#60a5fa' };
+    const blockC: LandedBlock = { x: 80, y: 10, width: 40, height: 60, color: '#34d399' };
+
+    // Moving right from inside blockB toward blockC
+    const resultABC = resolveHorizontalMove(50, 78, 5, 10, 10, [blockA, blockB, blockC]);
+    const resultCBA = resolveHorizontalMove(50, 78, 5, 10, 10, [blockC, blockB, blockA]);
+
+    expect(resultABC).toBe(resultCBA);
   });
 });

@@ -58,14 +58,14 @@ function randomSpineHeight(title: string) {
 
 const TITLE_AREA_OVERHEAD = 60; // rough space used by the author line + padding
 
-function titleTextStyle(title: string) {
-  const fontSize = Math.max(12, Math.min(20, 220 / Math.max(title.length, 1)));
+function titleTextStyle(spineHeight: number) {
+  const fontSize = Math.max(12, Math.min(22, spineHeight / 11));
   return { fontSize };
 }
 
 function createBook(entry: BookEntry): Book {
   const height = randomSpineHeight(entry.title);
-  const { fontSize } = titleTextStyle(entry.title);
+  const { fontSize } = titleTextStyle(height);
   return {
     ...entry,
     color: randomColor(),

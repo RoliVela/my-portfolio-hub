@@ -6,6 +6,7 @@ import { PopBurst, FallingDust, FallingDustOverlay } from '@/components/game/Gam
 import {
   clamp,
   surfaceHeightAt,
+  ceilingHeightAt,
   resolveHorizontalMove,
   isCrushedByFallingBlock,
   type LandedBlock,
@@ -652,6 +653,17 @@ export default function CloudClimberGame() {
       }
 
       charYRef.current += charVyRef.current;
+
+      // Ceiling collision: stop upward movement when head hits a block underside
+      if (charVyRef.current > 0) {
+        const prevHeadY = prevCharYRef.current + CHAR_HEIGHT;
+        const nextHeadY = charYRef.current + CHAR_HEIGHT;
+        const ceiling = ceilingHeightAt(charXRef.current, charXRef.current + CHAR_WIDTH, prevHeadY, landedRef.current);
+        if (ceiling !== null && nextHeadY >= ceiling) {
+          charYRef.current = ceiling - CHAR_HEIGHT;
+          charVyRef.current = 0;
+        }
+      }
 
       const ground = surfaceHeightAt(charXRef.current, charXRef.current + CHAR_WIDTH, landedRef.current);
       const canLand = wasGrounded || (charVyRef.current <= 0 && prevCharYRef.current >= ground);

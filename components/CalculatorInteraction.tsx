@@ -69,6 +69,7 @@ export default function CalculatorInteraction({ onComplete, onUnlock }: Calculat
   const [operator, setOperator] = useState<Operator>(null);
   const [shouldResetDisplay, setShouldResetDisplay] = useState(false);
   const hasUnlockedRef = useRef(false);
+  const [showUnlockFlash, setShowUnlockFlash] = useState(false);
 
   const calculate = useCallback((left: number, right: number, op: Operator): number => {
     switch (op) {
@@ -175,6 +176,8 @@ export default function CalculatorInteraction({ onComplete, onUnlock }: Calculat
   useEffect(() => {
     if (display === FREE_BYPASS_CODE && !hasUnlockedRef.current) {
       hasUnlockedRef.current = true;
+      setShowUnlockFlash(true);
+      setTimeout(() => setShowUnlockFlash(false), 1500);
       onUnlock?.();
     }
   }, [display, onUnlock]);
@@ -204,7 +207,9 @@ export default function CalculatorInteraction({ onComplete, onUnlock }: Calculat
 
   return (
     <div className="flex w-full max-w-md flex-col items-center gap-5 rounded-xl border-4 border-fuchsia-900 bg-fuchsia-950 p-6 shadow-[0_0_0_4px_#000]">
-      <div className="mb-2 w-full rounded border-4 border-fuchsia-700 bg-pink-100 p-4 text-right font-vt323 text-4xl text-fuchsia-950 shadow-inner">
+      <div className={`mb-2 w-full rounded border-4 border-fuchsia-700 bg-pink-100 p-4 text-right font-vt323 text-4xl text-fuchsia-950 shadow-inner transition-all duration-300 ${
+        showUnlockFlash ? 'ring-4 ring-green-400 shadow-[0_0_20px_rgba(74,222,128,0.8)]' : ''
+      }`}>
         {display}
       </div>
 

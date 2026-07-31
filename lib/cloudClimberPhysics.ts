@@ -20,6 +20,23 @@ export function clamp(value: number, min: number, max: number): number {
 const MIN_SURFACE_OVERLAP = 10; // px: ignore blocks that barely graze the character horizontally
 
 /**
+ * Returns the nearest underside (bottom-y) among all landed blocks that
+ * overlap the horizontal interval [xStart, xEnd] and sit *above* the given
+ * reference point. Useful for ceiling collision when jumping upward.
+ */
+export function ceilingHeightAt(xStart: number, xEnd: number, aboveY: number, landed: LandedBlock[]): number | null {
+  let nearest: number | null = null;
+  for (const b of landed) {
+    const overlapLeft = Math.max(b.x, xStart);
+    const overlapRight = Math.min(b.x + b.width, xEnd);
+    if (overlapRight - overlapLeft <= MIN_SURFACE_OVERLAP) continue;
+    if (b.y < aboveY) continue; // this block's underside is already at/below the reference point
+    if (nearest === null || b.y < nearest) nearest = b.y;
+  }
+  return nearest;
+}
+
+/**
  * Returns the highest surface (top) among all landed blocks that overlap the
  * horizontal interval [xStart, xEnd]. Falls back to 0 (the floor).
  * Empty or reversed/zero-width intervals short-circuit to 0.
@@ -63,14 +80,16 @@ export function resolveHorizontalMove(
   charHeight: number,
   landed: LandedBlock[]
 ): number {
+  const movingRight = nextX > currentX;
   let resolvedX = nextX;
   for (const b of landed) {
     const blockTop = b.y + b.height;
     if (charY >= blockTop) continue; // standing on/above it — not a wall
     if (charY + charHeight <= b.y) continue; // fully below it — no vertical overlap
-    const overlapsX = resolvedX < b.x + b.width && resolvedX + charWidth > b.x;
+    const overlapsX = nextX < b.x + b.width && nextX + charWidth > b.x;
     if (!overlapsX) continue;
-    resolvedX = nextX > currentX ? b.x - charWidth : b.x + b.width;
+    const candidate = movingRight ? b.x - charWidth : b.x + b.width;
+    resolvedX = movingRight ? Math.min(resolvedX, candidate) : Math.max(resolvedX, candidate);
   }
   return resolvedX;
 }

@@ -12,6 +12,7 @@ import DialogueBox from '@/components/DialogueBox';
 import SnippyCharacter from '@/components/SnippyCharacter';
 import ItemInteractionStage, { JukeboxTrack } from '@/components/ItemInteractionStage';
 import ClockOverlay from '@/components/ClockOverlay';
+import SnippyToast from '@/components/SnippyToast';
 
 type ObjectState = Record<string, Record<string, unknown>>;
 type InspectionPhase = 'closed' | 'dialogue' | 'choice' | 'interacting';
@@ -85,6 +86,7 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [panelCollapsed, setPanelCollapsed] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [snippyToast, setSnippyToast] = useState<string | null>(null);
   const [musicOn, setMusicOn] = useState(true);
   const [currentJukeboxTrack, setCurrentJukeboxTrack] = useState<JukeboxTrack | null>({
     title: 'Default Audio',
@@ -360,6 +362,10 @@ export default function Home() {
   const handleInteract = () => {
     if (!inspectedObject) return;
     setInspectionPhase('interacting');
+    setObjectState((prev) => ({
+      ...prev,
+      [inspectedObject.id]: { ...prev[inspectedObject.id], hasInteracted: true },
+    }));
     // Generic toggles are now handled inside ItemInteractionStage so the user
     // sees a dedicated "Activate" step. Only objects with custom interaction
     // stages are skipped here.
@@ -542,6 +548,14 @@ export default function Home() {
     });
   };
 
+  // Completion tracker: count tracked objects that have been interacted with
+  const trackedObjects = roomObjects.filter(
+    (o) => o.id !== 'OBJ_01' && o.id !== 'OBJ_02' && !o.decorative
+  );
+  const completedCount = trackedObjects.filter(
+    (o) => objectState[o.id]?.hasInteracted
+  ).length;
+
   const isInspecting = inspectedObject !== null;
   const dimLevel = inspectionPhase === 'interacting' ? 'bg-black/80' : 'bg-black/50';
 
@@ -596,6 +610,13 @@ export default function Home() {
           </svg>
         )}
       </button>
+
+      {/* Completion tracker badge (non-reposition mode) */}
+      {!repositionMode && (
+        <div className="absolute top-4 right-4 z-50 rounded-full bg-black/70 px-3 py-2 font-vt323 text-white">
+          {completedCount}/{trackedObjects.length}
+        </div>
+      )}
 
       {/* Coordinate readout (reposition mode only) */}
       {repositionMode && (
@@ -855,12 +876,13 @@ export default function Home() {
                 onJukeboxTrackSelect={setCurrentJukeboxTrack}
                 onJukeboxToggle={() => setMusicOn((prev) => !prev)}
                 isComputerUnlocked={Boolean(objectState.OBJ_16?.isUnlocked)}
-                onUnlockComputer={() =>
+                onUnlockComputer={() => {
                   setObjectState((prev) => ({
                     ...prev,
                     OBJ_16: { ...prev.OBJ_16, isUnlocked: true },
-                  }))
-                }
+                  }));
+                  setSnippyToast("Oh! I think something happened on the computer.");
+                }}
               />
               <button
                 type="button"
@@ -927,6 +949,9 @@ export default function Home() {
           ))}
         </div>
       )}
+
+      {/* Snippy toast notification */}
+      {snippyToast && <SnippyToast message={snippyToast} onDismiss={() => setSnippyToast(null)} />}
     </main>
   );
 }
