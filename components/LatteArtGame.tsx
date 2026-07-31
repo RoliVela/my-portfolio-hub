@@ -29,7 +29,14 @@ const CUP_RADIUS = CANVAS_SIZE / 2 - CUP_MARGIN;
 const CREAM_WIDTH = 7;
 const GUIDE_ALPHA = 0.25;
 const GALLERY_KEY = 'latte-art-gallery';
+const STATS_KEY = 'latte-art-stats';
 const MAX_GALLERY_ITEMS = 10;
+
+interface LatteArtStats {
+  creationsSaved: number;
+  totalStrokes: number;
+  longestStroke: number;
+}
 
 const REACTIONS = [
   'Ooh, fancy!',
@@ -39,6 +46,16 @@ const REACTIONS = [
   'A masterpiece in milk foam.',
   'Latte art complete!',
 ];
+
+function computeStrokeLength(stroke: Stroke): number {
+  let length = 0;
+  for (let i = 1; i < stroke.length; i += 1) {
+    const dx = stroke[i].x - stroke[i - 1].x;
+    const dy = stroke[i].y - stroke[i - 1].y;
+    length += Math.sqrt(dx * dx + dy * dy);
+  }
+  return Math.round(length);
+}
 
 function drawHeartPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number) {
   const bottomY = cy + size * 0.55;
@@ -77,6 +94,36 @@ function writeGallery(gallery: SavedDesign[]) {
   }
 }
 
+function readStats(): LatteArtStats {
+  if (typeof window === 'undefined') {
+    return { creationsSaved: 0, totalStrokes: 0, longestStroke: 0 };
+  }
+  try {
+    const raw = window.localStorage.getItem(STATS_KEY);
+    if (!raw) return { creationsSaved: 0, totalStrokes: 0, longestStroke: 0 };
+    const parsed = JSON.parse(raw) as unknown;
+    if (typeof parsed === 'object' && parsed !== null) {
+      return {
+        creationsSaved: Number((parsed as LatteArtStats).creationsSaved) || 0,
+        totalStrokes: Number((parsed as LatteArtStats).totalStrokes) || 0,
+        longestStroke: Number((parsed as LatteArtStats).longestStroke) || 0,
+      };
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return { creationsSaved: 0, totalStrokes: 0, longestStroke: 0 };
+}
+
+function writeStats(stats: LatteArtStats) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+  } catch {
+    // ignore storage errors
+  }
+}
+
 export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dprRef = useRef(1);
@@ -93,6 +140,7 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
   const [canRedo, setCanRedo] = useState(false);
   const [gallery, setGallery] = useState<SavedDesign[]>(() => readGallery());
   const [galleryMessage, setGalleryMessage] = useState<string | null>(null);
+  const [stats, setStats] = useState<LatteArtStats>(() => readStats());
 
   const updateHistoryState = useCallback(() => {
     setCanUndo(strokesRef.current.length > 0);
@@ -235,8 +283,15 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
       if (e.currentTarget.hasPointerCapture(e.pointerId)) {
         e.currentTarget.releasePointerCapture(e.pointerId);
       }
-      if (currentStrokeRef.current.length > 0) {
-        strokesRef.current = [...strokesRef.current, currentStrokeRef.current];
+      const finishedStroke = currentStrokeRef.current;
+      if (finishedStroke.length > 0) {
+        strokesRef.current = [...strokesRef.current, finishedStroke];
+        const strokeLength = computeStrokeLength(finishedStroke);
+        setStats((prev) => ({
+          ...prev,
+          totalStrokes: prev.totalStrokes + 1,
+          longestStroke: Math.max(prev.longestStroke, strokeLength),
+        }));
       }
       currentStrokeRef.current = [];
       updateHistoryState();
@@ -305,6 +360,8 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
       return next;
     });
 
+    setStats((prev) => ({ ...prev, creationsSaved: prev.creationsSaved + 1 }));
+
     setGalleryMessage('Saved to gallery!');
     if (galleryMessageTimerRef.current) {
       clearTimeout(galleryMessageTimerRef.current);
@@ -349,6 +406,10 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
       onComplete?.();
     }, 1800);
   }, [onComplete, onToggle]);
+
+  useEffect(() => {
+    writeStats(stats);
+  }, [stats]);
 
   useEffect(() => {
     return () => {
@@ -439,6 +500,12 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
       {galleryMessage && (
         <p className="font-vt323 text-lg text-pink-300">{galleryMessage}</p>
       )}
+
+      <div className="flex w-full flex-wrap items-center justify-center gap-x-4 gap-y-1 font-vt323 text-pink-100/80">
+        <span>Creations: {stats.creationsSaved}</span>
+        <span>Strokes: {stats.totalStrokes}</span>
+        <span>Longest: {stats.longestStroke}px</span>
+      </div>
 
       {gallery.length > 0 && (
         <div className="w-full">
