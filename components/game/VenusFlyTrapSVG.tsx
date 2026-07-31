@@ -95,10 +95,7 @@ export default function VenusFlyTrapSVG({
           <stop offset="60%" stopColor="#dc2626" />
           <stop offset="100%" stopColor="#991b1b" />
         </radialGradient>
-        <radialGradient id="vft-water-drop">
-          <stop offset="0%" stopColor="#7dd3fc" />
-          <stop offset="100%" stopColor="#0ea5e9" />
-        </radialGradient>
+
       </defs>
 
       {/* ===== Pot ===== */}
@@ -131,6 +128,35 @@ export default function VenusFlyTrapSVG({
       <circle cx="130" cy="244" r="1" fill="#5c4033" opacity="0.4" />
       <circle cx="115" cy="246" r="1.5" fill="#5c4033" opacity="0.3" />
       <circle cx="140" cy="245" r="1" fill="#5c4033" opacity="0.3" />
+
+      {/* ===== Water droplets on soil ===== */}
+      {waterLevel > 5 && (() => {
+        const dropCount = Math.min(Math.floor(waterLevel / 12) + 1, 8);
+        const dropPositions: [number, number, number][] = [
+          [95, 243, 2.2],
+          [108, 244, 1.8],
+          [132, 243, 2.0],
+          [145, 244, 1.6],
+          [82, 245, 1.5],
+          [118, 242, 2.4],
+          [155, 245, 1.7],
+          [102, 245, 1.4],
+        ];
+        return (
+          <g opacity={0.5 + (waterLevel / 100) * 0.5}>
+            {dropPositions.slice(0, dropCount).map(([dx, dy, r], i) => (
+              <g key={`drop-${i}`}>
+                {/* Drop body */}
+                <ellipse cx={dx} cy={dy} rx={r * 0.8} ry={r} fill="#38bdf8" />
+                {/* Highlight */}
+                <ellipse cx={dx - r * 0.2} cy={dy - r * 0.3} rx={r * 0.3} ry={r * 0.4} fill="#bae6fd" opacity="0.6" />
+              </g>
+            ))}
+            {/* Damp soil darkening around drops */}
+            <ellipse cx="120" cy="244" rx={20 + (waterLevel / 100) * 25} ry="3" fill="#1e3a5f" opacity={0.1 + (waterLevel / 100) * 0.15} />
+          </g>
+        );
+      })()}
 
       {/* ===== Plant group (wilt + growth) ===== */}
       <g
@@ -280,24 +306,7 @@ export default function VenusFlyTrapSVG({
             );
           })}
 
-          {/* ----- Water inside trap ----- */}
-          {waterLevel > 5 && (
-            <ellipse
-              cx="5"
-              cy={15 - (waterLevel / 100) * 20}
-              rx={8 + (waterLevel / 100) * 10}
-              ry={4 + (waterLevel / 100) * 12}
-              fill="url(#vft-water-drop)"
-              opacity={0.3 + (waterLevel / 100) * 0.4}
-            >
-              <animate
-                attributeName="ry"
-                values={`${4 + (waterLevel / 100) * 12};${6 + (waterLevel / 100) * 12};${4 + (waterLevel / 100) * 12}`}
-                dur="2s"
-                repeatCount="indefinite"
-              />
-            </ellipse>
-          )}
+
         </g>
       </g>
 
