@@ -30,6 +30,7 @@ const CREAM_WIDTH = 7;
 const GUIDE_ALPHA = 0.25;
 const GALLERY_KEY = 'latte-art-gallery';
 const STATS_KEY = 'latte-art-stats';
+const BRUSH_COLOR_KEY = 'latte-art-brush-color';
 const MAX_GALLERY_ITEMS = 10;
 
 interface LatteArtStats {
@@ -37,6 +38,17 @@ interface LatteArtStats {
   totalStrokes: number;
   longestStroke: number;
 }
+
+const BRUSH_COLORS = [
+  { label: 'Cream', value: '#FFF8E7' },
+  { label: 'White', value: '#FFFFFF' },
+  { label: 'Pink', value: '#FFD1E8' },
+  { label: 'Mint', value: '#C7F9E8' },
+  { label: 'Lavender', value: '#E3D7FF' },
+  { label: 'Honey', value: '#FFF0B3' },
+];
+
+const DEFAULT_BRUSH_COLOR = BRUSH_COLORS[0].value;
 
 const REACTIONS = [
   'Ooh, fancy!',
@@ -124,6 +136,27 @@ function writeStats(stats: LatteArtStats) {
   }
 }
 
+function readBrushColor(): string {
+  if (typeof window === 'undefined') return DEFAULT_BRUSH_COLOR;
+  try {
+    const raw = window.localStorage.getItem(BRUSH_COLOR_KEY);
+    if (!raw) return DEFAULT_BRUSH_COLOR;
+    const isValid = BRUSH_COLORS.some((color) => color.value === raw);
+    return isValid ? raw : DEFAULT_BRUSH_COLOR;
+  } catch {
+    return DEFAULT_BRUSH_COLOR;
+  }
+}
+
+function writeBrushColor(color: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(BRUSH_COLOR_KEY, color);
+  } catch {
+    // ignore storage errors
+  }
+}
+
 export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dprRef = useRef(1);
@@ -141,6 +174,8 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
   const [gallery, setGallery] = useState<SavedDesign[]>(() => readGallery());
   const [galleryMessage, setGalleryMessage] = useState<string | null>(null);
   const [stats, setStats] = useState<LatteArtStats>(() => readStats());
+  const [brushColor, setBrushColor] = useState<string>(() => readBrushColor());
+  const brushColorRef = useRef(brushColor);
 
   const updateHistoryState = useCallback(() => {
     setCanUndo(strokesRef.current.length > 0);
@@ -161,6 +196,7 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    const activeColor = brushColorRef.current;
 
     ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
@@ -195,7 +231,7 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
     ctx.restore();
 
     // Cream strokes
-    ctx.strokeStyle = '#FFF8E7';
+    ctx.strokeStyle = activeColor;
     ctx.lineWidth = CREAM_WIDTH;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -206,7 +242,7 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
       if (stroke.length === 1) {
         ctx.beginPath();
         ctx.arc(stroke[0].x, stroke[0].y, CREAM_WIDTH / 2, 0, Math.PI * 2);
-        ctx.fillStyle = '#FFF8E7';
+        ctx.fillStyle = activeColor;
         ctx.fill();
       } else {
         ctx.beginPath();
@@ -248,6 +284,11 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
       drawScene();
     }
   }, [drawScene]);
+
+  useEffect(() => {
+    brushColorRef.current = brushColor;
+    drawScene();
+  }, [brushColor, drawScene]);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -412,6 +453,10 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
   }, [stats]);
 
   useEffect(() => {
+    writeBrushColor(brushColor);
+  }, [brushColor]);
+
+  useEffect(() => {
     return () => {
       if (doneTimerRef.current) {
         clearTimeout(doneTimerRef.current);
@@ -444,6 +489,28 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
             <p className="whitespace-pre-line font-vt323 text-2xl text-pink-200">{message}</p>
           </div>
         )}
+      </div>
+
+      <div className="flex w-full flex-col items-center gap-2">
+        <p className="font-vt323 text-lg text-pink-200">Brush Color</p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {BRUSH_COLORS.map((color) => (
+            <button
+              key={color.value}
+              type="button"
+              onClick={() => setBrushColor(color.value)}
+              aria-label={`Select ${color.label} brush color`}
+              aria-pressed={brushColor === color.value}
+              className={`h-8 w-8 rounded-full border-2 transition hover:scale-110 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 focus:ring-offset-purple-950 ${
+                brushColor === color.value
+                  ? 'border-white shadow-[0_0_0_2px_#f9a8d4]'
+                  : 'border-pink-300/50'
+              }`}
+              style={{ backgroundColor: color.value }}
+              title={color.label}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="flex w-full flex-col items-center gap-3">
