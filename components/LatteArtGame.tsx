@@ -200,6 +200,18 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
     drawScene();
   }, [drawScene]);
 
+  const handleSave = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = `latte-art-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
+
   const handleDone = useCallback(() => {
     if (isDoneRef.current) return;
     isDoneRef.current = true;
@@ -253,6 +265,13 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
           className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
         >
           Clear
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
+        >
+          Save
         </button>
         <button
           type="button"
