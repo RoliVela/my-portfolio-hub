@@ -206,6 +206,32 @@ export default function Home() {
     };
   }, [currentJukeboxTrack]);
 
+  // Keyboard shortcut to toggle global mute.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if the user is typing in an input, textarea, or contenteditable element.
+      const target = e.target as HTMLElement | null;
+      const isTyping =
+        !!target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable);
+
+      if (isTyping) return;
+
+      if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        toggleMute();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Pre-load alpha maps for all object images (including alt states) so
   // pixel-perfect hit detection is ready before the user clicks.
   useEffect(() => {
