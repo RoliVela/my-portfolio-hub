@@ -7,6 +7,20 @@ interface LatteArtGameProps {
   onToggle?: () => void;
 }
 
+interface Point {
+  x: number;
+  y: number;
+}
+
+type Stroke = Point[];
+
+interface SavedDesign {
+  id: string;
+  date: number;
+  thumbnail: string;
+  strokes: Stroke[];
+}
+
 const CANVAS_SIZE = 360;
 const CUP_X = CANVAS_SIZE / 2;
 const CUP_Y = CANVAS_SIZE / 2;
@@ -14,6 +28,8 @@ const CUP_MARGIN = 24;
 const CUP_RADIUS = CANVAS_SIZE / 2 - CUP_MARGIN;
 const CREAM_WIDTH = 7;
 const GUIDE_ALPHA = 0.25;
+const GALLERY_KEY = 'latte-art-gallery';
+const MAX_GALLERY_ITEMS = 10;
 
 const REACTIONS = [
   'Ooh, fancy!',
@@ -39,16 +55,49 @@ function drawHeartPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, si
   ctx.closePath();
 }
 
+function readGallery(): SavedDesign[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(GALLERY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) return parsed as SavedDesign[];
+  } catch {
+    // ignore storage errors
+  }
+  return [];
+}
+
+function writeGallery(gallery: SavedDesign[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(GALLERY_KEY, JSON.stringify(gallery));
+  } catch {
+    // ignore storage errors
+  }
+}
+
 export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dprRef = useRef(1);
   const isDrawingRef = useRef(false);
-  const strokesRef = useRef<{ x: number; y: number }[][]>([]);
-  const currentStrokeRef = useRef<{ x: number; y: number }[]>([]);
+  const strokesRef = useRef<Stroke[]>([]);
+  const currentStrokeRef = useRef<Stroke>([]);
+  const redoStackRef = useRef<Stroke[]>([]);
   const doneTimerRef = useRef<number | null>(null);
+  const galleryMessageTimerRef = useRef<number | null>(null);
   const isDoneRef = useRef(false);
 
   const [message, setMessage] = useState<string | null>(null);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const [gallery, setGallery] = useState<SavedDesign[]>(() => readGallery());
+  const [galleryMessage, setGalleryMessage] = useState<string | null>(null);
+
+  const updateHistoryState = useCallback(() => {
+    setCanUndo(strokesRef.current.length > 0);
+    setCanRedo(redoStackRef.current.length > 0);
+  }, []);
 
   const getCanvasPoint = useCallback((clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
@@ -160,6 +209,9 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
       const point = getCanvasPoint(e.clientX, e.clientY);
       isDrawingRef.current = true;
       currentStrokeRef.current = [point];
+      // New stroke invalidates redo history
+      redoStackRef.current = [];
+      setCanRedo(false);
       drawScene();
     },
     [getCanvasPoint, drawScene]
@@ -176,7 +228,7 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
     [getCanvasPoint, drawScene]
   );
 
-  const handlePointerUp = useCallback(
+  const finishStroke = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
       if (!isDrawingRef.current) return;
       isDrawingRef.current = false;
@@ -187,18 +239,41 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
         strokesRef.current = [...strokesRef.current, currentStrokeRef.current];
       }
       currentStrokeRef.current = [];
+      updateHistoryState();
       drawScene();
     },
-    [drawScene]
+    [drawScene, updateHistoryState]
   );
 
   const handleClear = useCallback(() => {
     if (isDoneRef.current) return;
     strokesRef.current = [];
     currentStrokeRef.current = [];
+    redoStackRef.current = [];
     isDrawingRef.current = false;
+    updateHistoryState();
     drawScene();
-  }, [drawScene]);
+  }, [drawScene, updateHistoryState]);
+
+  const handleUndo = useCallback(() => {
+    if (isDoneRef.current) return;
+    if (strokesRef.current.length === 0) return;
+    const lastStroke = strokesRef.current[strokesRef.current.length - 1];
+    strokesRef.current = strokesRef.current.slice(0, -1);
+    redoStackRef.current = [...redoStackRef.current, lastStroke];
+    updateHistoryState();
+    drawScene();
+  }, [drawScene, updateHistoryState]);
+
+  const handleRedo = useCallback(() => {
+    if (isDoneRef.current) return;
+    if (redoStackRef.current.length === 0) return;
+    const stroke = redoStackRef.current[redoStackRef.current.length - 1];
+    redoStackRef.current = redoStackRef.current.slice(0, -1);
+    strokesRef.current = [...strokesRef.current, stroke];
+    updateHistoryState();
+    drawScene();
+  }, [drawScene, updateHistoryState]);
 
   const handleSave = useCallback(() => {
     const canvas = canvasRef.current;
@@ -211,6 +286,55 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
     link.click();
     document.body.removeChild(link);
   }, []);
+
+  const handleKeep = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const thumbnail = canvas.toDataURL('image/jpeg', 0.5);
+    const design: SavedDesign = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      date: Date.now(),
+      thumbnail,
+      strokes: strokesRef.current.map((stroke) => stroke.map((point) => ({ ...point }))),
+    };
+
+    setGallery((prev) => {
+      const next = [design, ...prev].slice(0, MAX_GALLERY_ITEMS);
+      writeGallery(next);
+      return next;
+    });
+
+    setGalleryMessage('Saved to gallery!');
+    if (galleryMessageTimerRef.current) {
+      clearTimeout(galleryMessageTimerRef.current);
+    }
+    galleryMessageTimerRef.current = window.setTimeout(() => setGalleryMessage(null), 1500);
+  }, []);
+
+  const handleLoadDesign = useCallback(
+    (design: SavedDesign) => {
+      if (isDoneRef.current) return;
+      strokesRef.current = design.strokes.map((stroke) => stroke.map((point) => ({ ...point })));
+      currentStrokeRef.current = [];
+      redoStackRef.current = [];
+      isDrawingRef.current = false;
+      updateHistoryState();
+      drawScene();
+    },
+    [drawScene, updateHistoryState]
+  );
+
+  const handleDeleteDesign = useCallback(
+    (id: string) => {
+      setGallery((prev) => {
+        const next = prev.filter((design) => design.id !== id);
+        writeGallery(next);
+        return next;
+      });
+    },
+    []
+  );
 
   const handleDone = useCallback(() => {
     if (isDoneRef.current) return;
@@ -231,6 +355,9 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
       if (doneTimerRef.current) {
         clearTimeout(doneTimerRef.current);
       }
+      if (galleryMessageTimerRef.current) {
+        clearTimeout(galleryMessageTimerRef.current);
+      }
     };
   }, []);
 
@@ -246,8 +373,8 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
           ref={canvasRef}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
+          onPointerUp={finishStroke}
+          onPointerCancel={finishStroke}
           className="touch-none rounded-full"
           aria-label="Latte art drawing canvas. Drag to draw cream on the coffee."
         />
@@ -258,29 +385,92 @@ export default function LatteArtGame({ onComplete, onToggle }: LatteArtGameProps
         )}
       </div>
 
-      <div className="flex w-full flex-wrap items-center justify-center gap-3">
-        <button
-          type="button"
-          onClick={handleClear}
-          className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
-        >
-          Clear
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
-        >
-          Save
-        </button>
-        <button
-          type="button"
-          onClick={handleDone}
-          className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
-        >
-          Done
-        </button>
+      <div className="flex w-full flex-col items-center gap-3">
+        <div className="flex w-full flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={handleUndo}
+            disabled={!canUndo}
+            className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-4 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Undo
+          </button>
+          <button
+            type="button"
+            onClick={handleRedo}
+            disabled={!canRedo}
+            className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-4 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Redo
+          </button>
+          <button
+            type="button"
+            onClick={handleClear}
+            className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-4 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
+          >
+            Clear
+          </button>
+        </div>
+        <div className="flex w-full flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={handleSave}
+            className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-4 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            onClick={handleKeep}
+            className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-4 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
+          >
+            Keep
+          </button>
+          <button
+            type="button"
+            onClick={handleDone}
+            className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-4 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
+          >
+            Done
+          </button>
+        </div>
       </div>
+
+      {galleryMessage && (
+        <p className="font-vt323 text-lg text-pink-300">{galleryMessage}</p>
+      )}
+
+      {gallery.length > 0 && (
+        <div className="w-full">
+          <h3 className="mb-2 text-center font-vt323 text-xl text-pink-200">My Creations</h3>
+          <div className="flex w-full gap-2 overflow-x-auto pb-2">
+            {gallery.map((design) => (
+              <div key={design.id} className="group relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleLoadDesign(design)}
+                  className="h-20 w-20 overflow-hidden rounded-full border-2 border-pink-300/50 bg-purple-900 transition hover:border-pink-300"
+                  aria-label="Load saved design"
+                >
+                  <img
+                    src={design.thumbnail}
+                    alt="Saved latte art thumbnail"
+                    className="h-full w-full object-cover"
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteDesign(design.id)}
+                  className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-xs text-white opacity-0 transition hover:bg-pink-400 group-hover:opacity-100"
+                  aria-label="Delete saved design"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
