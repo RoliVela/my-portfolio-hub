@@ -390,7 +390,7 @@ export const roomObjects: RoomObject[] = [
     initialState: {},
     imageSrc: '/assets/cloud-climb-icon.png',
     dialogue: {
-      free: [{ speaker: 'Snippy', text: "Ooh, a little climbing game! Roli hasn't picked out art for this one yet, but it's fun to play already." }],
+      free: [{ speaker: 'Snippy', text: "Ooh, a little climbing game! Give it a try." }],
       paid: 'N/A',
     },
     actionTarget: 'Launches falling-blocks climbing mini-game overlay',

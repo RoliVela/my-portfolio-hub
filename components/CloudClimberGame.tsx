@@ -694,7 +694,7 @@ export default function CloudClimberGame() {
         const block = fallingRef.current[i];
         if (!block) continue;
         const blockRect = { x: block.x, y: block.y, width: block.width, height: block.height };
-        if (!isCrushedByFallingBlock(charRect, blockRect, groundHeight)) {
+        if (isCrushedByFallingBlock(charRect, blockRect, groundHeight)) {
           playPopSound();
           spawnDust(15);
           shakeRef.current = { frames: 20, intensity: 8 };

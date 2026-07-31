@@ -72,12 +72,12 @@ export class DinoAudioEngine {
     this.masterGain = this.ctx.createGain();
     this.lfoGain = this.ctx.createGain();
 
-    // Retro sawtooth drone
-    this.osc.type = 'sawtooth';
+    // Retro triangle drone (softer than sawtooth)
+    this.osc.type = 'triangle';
     this.osc.frequency.value = 80;
 
-    // LFO creates rhythmic pulsing / footstep feel
-    this.lfo.type = 'square';
+    // LFO creates rhythmic pulsing / footstep feel (sine instead of square for smooth tremolo)
+    this.lfo.type = 'sine';
     this.lfo.frequency.value = 4;
 
     // Tremolo: LFO modulates master volume
