@@ -563,6 +563,11 @@ export default function CloudClimberGame() {
         });
       }
 
+      // Snapshot landed blocks BEFORE updating falling blocks, so a block that
+      // just landed this frame doesn't create a new surface the character can
+      // teleport onto in the same frame.
+      const landedSnapshot = landedRef.current;
+
       // Update falling blocks
       for (let i = fallingRef.current.length - 1; i >= 0; i -= 1) {
         const block = fallingRef.current[i];
@@ -636,8 +641,13 @@ export default function CloudClimberGame() {
         }
       }
 
-      const ground = surfaceHeightAt(charXRef.current, charXRef.current + CHAR_WIDTH, landedRef.current);
-      const canLand = wasGrounded || (charVyRef.current <= 0 && prevCharYRef.current >= ground);
+      const ground = surfaceHeightAt(charXRef.current, charXRef.current + CHAR_WIDTH, landedSnapshot);
+      // Tolerance: the character can only land on a surface they were above last
+      // frame, or at most one block-fall-speed below it (accounts for a block
+      // landing on the character's surface in the previous frame).
+      const LANDING_TOLERANCE = BLOCK_FALL_SPEED + 2;
+      const canLand = (wasGrounded || (charVyRef.current <= 0 && prevCharYRef.current >= ground))
+        && prevCharYRef.current >= ground - LANDING_TOLERANCE;
       if (canLand && charYRef.current <= ground) {
         const impactVy = charVyRef.current;
         charYRef.current = ground;
