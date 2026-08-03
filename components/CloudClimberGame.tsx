@@ -23,12 +23,13 @@ const BLOCK_SPAWN_INTERVAL_MS = 1000;
 const LAVA_RISE_SPEED = 0.5; // world pixels per frame (lavaY increases)
 const CHAR_WIDTH = 28;
 const CHAR_HEIGHT = 28;
-const CHAR_SPEED = 5; // world pixels per frame
+const MOVE_ACCEL = 1.5; // horizontal acceleration per frame while a direction is held
+const MAX_MOVE_SPEED = 6;
+const MOVE_FRICTION = 0.85; // velocity multiplier per frame with no input — close to 1 = long slide
 const GRAVITY = -0.6; // y decreases each frame when falling
 const JUMP_VELOCITY = 13;
-const WALL_JUMP_VELOCITY = JUMP_VELOCITY * 0.7;
-const WALL_JUMP_KICK = 6;
-const WALL_JUMP_KICK_DECAY = 0.88;
+const MAX_FALL_SPEED = -14; // terminal velocity cap
+const BOUNCE_COEFFICIENT = 0.25; // 0.2–0.3 — minor elastic bounce on landing
 const WALL_SLIDE_SPEED = -2;
 const CAMERA_THRESHOLD_SCREEN_Y = CANVAS_HEIGHT * 0.5;
 const COYOTE_FRAMES = 8;
@@ -156,7 +157,7 @@ export default function CloudClimberGame() {
   const squashRef = useRef(1);
   const coyoteTimeRef = useRef(0);
   const wallSideRef = useRef<'left' | 'right' | null>(null);
-  const charKickVxRef = useRef(0);
+  const charVxRef = useRef(0);
   const wallSlideDustTimerRef = useRef(0);
 
   const updateHighScore = useCallback((value: number) => {
@@ -194,7 +195,7 @@ export default function CloudClimberGame() {
     squashRef.current = 1;
     coyoteTimeRef.current = 0;
     wallSideRef.current = null;
-    charKickVxRef.current = 0;
+    charVxRef.current = 0;
     wallSlideDustTimerRef.current = 0;
     setScore(0);
     setGameState('playing');
@@ -287,17 +288,6 @@ export default function CloudClimberGame() {
       const y = CANVAS_HEIGHT - (charYRef.current - cameraYRef.current) - CHAR_HEIGHT / 2;
       spawnPop(x, y);
       spawnPuffs();
-    } else if (wallSideRef.current) {
-      charVyRef.current = WALL_JUMP_VELOCITY;
-      charKickVxRef.current = wallSideRef.current === 'right' ? -WALL_JUMP_KICK : WALL_JUMP_KICK;
-      wallSideRef.current = null;
-      groundedRef.current = false;
-      squashRef.current = 1.25;
-      playPopSound();
-      const x = charXRef.current + CHAR_WIDTH / 2;
-      const y = CANVAS_HEIGHT - (charYRef.current - cameraYRef.current) - CHAR_HEIGHT / 2;
-      spawnPop(x, y);
-      spawnPuffs();
     }
   }, [spawnPop, spawnPuffs]);
 
@@ -307,9 +297,6 @@ export default function CloudClimberGame() {
 
   const stopLeft = useCallback(() => {
     inputRef.current.left = false;
-    if (wallSideRef.current === 'left') {
-      wallSideRef.current = null;
-    }
   }, []);
 
   const startRight = useCallback(() => {
@@ -318,9 +305,6 @@ export default function CloudClimberGame() {
 
   const stopRight = useCallback(() => {
     inputRef.current.right = false;
-    if (wallSideRef.current === 'right') {
-      wallSideRef.current = null;
-    }
   }, []);
 
   // ======================== Canvas game loop ========================
@@ -595,39 +579,30 @@ export default function CloudClimberGame() {
         }
       }
 
-      // Character horizontal movement
+      // Character horizontal movement (acceleration + friction)
       const input = inputRef.current;
-      let nextX = charXRef.current;
       if (input.left && !input.right) {
-        nextX -= CHAR_SPEED;
+        charVxRef.current -= MOVE_ACCEL;
+      } else if (input.right && !input.left) {
+        charVxRef.current += MOVE_ACCEL;
+      } else {
+        charVxRef.current *= MOVE_FRICTION; // no input: slides noticeably before stopping
       }
-      if (input.right && !input.left) {
-        nextX += CHAR_SPEED;
-      }
-      nextX += charKickVxRef.current;
-      charKickVxRef.current *= WALL_JUMP_KICK_DECAY;
-      if (Math.abs(charKickVxRef.current) < 0.1) {
-        charKickVxRef.current = 0;
-      }
+      charVxRef.current = clamp(charVxRef.current, -MAX_MOVE_SPEED, MAX_MOVE_SPEED);
 
       const prevX = charXRef.current;
-      const rawX = clamp(nextX, 0, CANVAS_WIDTH - CHAR_WIDTH);
-      const resolvedX = resolveHorizontalMove(
-        prevX,
-        rawX,
-        charYRef.current,
-        CHAR_WIDTH,
-        CHAR_HEIGHT,
-        landedRef.current
-      );
+      const rawX = clamp(charXRef.current + charVxRef.current, 0, CANVAS_WIDTH - CHAR_WIDTH);
+      const resolvedX = resolveHorizontalMove(prevX, rawX, charYRef.current, CHAR_WIDTH, CHAR_HEIGHT, landedRef.current);
+      if (resolvedX !== rawX) {
+        charVxRef.current = 0; // hit a wall — kill velocity into it
+      }
 
-      if (!groundedRef.current && input.right && rawX > prevX && resolvedX < rawX) {
+      // Wall detection (stateless per frame — stays accurate regardless of grounded state)
+      if (input.right && rawX > prevX && resolvedX < rawX) {
         wallSideRef.current = 'right';
-      } else if (!groundedRef.current && input.left && rawX < prevX && resolvedX > rawX) {
+      } else if (input.left && rawX < prevX && resolvedX > rawX) {
         wallSideRef.current = 'left';
-      } else if (groundedRef.current) {
-        wallSideRef.current = null;
-      } else if (wallSideRef.current) {
+      } else {
         wallSideRef.current = null;
       }
       charXRef.current = resolvedX;
@@ -635,11 +610,7 @@ export default function CloudClimberGame() {
       // Character vertical physics
       const wasGrounded = groundedRef.current;
       charVyRef.current += GRAVITY;
-
-      // Wall slide: clamp fall speed when sliding against a wall
-      if (wallSideRef.current && charVyRef.current < WALL_SLIDE_SPEED) {
-        charVyRef.current = WALL_SLIDE_SPEED;
-      }
+      charVyRef.current = Math.max(charVyRef.current, MAX_FALL_SPEED); // terminal velocity cap
 
       // Spawn dust trail while wall-sliding
       if (wallSideRef.current && !groundedRef.current) {
@@ -668,8 +639,9 @@ export default function CloudClimberGame() {
       const ground = surfaceHeightAt(charXRef.current, charXRef.current + CHAR_WIDTH, landedRef.current);
       const canLand = wasGrounded || (charVyRef.current <= 0 && prevCharYRef.current >= ground);
       if (canLand && charYRef.current <= ground) {
+        const impactVy = charVyRef.current;
         charYRef.current = ground;
-        charVyRef.current = 0;
+        charVyRef.current = !wasGrounded && Math.abs(impactVy) > 1 ? -impactVy * BOUNCE_COEFFICIENT : 0;
         if (!wasGrounded) {
           squashRef.current = 0.75;
           spawnLandingDust();
@@ -682,6 +654,15 @@ export default function CloudClimberGame() {
         if (coyoteTimeRef.current > 0) {
           coyoteTimeRef.current -= 1;
         }
+      }
+
+      // Wall-slide "exploit": false-grounded via wall friction
+      // Replicates Avalanche's actual collision quirk: sliding down a wall under enough friction
+      // falsely registers as standing on a floor, resetting the jump.
+      if (!groundedRef.current && wallSideRef.current && charVyRef.current < 0) {
+        charVyRef.current = Math.max(charVyRef.current, WALL_SLIDE_SPEED);
+        groundedRef.current = true;
+        coyoteTimeRef.current = COYOTE_FRAMES;
       }
 
       highestHeadYRef.current = Math.max(highestHeadYRef.current, charYRef.current + CHAR_HEIGHT);
@@ -810,16 +791,10 @@ export default function CloudClimberGame() {
       if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
         e.preventDefault();
         inputRef.current.left = false;
-        if (wallSideRef.current === 'left') {
-          wallSideRef.current = null;
-        }
       }
       if (e.code === 'ArrowRight' || e.code === 'KeyD') {
         e.preventDefault();
         inputRef.current.right = false;
-        if (wallSideRef.current === 'right') {
-          wallSideRef.current = null;
-        }
       }
     };
 
