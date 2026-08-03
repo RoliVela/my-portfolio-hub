@@ -395,7 +395,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Launches falling-blocks climbing mini-game overlay',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 56.5, y: 84.19, width: 6, height: 5.62 },
+    position: { x: 51.25898171768708, y: 83.19215194610778, width: 17.033428996598637, height: 14.893016467065868 },
   },
   {
     id: 'OBJ_22',
@@ -409,7 +409,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Opens favorite-books shelf overlay',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 75, y: 10.94, width: 8, height: 5.13 },
+    position: { x: 46.230601615646265, y: 65.44832709580837, width: 18.464764030612244, height: 12.035875748502994 },
   },
   {
     id: 'OBJ_23',
@@ -424,6 +424,6 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'N/A — purely inspect/view',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 70, y: 33, width: 6, height: 6 },
+    position: { x: 84.61814413265306, y: 81.9778255988024, width: 6, height: 6 },
   },
 ];
