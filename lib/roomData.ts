@@ -50,7 +50,7 @@ export const roomObjects: RoomObject[] = [
     dialogue: {
       free: [
         { speaker: 'Snippy', text: "Wow, Roli's room sure is cool! I wonder if it's this tidy in real life." },
-        { speaker: 'Snippy', text: "You can look around or do a one time payment to use Roli's paid websites, though I've heard there's a way around that." },
+        { speaker: 'Snippy', text: "You can look around for now since I think the computer is locked right now... but I think there might be a way around it." },
       ],
       paid: 'Upon paying, the pay button will become a talk button on the UI. From here, the user can ask Snippy anything, and the LLM will provide a response.',
     },
@@ -162,7 +162,7 @@ export const roomObjects: RoomObject[] = [
     initialState: { input: '' },
     imageSrc: '/assets/calculator.png',
     dialogue: {
-      free: [{ speaker: 'Snippy', text: 'Just a normal calculator. Unless Roli gave you a code of some type… *psst, this is roli, feel free to message me for the code*' }],
+      free: [{ speaker: 'Snippy', text: 'Just a normal calculator. Unless Roli gave you a code of some type...' }],
       paid: 'N/A',
     },
     actionTarget: 'Verifies hidden string input for Free bypass',
@@ -225,7 +225,7 @@ export const roomObjects: RoomObject[] = [
     toggleKey: 'isSquished',
     imageSrc: '/assets/nee-doh.png',
     dialogue: {
-      free: [{ speaker: 'Snippy', text: 'Whoa, he got a Nee-Doh? What did he have to do to get that? We should play with it, I\'m sure Roli wouldn\'t mind.' }],
+      free: [{ speaker: 'Snippy', text: 'Whoa, he got a Nee-Doh? What did he have to do to get that? We should play with it; I\'m sure Roli wouldn\'t mind.' }],
       paid: 'N/A',
     },
     actionTarget: 'Squish animation triggering local state',
@@ -300,7 +300,7 @@ export const roomObjects: RoomObject[] = [
     imageSrcAlt: '/assets/record-player-on.png',
     dialogue: {
       free: [{ speaker: 'Snippy', text: 'Epic! We can play music here! There\'s already something playing here, but feel free to change it up. Im always eager to hear some new tunes.' }],
-      paid: 'music! Roli curates the absolute best beats for working. Let\'s make it extra cozy in here!',
+      paid: 'Music! Roli put some lo-fi versions of his favorite songs to match the aesthetic. Let\'s make it extra cozy in here!',
     },
     actionTarget: 'Toggles background audio playlist track array stream',
     visualFeedback: 'Yellow highlight on hover',
@@ -314,7 +314,7 @@ export const roomObjects: RoomObject[] = [
     toggleKey: 'isInspected',
     imageSrc: '/assets/coffee-mug.png',
     dialogue: {
-      free: [{ speaker: 'Snippy', text: 'Careful, it\'s hot! Roli runs on 50% caffeine, 25% logic, and 25% imagination. I don\'t drink coffee myself… it tends to rust my pivot pin.' }],
+      free: [{ speaker: 'Snippy', text: 'Careful, it\'s hot! Roli\'s go-to order is a mocha with coconut milk in case you ever want to buy him one. I don\'t drink coffee myself… it tends to rust my pivot pin.' }],
       paid: 'N/A',
     },
     actionTarget: 'Triggers localized steam particle burst animation',
@@ -329,7 +329,7 @@ export const roomObjects: RoomObject[] = [
     toggleKey: 'isViewed',
     imageSrc: '/assets/polaroid-board.png',
     dialogue: {
-      free: [{ speaker: 'Snippy', text: 'Look at all these memories! That one\'s Kermit looking majestic, and over there is the very first messy sketch of this exact room! Isn\'t it wonderful how big ideas grow?' }],
+      free: [{ speaker: 'Snippy', text: 'Look at all these memories! That one\'s Kermit looking cute as usual, and over there is the very first messy sketch of this exact room! It must have taken a while to turn the room into this from just an idea.' }],
       paid: 'N/A',
     },
     actionTarget: 'Opens image gallery overlay of personal and team photos',
@@ -361,7 +361,7 @@ export const roomObjects: RoomObject[] = [
     imageSrc: '/assets/venus_flytrap.png',
     dialogue: {
       free: [
-        { speaker: 'Snippy', text: 'Yikes! A venus fly trap! You can feed it, but I\'ll be looking away because those always give me the creeps.' },
+        { speaker: 'Snippy', text: 'Yikes! A Venus flytrap! You can feed it, but I\'ll be looking away because those always give me the creeps.' },
         { speaker: 'Snippy', text: 'It looks pretty busy there. These plants can take 7-12 days to completely digest their prey, so don\'t bother waiting.' },
       ],
       paid: 'N/A',
