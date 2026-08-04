@@ -97,7 +97,7 @@ export default function ItemInteractionStage({
     }
 
     if (obj.id === 'OBJ_21') {
-      return <CloudClimberGame />;
+      return <CloudClimberGame onExit={onComplete} />;
     }
 
     if (obj.id === 'OBJ_11') {

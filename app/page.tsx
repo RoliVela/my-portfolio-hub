@@ -890,13 +890,15 @@ export default function Home() {
                   setSnippyToast("Oh! I think something happened on the computer.");
                 }}
               />
-              <button
-                type="button"
-                onClick={handleExit}
-                className="rounded border-2 border-white bg-black px-6 py-2 font-vt323 text-2xl text-white transition hover:bg-white hover:text-black"
-              >
-                Exit
-              </button>
+              {inspectedObject.id !== 'OBJ_21' && (
+                <button
+                  type="button"
+                  onClick={handleExit}
+                  className="rounded border-2 border-white bg-black px-6 py-2 font-vt323 text-2xl text-white transition hover:bg-white hover:text-black"
+                >
+                  Exit
+                </button>
+              )}
             </div>
           </div>
         </div>

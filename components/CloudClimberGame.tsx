@@ -132,7 +132,11 @@ function drawRoundedRect(
   }
 }
 
-export default function CloudClimberGame() {
+interface CloudClimberGameProps {
+  onExit?: () => void;
+}
+
+export default function CloudClimberGame({ onExit }: CloudClimberGameProps = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -947,13 +951,24 @@ export default function CloudClimberGame() {
       </div>
 
       {gameState === 'gameover' && (
-        <button
-          type="button"
-          onClick={resetGame}
-          className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
-        >
-          Restart (Space)
-        </button>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={resetGame}
+            className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
+          >
+            Restart (Space)
+          </button>
+          {onExit && (
+            <button
+              type="button"
+              onClick={onExit}
+              className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
+            >
+              Exit
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
