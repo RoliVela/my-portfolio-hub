@@ -60,6 +60,8 @@ function CalcButton({
 
 // Placeholder — change to whatever secret code should unlock the computer.
 const FREE_BYPASS_CODE = '6767';
+// Secret code that resets all saved room progress, same as the old top-left reset button.
+const RESET_CODE = '6969';
 
 // Keep onComplete prop available for callers; it's passed by the shared wrapper.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -70,6 +72,7 @@ export default function CalculatorInteraction({ onComplete, onUnlock }: Calculat
   const [shouldResetDisplay, setShouldResetDisplay] = useState(false);
   const hasUnlockedRef = useRef(false);
   const [showUnlockFlash, setShowUnlockFlash] = useState(false);
+  const hasResetRef = useRef(false);
 
   const calculate = useCallback((left: number, right: number, op: Operator): number => {
     switch (op) {
@@ -181,6 +184,15 @@ export default function CalculatorInteraction({ onComplete, onUnlock }: Calculat
       onUnlock?.();
     }
   }, [display, onUnlock]);
+
+  useEffect(() => {
+    if (display === RESET_CODE && !hasResetRef.current) {
+      hasResetRef.current = true;
+      window.localStorage.clear();
+      window.sessionStorage.setItem('skip-intro-dialogue', 'true');
+      window.location.reload();
+    }
+  }, [display]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
