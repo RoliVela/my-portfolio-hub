@@ -262,7 +262,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Swaps localized layer opacity / texture',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 89.24771471088435, y: 43.390157185628745, width: 12.608205782312925, height: 21.715943113772454 },
+    position: { x: 89.26392431972789, y: 42.64633233532934, width: 12.608205782312925, height: 24.228574101796404 },
   },
   {
     id: 'OBJ_17',
@@ -409,7 +409,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Opens favorite-books shelf overlay',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 46.230601615646265, y: 65.44832709580837, width: 18.464764030612244, height: 12.035875748502994 },
+    position: { x: 47.28130314625851, y: 65.92783682634729, width: 18.236500850340136, height: 11.653671407185628 },
   },
   {
     id: 'OBJ_23',
