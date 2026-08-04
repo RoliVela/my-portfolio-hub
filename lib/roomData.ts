@@ -173,7 +173,7 @@ export const roomObjects: RoomObject[] = [
     id: 'OBJ_12',
     assetName: 'Window blinds',
     type: 'Click / Toggle',
-    initialState: { isOpen: true },
+    initialState: { isOpen: false },
     toggleKey: 'isOpen',
     imageSrc: '/assets/window-blinds-closed.png',
     imageSrcAlt: '/assets/window-blinds-open.png',

@@ -556,6 +556,11 @@ export default function Home() {
     (o) => objectState[o.id]?.hasInteracted
   ).length;
 
+  // Lighting state — used by both the ambient overlay and per-object brightness
+  const LIT_OBJECT_IDS = ['OBJ_07', 'OBJ_09', 'OBJ_10', 'OBJ_08'];
+  const litCount = LIT_OBJECT_IDS.filter((id) => objectState[id]?.isLit).length;
+  const ambientGlow = litCount / LIT_OBJECT_IDS.length;
+
   const isInspecting = inspectedObject !== null;
   const dimLevel = inspectionPhase === 'interacting' ? 'bg-black/80' : 'bg-black/50';
 
@@ -642,33 +647,24 @@ export default function Home() {
       </div>
 
       {/* Ambient light glow overlay */}
-      {(() => {
-        const LIT_OBJECT_IDS = ['OBJ_07', 'OBJ_09', 'OBJ_10', 'OBJ_08'];
-        const litCount = LIT_OBJECT_IDS.filter((id) => objectState[id]?.isLit).length;
-        const ambientGlow = litCount / LIT_OBJECT_IDS.length;
-        return (
-          <>
-            {/* Darkens the room by default, fades out as more lights turn on */}
-            <div
-              className="pointer-events-none absolute inset-0 z-[5] transition-opacity duration-700"
-              style={{
-                opacity: 1 - ambientGlow * 0.8,
-                backgroundColor: 'rgba(10, 8, 40, 0.55)',
-                mixBlendMode: 'multiply',
-              }}
-            />
-            {/* Warm wash that builds as more lights turn on */}
-            <div
-              className="pointer-events-none absolute inset-0 z-[5] transition-opacity duration-700"
-              style={{
-                opacity: ambientGlow,
-                background: 'radial-gradient(circle at 50% 40%, rgba(255,200,140,0.45), rgba(255,200,140,0) 75%)',
-                mixBlendMode: 'screen',
-              }}
-            />
-          </>
-        );
-      })()}
+      {/* Darkens the room by default, fades out as more lights turn on */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[5] transition-opacity duration-700"
+        style={{
+          opacity: 1 - ambientGlow * 0.8,
+          backgroundColor: 'rgba(10, 8, 40, 0.55)',
+          mixBlendMode: 'multiply',
+        }}
+      />
+      {/* Warm wash that builds as more lights turn on */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[5] transition-opacity duration-700"
+        style={{
+          opacity: ambientGlow,
+          background: 'radial-gradient(circle at 50% 40%, rgba(255,200,140,0.45), rgba(255,200,140,0) 75%)',
+          mixBlendMode: 'screen',
+        }}
+      />
 
       {/* Dim overlay during inspection */}
       <AnimatePresence>
@@ -736,6 +732,11 @@ export default function Home() {
                     src={getAssetPath(src ?? '')}
                     alt=""
                     className="pointer-events-none h-full w-full object-contain pixel-art drop-shadow-lg"
+                    style={
+                      LIT_OBJECT_IDS.includes(obj.id)
+                        ? undefined
+                        : { filter: `brightness(${0.55 + ambientGlow * 0.45})`, transition: 'filter 700ms' }
+                    }
                     ref={(el) => captureImageMeta(el, obj)}
                     onLoad={(e) => {
                       const img = e.currentTarget;

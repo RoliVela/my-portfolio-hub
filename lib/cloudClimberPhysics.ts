@@ -17,7 +17,9 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-const MIN_SURFACE_OVERLAP = 10; // px: ignore blocks that barely graze the character horizontally
+const MIN_SURFACE_OVERLAP = 1; // px: any real overlap counts — must match resolveHorizontalMove's
+// own (threshold-free) overlap test, or corner grazes can pass one check and fail the other,
+// causing fall-throughs and teleports.
 
 /**
  * Returns the nearest underside (bottom-y) among all landed blocks that

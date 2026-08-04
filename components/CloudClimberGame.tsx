@@ -566,7 +566,7 @@ export default function CloudClimberGame() {
       // Snapshot landed blocks BEFORE updating falling blocks, so a block that
       // just landed this frame doesn't create a new surface the character can
       // teleport onto in the same frame.
-      const landedSnapshot = landedRef.current;
+      const landedSnapshot = [...landedRef.current];
 
       // Update falling blocks
       for (let i = fallingRef.current.length - 1; i >= 0; i -= 1) {
@@ -634,7 +634,14 @@ export default function CloudClimberGame() {
       if (charVyRef.current > 0) {
         const prevHeadY = prevCharYRef.current + CHAR_HEIGHT;
         const nextHeadY = charYRef.current + CHAR_HEIGHT;
-        const ceiling = ceilingHeightAt(charXRef.current, charXRef.current + CHAR_WIDTH, prevHeadY, landedRef.current);
+        // Falling (in-transit) blocks count too — jumping into one from below should
+      // bonk your head on it and drop you back down, not pass through it.
+      const ceiling = ceilingHeightAt(
+        charXRef.current,
+        charXRef.current + CHAR_WIDTH,
+        prevHeadY,
+        [...landedRef.current, ...fallingRef.current]
+      );
         if (ceiling !== null && nextHeadY >= ceiling) {
           charYRef.current = ceiling - CHAR_HEIGHT;
           charVyRef.current = 0;
