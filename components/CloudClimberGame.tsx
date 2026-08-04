@@ -856,9 +856,6 @@ export default function CloudClimberGame() {
   return (
     <div className="flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-pink-300 bg-purple-950 p-6 shadow-[0_0_0_4px_#000]">
       <h2 className="font-vt323 text-3xl text-pink-200">Cloud Climber</h2>
-      <p className="text-center font-vt323 text-lg text-pink-100/80">
-        ← / A and → / D to move · Space / ↑ / W to jump · Avoid lava and falling blocks.
-      </p>
 
       <div className="relative">
         <canvas
