@@ -652,8 +652,8 @@ export default function Home() {
         )}
       </button>
 
-      {/* Completion tracker badge (reposition mode only — was a debug counter for normal visitors) */}
-      {repositionMode && (
+      {/* Completion tracker badge (hidden during dev reposition mode, which uses this corner for the coordinate readout instead) */}
+      {!repositionMode && (
         <div className="absolute top-4 right-4 z-50 rounded-full bg-black/70 px-3 py-2 font-vt323 text-white">
           {completedCount}/{trackedObjects.length}
         </div>
