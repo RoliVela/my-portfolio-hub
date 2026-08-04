@@ -770,10 +770,13 @@ export default function Home() {
                     className={`pointer-events-none h-full w-full object-contain pixel-art drop-shadow-lg${obj.id === 'OBJ_09' ? ' string-light-wobble' : ''}${obj.id === 'OBJ_07' && showAlt ? ' neon-flicker' : ''}${obj.id === 'OBJ_03' ? ' leaf-sway' : ''}`}
                     style={(() => {
                       const base: React.CSSProperties = {};
-                      if (!LIT_OBJECT_IDS.includes(obj.id)) {
-                        base.filter = `brightness(${0.55 + ambientGlow * 0.45})`;
-                        base.transition = 'filter 700ms';
-                      }
+                      // Apply the per-image brightness filter to ALL interactive
+                      // objects — including the lit lamps/neon/lights — so they dim
+                      // and brighten in lockstep with the room. (Previously LIT
+                      // objects skipped this, leaving Snippy-like elements visually
+                      // untouched when the ambient overlay darkened the room.)
+                      base.filter = `brightness(${0.55 + ambientGlow * 0.45})`;
+                      base.transition = 'filter 700ms';
                       if (obj.id === 'OBJ_22') base.transform = 'rotate(-2deg)'; // bookshelf tilted counter-clockwise
                       // OBJ_09 (string lights) uses a CSS animation class instead of inline transform
                       return Object.keys(base).length ? base : undefined;
@@ -832,6 +835,7 @@ export default function Home() {
             onPointerDown={(e) => handleObjectPointerDown(snippy, e)}
             onResizePointerDown={(e) => handleResizePointerDown(snippy, e)}
             isMuted={isMuted}
+            brightness={0.55 + ambientGlow * 0.45}
           />
         )}
       </div>

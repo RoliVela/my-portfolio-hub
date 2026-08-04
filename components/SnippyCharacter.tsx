@@ -12,6 +12,9 @@ interface SnippyCharacterProps {
   onPointerDown?: (e: React.PointerEvent<HTMLButtonElement>) => void;
   onResizePointerDown?: (e: React.PointerEvent<HTMLSpanElement>) => void;
   isMuted?: boolean;
+  // When provided, applies `filter: brightness(<brightness>)` to the image so
+  // Snippy dims/brightens with the room just like the other interactive objects.
+  brightness?: number;
 }
 
 export default function SnippyCharacter({
@@ -23,6 +26,7 @@ export default function SnippyCharacter({
   onPointerDown,
   onResizePointerDown,
   isMuted,
+  brightness,
 }: SnippyCharacterProps) {
   // Cached images never re-fire `onLoad`, so a ref callback (checked on every
   // render) covers repeat loads; onLoad still covers a true first load.
@@ -66,6 +70,11 @@ export default function SnippyCharacter({
               const img = e.currentTarget;
               if (img.naturalWidth && img.naturalHeight) onImageLoad?.(img.naturalWidth, img.naturalHeight);
             }}
+            style={
+              brightness !== undefined
+                ? { filter: `brightness(${brightness})`, transition: 'filter 700ms' }
+                : undefined
+            }
           />
         </>
       ) : (
