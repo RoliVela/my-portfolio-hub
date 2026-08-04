@@ -19,7 +19,7 @@ const CANVAS_HEIGHT = 600;
 const MIN_BLOCK_WIDTH = 50;
 const MAX_BLOCK_WIDTH = 140;
 const BLOCK_FALL_SPEED = 4; // world pixels per frame (y decreases)
-const BLOCK_SPAWN_INTERVAL_MS = 2000;
+const BLOCK_SPAWN_INTERVAL_MS = 1500;
 const LAVA_RISE_SPEED = 0.5; // world pixels per frame (lavaY increases)
 const CHAR_WIDTH = 28;
 const CHAR_HEIGHT = 28;
@@ -75,6 +75,17 @@ function readStoredHighScore(): number {
   return 0;
 }
 
+const INSTRUCTIONS_SEEN_KEY = 'cloud-climber-instructions-seen';
+
+function readInstructionsSeen(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(INSTRUCTIONS_SEEN_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
 function randomRange(min: number, max: number) {
   return min + Math.random() * (max - min);
 }
@@ -128,6 +139,7 @@ export default function CloudClimberGame() {
   const [gameState, setGameState] = useState<'playing' | 'gameover'>('playing');
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(readStoredHighScore);
+  const [showInstructions, setShowInstructions] = useState(() => !readInstructionsSeen());
   const [popEffects, setPopEffects] = useState<{ id: number; x: number; y: number }[]>([]);
   const [dustParticles, setDustParticles] = useState<{ id: number; x: number; y: number; color: string }[]>([]);
   const popIdRef = useRef(0);
@@ -175,6 +187,15 @@ export default function CloudClimberGame() {
       // ignore storage errors
     }
   }, [updateHighScore]);
+
+  const dismissInstructions = useCallback(() => {
+    setShowInstructions(false);
+    try {
+      window.localStorage.setItem(INSTRUCTIONS_SEEN_KEY, 'true');
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
 
   const resetGame = useCallback(() => {
     landedRef.current = [];
@@ -277,7 +298,7 @@ export default function CloudClimberGame() {
   }, []);
 
   const jump = useCallback(() => {
-    if (gameStateRef.current !== 'playing') return;
+    if (gameStateRef.current !== 'playing' || showInstructions) return;
     if (groundedRef.current || coyoteTimeRef.current > 0) {
       charVyRef.current = JUMP_VELOCITY;
       groundedRef.current = false;
@@ -289,7 +310,7 @@ export default function CloudClimberGame() {
       spawnPop(x, y);
       spawnPuffs();
     }
-  }, [spawnPop, spawnPuffs]);
+  }, [spawnPop, spawnPuffs, showInstructions]);
 
   const startLeft = useCallback(() => {
     inputRef.current.left = true;
@@ -309,7 +330,7 @@ export default function CloudClimberGame() {
 
   // ======================== Canvas game loop ========================
   useEffect(() => {
-    if (gameState !== 'playing') return;
+    if (gameState !== 'playing' || showInstructions) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -782,7 +803,7 @@ export default function CloudClimberGame() {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [gameState, saveHighScore, spawnDust, spawnLandingDust, spawnWallSlideDust, updateHighScore]);
+  }, [gameState, showInstructions, saveHighScore, spawnDust, spawnLandingDust, spawnWallSlideDust, updateHighScore]);
 
   // ======================== Keyboard controls ========================
   useEffect(() => {
@@ -864,6 +885,21 @@ export default function CloudClimberGame() {
             <p className="font-vt323 text-xl text-pink-100/80">Height: {score}ft</p>
             <p className="font-vt323 text-lg text-pink-100/70">Best: {highScore}ft</p>
             <p className="font-vt323 text-sm text-pink-100/60">Press Space or click to restart</p>
+          </div>
+        )}
+        {showInstructions && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/80 p-6 text-center">
+            <p className="font-vt323 text-3xl text-pink-200">How to Play</p>
+            <p className="font-vt323 text-lg text-pink-100/90">
+              ← / A and → / D to move · Space / ↑ / W to jump · Avoid lava and falling blocks.
+            </p>
+            <button
+              type="button"
+              onClick={dismissInstructions}
+              className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-8 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
+            >
+              OK
+            </button>
           </div>
         )}
       </div>
