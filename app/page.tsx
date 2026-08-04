@@ -732,11 +732,16 @@ export default function Home() {
                     src={getAssetPath(src ?? '')}
                     alt=""
                     className="pointer-events-none h-full w-full object-contain pixel-art drop-shadow-lg"
-                    style={
-                      LIT_OBJECT_IDS.includes(obj.id)
-                        ? undefined
-                        : { filter: `brightness(${0.55 + ambientGlow * 0.45})`, transition: 'filter 700ms' }
-                    }
+                    style={(() => {
+                      const base: React.CSSProperties = {};
+                      if (!LIT_OBJECT_IDS.includes(obj.id)) {
+                        base.filter = `brightness(${0.55 + ambientGlow * 0.45})`;
+                        base.transition = 'filter 700ms';
+                      }
+                      if (obj.id === 'OBJ_22') base.transform = 'rotate(-2deg)'; // bookshelf tilted counter-clockwise
+                      if (obj.id === 'OBJ_09') base.transform = 'rotate(2deg)';  // string lights tilted clockwise
+                      return Object.keys(base).length ? base : undefined;
+                    })()}
                     ref={(el) => captureImageMeta(el, obj)}
                     onLoad={(e) => {
                       const img = e.currentTarget;
