@@ -731,7 +731,7 @@ export default function Home() {
                   <img
                     src={getAssetPath(src ?? '')}
                     alt=""
-                    className={`pointer-events-none h-full w-full object-contain pixel-art drop-shadow-lg${obj.id === 'OBJ_09' ? ' string-light-wobble' : ''}`}
+                    className={`pointer-events-none h-full w-full object-contain pixel-art drop-shadow-lg${obj.id === 'OBJ_09' ? ' string-light-wobble' : ''}${obj.id === 'OBJ_07' && showAlt ? ' neon-flicker' : ''}`}
                     style={(() => {
                       const base: React.CSSProperties = {};
                       if (!LIT_OBJECT_IDS.includes(obj.id)) {

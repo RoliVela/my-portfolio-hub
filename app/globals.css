@@ -34,6 +34,21 @@ body {
   50%      { transform: rotate(7deg); }
 }
 
+@keyframes neon-flicker {
+  0%, 100% { opacity: 1; }
+  4%       { opacity: 0.85; }
+  8%       { opacity: 1; }
+  12%      { opacity: 0.9; }
+  16%      { opacity: 1; }
+  50%      { opacity: 1; }
+  54%      { opacity: 0.88; }
+  58%      { opacity: 1; }
+}
+
+.neon-flicker {
+  animation: neon-flicker 3s ease-in-out infinite;
+}
+
 .string-light-wobble {
   animation: string-light-wobble 4s ease-in-out infinite;
   transform-origin: top center;
