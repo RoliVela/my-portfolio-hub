@@ -597,7 +597,9 @@ export default function CloudClimberGame() {
 
       const prevX = charXRef.current;
       const rawX = clamp(charXRef.current + charVxRef.current, 0, CANVAS_WIDTH - CHAR_WIDTH);
-      const resolvedX = resolveHorizontalMove(prevX, rawX, charYRef.current, CHAR_WIDTH, CHAR_HEIGHT, landedRef.current);
+      // Falling blocks are solid walls too — prevents sliding through them and
+      // keeps the ceiling check consistent (no corner teleport).
+      const resolvedX = resolveHorizontalMove(prevX, rawX, charYRef.current, CHAR_WIDTH, CHAR_HEIGHT, [...landedRef.current, ...fallingRef.current]);
       if (resolvedX !== rawX) {
         charVxRef.current = 0; // hit a wall — kill velocity into it
       }
@@ -634,16 +636,14 @@ export default function CloudClimberGame() {
       if (charVyRef.current > 0) {
         const prevHeadY = prevCharYRef.current + CHAR_HEIGHT;
         const nextHeadY = charYRef.current + CHAR_HEIGHT;
-      // Only landed blocks are solid ceilings. Falling blocks are excluded because
-      // they're not in resolveHorizontalMove — including them here lets the character
-      // slide into a falling block's footprint horizontally, then the cross-above test
-      // falsely triggers and teleports the character to the block's underside.
-      // The crush check (isCrushedByFallingBlock) handles lethal falling-block collisions.
+      // Falling blocks count as ceilings too — jumping into one from below
+      // bonks your head. Safe now that resolveHorizontalMove also blocks them,
+      // so the character can't slide into the footprint and trigger a false cross-above.
       const ceiling = ceilingHeightAt(
         charXRef.current,
         charXRef.current + CHAR_WIDTH,
         prevHeadY,
-        landedRef.current
+        [...landedRef.current, ...fallingRef.current]
       );
         if (ceiling !== null && nextHeadY >= ceiling) {
           charYRef.current = ceiling - CHAR_HEIGHT;
