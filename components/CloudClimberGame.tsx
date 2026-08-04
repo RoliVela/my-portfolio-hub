@@ -672,11 +672,17 @@ export default function CloudClimberGame() {
         }
       }
 
-      const ground = surfaceHeightAt(charXRef.current, charXRef.current + CHAR_WIDTH, landedSnapshot);
       // Tolerance: the character can only land on a surface they were above last
       // frame, or at most one block-fall-speed below it (accounts for a block
       // landing on the character's surface in the previous frame).
       const LANDING_TOLERANCE = BLOCK_FALL_SPEED + 2;
+      // Only blocks whose top is at/below where the character currently stands can
+      // be "the ground" — a wide block that lands elsewhere and merely clips the
+      // edge of the character's foot column while sitting well above their head
+      // is not a floor they were on, and must not yank them out from under
+      // themselves (this is the "a block lands above me and I teleport" bug).
+      const groundCandidates = landedSnapshot.filter((b) => b.y + b.height <= prevCharYRef.current + LANDING_TOLERANCE);
+      const ground = surfaceHeightAt(charXRef.current, charXRef.current + CHAR_WIDTH, groundCandidates);
       const canLand = (wasGrounded || (charVyRef.current <= 0 && prevCharYRef.current >= ground))
         && prevCharYRef.current >= ground - LANDING_TOLERANCE;
       if (canLand && charYRef.current <= ground) {
