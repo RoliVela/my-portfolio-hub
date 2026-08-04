@@ -46,12 +46,12 @@ body {
 }
 
 @keyframes leaf-sway {
-  0%, 100% { transform: rotate(-1.5deg); }
-  50%      { transform: rotate(1.5deg); }
+  0%, 100% { transform: rotate(-0.75deg); }
+  50%      { transform: rotate(0.75deg); }
 }
 
 .leaf-sway {
-  animation: leaf-sway 5s ease-in-out infinite;
+  animation: leaf-sway 8s ease-in-out infinite;
   transform-origin: bottom center;
 }
 
