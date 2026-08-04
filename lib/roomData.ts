@@ -137,7 +137,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Toggle plant watering animation state',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 85.20169005102042, y: 15.049588323353293, width: 17.35879039115646, height: 32.578592814371255 },
+    position: { x: 86.50749362244899, y: 15.049588323353293, width: 17.35879039115646, height: 32.578592814371255 },
   },
   {
     id: 'OBJ_10',
@@ -276,7 +276,7 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'Opens text box for the user to type in',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 51.67490433673469, y: 58.84739895209581, width: 11.706473214285714, height: 7.021145209580839 },
+    position: { x: 52.27784863945578, y: 59.02189371257485, width: 11.706473214285714, height: 7.021145209580839 },
   },
   {
     id: 'DECOR_WHITE_MONSTER',
@@ -288,7 +288,7 @@ export const roomObjects: RoomObject[] = [
     dialogue: { free: [], paid: 'N/A' },
     actionTarget: 'N/A',
     visualFeedback: 'N/A',
-    position: { x: 55.64482355442177, y: 57.76936751497006, width: 9.465295493197278, height: 9.716036676646706 },
+    position: { x: 56.393920068027214, y: 58.52582335329341, width: 9.465295493197278, height: 9.716036676646706 },
   },
   {
     id: 'OBJ_18',
@@ -424,6 +424,6 @@ export const roomObjects: RoomObject[] = [
     },
     actionTarget: 'N/A — purely inspect/view',
     visualFeedback: 'Yellow highlight on hover',
-    position: { x: 84.61814413265306, y: 81.9778255988024, width: 6, height: 6 },
+    position: { x: 84.6343537414966, y: 82.62294161676647, width: 6, height: 6 },
   },
 ];
