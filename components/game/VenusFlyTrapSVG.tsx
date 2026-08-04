@@ -95,6 +95,32 @@ export default function VenusFlyTrapSVG({
           <stop offset="60%" stopColor="#dc2626" />
           <stop offset="100%" stopColor="#991b1b" />
         </radialGradient>
+        {/* Soft drop shadow for everything anchored above the soil */}
+        <filter id="vft-shadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000" floodOpacity="0.45" />
+        </filter>
+        {/* Idle breathing + blink keyframes, scoped to this SVG via a unique prefix */}
+        <style>{`
+          @keyframes vft-breathe {
+            0%, 100% { transform: scale(1); }
+            50%      { transform: scale(1.025); }
+          }
+          @keyframes vft-blink {
+            0%, 92%, 100% { transform: scaleY(1); }
+            96%           { transform: scaleY(0.08); }
+          }
+          .vft-breathe {
+            transform-origin: 120px 245px;
+            animation: vft-breathe 3.6s ease-in-out infinite;
+            will-change: transform;
+          }
+          .vft-eye {
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: vft-blink 7s ease-in-out infinite;
+          }
+          .vft-eye-right { animation-delay: -3.4s; }
+        `}</style>
 
       </defs>
 
@@ -104,6 +130,7 @@ export default function VenusFlyTrapSVG({
         fill="url(#vft-pot)"
         stroke="#8b4513"
         strokeWidth="2.5"
+        filter="url(#vft-shadow)"
       />
       <rect
         x="64"
@@ -158,10 +185,11 @@ export default function VenusFlyTrapSVG({
         );
       })()}
 
-      {/* ===== Plant group (wilt + growth) ===== */}
-      <g
-        transform={`translate(120, 245) scale(${plantScale}) rotate(${wiltAngle}) translate(-120, -245)`}
-      >
+      {/* ===== Plant group (wilt + growth + idle breathing) ===== */}
+      <g className="vft-breathe">
+        <g
+          transform={`translate(120, 245) scale(${plantScale}) rotate(${wiltAngle}) translate(-120, -245)`}
+        >
         {/* Stem */}
         <path
           d="M 120,243 C 118,220 116,190 120,135"
@@ -246,13 +274,17 @@ export default function VenusFlyTrapSVG({
             <circle cx="-8" cy="-18" r="2" fill="#7f1d1d" opacity="0.4" />
             <circle cx="15" cy="-15" r="1.5" fill="#7f1d1d" opacity="0.3" />
             <circle cx="5" cy="-32" r="1.5" fill="#7f1d1d" opacity="0.3" />
-            {/* Eyes */}
-            <circle cx="-8" cy="-30" r="6" fill="white" stroke="#166534" strokeWidth="1" />
-            <circle cx="-6" cy="-30" r="3" fill="#1e1b4b" />
-            <circle cx="-5" cy="-31" r="1.2" fill="white" />
-            <circle cx="12" cy="-30" r="6" fill="white" stroke="#166534" strokeWidth="1" />
-            <circle cx="14" cy="-30" r="3" fill="#1e1b4b" />
-            <circle cx="15" cy="-31" r="1.2" fill="white" />
+            {/* Eyes (each grouped so they can blink independently) */}
+            <g className="vft-eye vft-eye-left">
+              <circle cx="-8" cy="-30" r="6" fill="white" stroke="#166534" strokeWidth="1" />
+              <circle cx="-6" cy="-30" r="3" fill="#1e1b4b" />
+              <circle cx="-5" cy="-31" r="1.2" fill="white" />
+            </g>
+            <g className="vft-eye vft-eye-right">
+              <circle cx="12" cy="-30" r="6" fill="white" stroke="#166534" strokeWidth="1" />
+              <circle cx="14" cy="-30" r="3" fill="#1e1b4b" />
+              <circle cx="15" cy="-31" r="1.2" fill="white" />
+            </g>
             {/* Eyebrows - give expression */}
             <line x1="-14" y1="-37" x2="-3" y2="-38" stroke="#166534" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
             <line x1="6" y1="-38" x2="17" y2="-37" stroke="#166534" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
@@ -308,6 +340,7 @@ export default function VenusFlyTrapSVG({
 
 
         </g>
+      </g>
       </g>
 
       {/* ===== Nutrient glow + sparkles ===== */}

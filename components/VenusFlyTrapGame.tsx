@@ -1,8 +1,10 @@
 'use client';
 
+import type { FC } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { playPopSound } from '@/lib/sfx';
 import VenusFlyTrapSVG from '@/components/game/VenusFlyTrapSVG';
+import { DropletIcon, FlyIcon, SproutIcon } from '@/components/game/VenusFlyTrapIcons';
 import { PopBurst, FallingDust, FallingDustOverlay } from '@/components/game/GameParticles';
 
 interface VenusFlyTrapGameProps {
@@ -155,6 +157,73 @@ function FlyBug({
         <line x1="22" y1="18" x2="26" y2="24" stroke="#6b7280" strokeWidth="0.6" />
       </svg>
     </button>
+  );
+}
+
+interface PhaseStepProps {
+  active: boolean;
+  done: boolean;
+  Icon: FC<{ className?: string }>;
+  accent: 'sky' | 'lime' | 'amber';
+}
+
+function PhaseStep({ active, done, Icon, accent }: PhaseStepProps) {
+  // Color ring + opacity reflects progress state.
+  const ringActive = {
+    sky: 'ring-sky-300 shadow-[0_0_18px_4px_rgba(56,189,248,0.45)]',
+    lime: 'ring-lime-300 shadow-[0_0_18px_4px_rgba(132,204,22,0.45)]',
+    amber: 'ring-amber-300 shadow-[0_0_18px_4px_rgba(251,191,36,0.45)]',
+  }[accent];
+  const ringDone = {
+    sky: 'ring-sky-500/70',
+    lime: 'ring-lime-500/70',
+    amber: 'ring-amber-500/70',
+  }[accent];
+
+  return (
+    <div
+      className={`flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-900/60 backdrop-blur-sm transition-all duration-300 ${
+        active ? `${ringActive} scale-110` : done ? ringDone : 'ring-1 ring-emerald-700/40 opacity-40 grayscale'
+      }`}
+    >
+      <Icon className="h-6 w-6" />
+    </div>
+  );
+}
+
+/** Decorative pixel-style leaf arc that hugs the panel corners. */
+function CornerLeaf({
+  position,
+  flip,
+}: {
+  position: 'top-left' | 'bottom-right';
+  flip?: boolean;
+}) {
+  const basePos =
+    position === 'top-left'
+      ? '-top-3 -left-3'
+      : '-bottom-3 -right-3';
+  return (
+    <svg
+      viewBox="0 0 40 40"
+      className={`absolute ${basePos} h-12 w-12 text-emerald-400 drop-shadow-md ${flip ? '-scale-x-100' : ''}`}
+      aria-hidden="true"
+      shapeRendering="geometricPrecision"
+    >
+      {/* Leaf body sitting on a curling stem */}
+      <path
+        d="M 5,38 C 8,28 14,18 22,12 C 30,6 36,4 38,2 C 38,8 36,16 30,22 C 22,30 12,34 5,38 Z"
+        fill="currentColor"
+        stroke="#14532d"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+        opacity="0.55"
+      />
+      {/* Vein */}
+      <path d="M 8,36 C 14,28 22,20 34,8" stroke="#14532d" strokeWidth="0.7" fill="none" opacity="0.45" />
+      {/* Highlight */}
+      <path d="M 12,30 C 18,24 26,18 32,12" stroke="#bbf7d0" strokeWidth="0.6" fill="none" opacity="0.5" />
+    </svg>
   );
 }
 
@@ -454,6 +523,8 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
 
   return (
     <div className="relative flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-emerald-700 bg-gradient-to-b from-emerald-950 via-green-950 to-emerald-950 p-6 shadow-[0_0_0_4px_#000]">
+      <CornerLeaf position="top-left" />
+      <CornerLeaf position="bottom-right" flip />
       {/* Wing-flap keyframes */}
       <style>{`
         @keyframes wing-flap {
@@ -468,42 +539,12 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
       </p>
 
       {/* Phase progress indicator */}
-      <div className="flex items-center gap-3 font-vt323 text-xl">
-        <span
-          className={
-            phase === 'water'
-              ? 'text-sky-300 scale-125'
-              : waterQuality === 'just right'
-                ? 'text-sky-500'
-                : 'text-gray-600'
-          }
-        >
-          💧
-        </span>
-        <span className="text-emerald-700">→</span>
-        <span
-          className={
-            phase === 'bugs'
-              ? 'text-lime-300 scale-125'
-              : caughtBugs >= TARGET_BUG_COUNT
-                ? 'text-lime-500'
-                : 'text-gray-600'
-          }
-        >
-          🪰
-        </span>
-        <span className="text-emerald-700">→</span>
-        <span
-          className={
-            phase === 'nutrients'
-              ? 'text-amber-300 scale-125'
-              : nutrientLevel >= NUTRIENT_TARGET
-                ? 'text-amber-500'
-                : 'text-gray-600'
-          }
-        >
-          🌱
-        </span>
+      <div className="flex items-center gap-4 font-vt323 text-xl">
+        <PhaseStep active={phase === 'water'} done={waterQuality === 'just right'} Icon={DropletIcon} accent="sky" />
+        <span className="text-emerald-700 text-2xl leading-none">→</span>
+        <PhaseStep active={phase === 'bugs'} done={caughtBugs >= TARGET_BUG_COUNT} Icon={FlyIcon} accent="lime" />
+        <span className="text-emerald-700 text-2xl leading-none">→</span>
+        <PhaseStep active={phase === 'nutrients'} done={nutrientLevel >= NUTRIENT_TARGET} Icon={SproutIcon} accent="amber" />
       </div>
 
       {/* ===== Plant ===== */}
@@ -546,13 +587,37 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
               {/* Water fill — uses ref for instant DOM updates */}
               <div
                 ref={waterBarRef}
-                className="absolute bottom-1 left-1 right-1 rounded-sm"
+                className="absolute bottom-1 left-1 right-1 overflow-hidden rounded-sm"
                 style={{
                   height: '0%',
                   background: 'linear-gradient(to top, #0369a1, #38bdf8)',
                   transition: 'none',
                 }}
-              />
+              >
+                {/* Animated wave glint at the water surface */}
+                <svg
+                  viewBox="0 0 100 8"
+                  preserveAspectRatio="none"
+                  className="absolute -top-1 left-0 right-0 h-2 w-full"
+                  aria-hidden="true"
+                  shapeRendering="geometricPrecision"
+                >
+                  <path
+                    stroke="#bae6fd"
+                    strokeWidth="1.4"
+                    fill="none"
+                    opacity="0.85"
+                    d="M 0 4 Q 25 0 50 4 T 100 4"
+                  >
+                    <animate
+                      attributeName="d"
+                      dur="2.4s"
+                      repeatCount="indefinite"
+                      values="M 0 4 Q 25 0 50 4 T 100 4;M 0 4 Q 25 8 50 4 T 100 4;M 0 4 Q 25 0 50 4 T 100 4"
+                    />
+                  </path>
+                </svg>
+              </div>
 
             </div>
 
