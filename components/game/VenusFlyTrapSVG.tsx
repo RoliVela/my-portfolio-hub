@@ -15,6 +15,8 @@ export interface VenusFlyTrapSVGProps {
   isWilting: boolean;
   /** Increment to trigger a quick snap-shut animation */
   snapTrigger: number;
+  /** Optional pupil-glance offset (SVG units) for "eyes following cursor" effect. */
+  eyeGlance?: { x: number; y: number };
   className?: string;
 }
 
@@ -25,6 +27,7 @@ export default function VenusFlyTrapSVG({
   nutrientLevel,
   isWilting,
   snapTrigger,
+  eyeGlance,
   className = '',
 }: VenusFlyTrapSVGProps) {
   const [snapping, setSnapping] = useState(false);
@@ -120,6 +123,10 @@ export default function VenusFlyTrapSVG({
             animation: vft-blink 7s ease-in-out infinite;
           }
           .vft-eye-right { animation-delay: -3.4s; }
+          /* Pupils + shine translate together when the plant glances at something. */
+          .vft-pupil {
+            transition: transform 0.35s cubic-bezier(0.3, 1.4, 0.5, 1);
+          }
         `}</style>
 
       </defs>
@@ -277,13 +284,23 @@ export default function VenusFlyTrapSVG({
             {/* Eyes (each grouped so they can blink independently) */}
             <g className="vft-eye vft-eye-left">
               <circle cx="-8" cy="-30" r="6" fill="white" stroke="#166534" strokeWidth="1" />
-              <circle cx="-6" cy="-30" r="3" fill="#1e1b4b" />
-              <circle cx="-5" cy="-31" r="1.2" fill="white" />
+              <g
+                className="vft-pupil"
+                style={{ transform: `translate(${eyeGlance?.x ?? 0}px, ${(eyeGlance?.y ?? 0) + 0.5}px)` }}
+              >
+                <circle cx="-6" cy="-30" r="3" fill="#1e1b4b" />
+                <circle cx="-5" cy="-31" r="1.2" fill="white" />
+              </g>
             </g>
             <g className="vft-eye vft-eye-right">
               <circle cx="12" cy="-30" r="6" fill="white" stroke="#166534" strokeWidth="1" />
-              <circle cx="14" cy="-30" r="3" fill="#1e1b4b" />
-              <circle cx="15" cy="-31" r="1.2" fill="white" />
+              <g
+                className="vft-pupil"
+                style={{ transform: `translate(${eyeGlance?.x ?? 0}px, ${(eyeGlance?.y ?? 0) + 0.5}px)` }}
+              >
+                <circle cx="14" cy="-30" r="3" fill="#1e1b4b" />
+                <circle cx="15" cy="-31" r="1.2" fill="white" />
+              </g>
             </g>
             {/* Eyebrows - give expression */}
             <line x1="-14" y1="-37" x2="-3" y2="-38" stroke="#166534" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />

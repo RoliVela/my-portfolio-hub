@@ -199,31 +199,34 @@ function CornerLeaf({
   position: 'top-left' | 'bottom-right';
   flip?: boolean;
 }) {
-  const basePos =
-    position === 'top-left'
-      ? '-top-3 -left-3'
-      : '-bottom-3 -right-3';
+  // Outer wrapper handles the wind sway so the leaf pivots from the inner
+  // corner where it meets the panel. The SVG inside applies the optional
+  // horizontal flip for the bottom-right variant.
+  const wrapClass = position === 'top-left'
+    ? 'absolute -top-3 -left-3 vft-leaf-sway-tl origin-bottom-right'
+    : 'absolute -bottom-3 -right-3 vft-leaf-sway-br origin-top-left';
   return (
-    <svg
-      viewBox="0 0 40 40"
-      className={`absolute ${basePos} h-12 w-12 text-emerald-400 drop-shadow-md ${flip ? '-scale-x-100' : ''}`}
-      aria-hidden="true"
-      shapeRendering="geometricPrecision"
-    >
-      {/* Leaf body sitting on a curling stem */}
-      <path
-        d="M 5,38 C 8,28 14,18 22,12 C 30,6 36,4 38,2 C 38,8 36,16 30,22 C 22,30 12,34 5,38 Z"
-        fill="currentColor"
-        stroke="#14532d"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-        opacity="0.55"
-      />
-      {/* Vein */}
-      <path d="M 8,36 C 14,28 22,20 34,8" stroke="#14532d" strokeWidth="0.7" fill="none" opacity="0.45" />
-      {/* Highlight */}
-      <path d="M 12,30 C 18,24 26,18 32,12" stroke="#bbf7d0" strokeWidth="0.6" fill="none" opacity="0.5" />
-    </svg>
+    <div className={wrapClass} aria-hidden="true">
+      <svg
+        viewBox="0 0 40 40"
+        className={`h-12 w-12 text-emerald-400 drop-shadow-md ${flip ? '-scale-x-100' : ''}`}
+        shapeRendering="geometricPrecision"
+      >
+        {/* Leaf body sitting on a curling stem */}
+        <path
+          d="M 5,38 C 8,28 14,18 22,12 C 30,6 36,4 38,2 C 38,8 36,16 30,22 C 22,30 12,34 5,38 Z"
+          fill="currentColor"
+          stroke="#14532d"
+          strokeWidth="1.2"
+          strokeLinejoin="round"
+          opacity="0.55"
+        />
+        {/* Vein */}
+        <path d="M 8,36 C 14,28 22,20 34,8" stroke="#14532d" strokeWidth="0.7" fill="none" opacity="0.45" />
+        {/* Highlight */}
+        <path d="M 12,30 C 18,24 26,18 32,12" stroke="#bbf7d0" strokeWidth="0.6" fill="none" opacity="0.5" />
+      </svg>
+    </div>
   );
 }
 
@@ -259,6 +262,8 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
   const [dustParticles, setDustParticles] = useState<DustParticle[]>([]);
   const dustIdRef = useRef(0);
   const [snapTrigger, setSnapTrigger] = useState(0);
+  const [eyeGlance, setEyeGlance] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const eyeGlanceTimerRef = useRef<number | null>(null);
 
   // Success reporting
   const successReportedRef = useRef(false);
@@ -368,12 +373,36 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
     }, 900);
   }, []);
 
+  const triggerEyeGlance = useCallback((bugX: number, bugY: number) => {
+    // Bugs area sits below the plant, so the eyes look downward and slightly
+    // toward whichever side the bug landed on. Clamped magnitude keeps the
+    // glance subtle even at the extreme edges.
+    const area = bugsAreaRef.current;
+    const width = area?.clientWidth ?? 320;
+    const height = area?.clientHeight ?? 160;
+    const nx = (bugX + 18) / width;
+    const ny = (bugY + 14) / height;
+    const dx = nx - 0.5;
+    const dy = ny - 0.5;
+    const glanceX = clamp(dx * 7, -3.5, 3.5);
+    const glanceY = clamp(dy * 4, -1.5, 2.5);
+    setEyeGlance({ x: glanceX, y: glanceY });
+    if (eyeGlanceTimerRef.current !== null) {
+      window.clearTimeout(eyeGlanceTimerRef.current);
+    }
+    eyeGlanceTimerRef.current = window.setTimeout(() => {
+      setEyeGlance({ x: 0, y: 0 });
+      eyeGlanceTimerRef.current = null;
+    }, 650);
+  }, []);
+
   const handleCatchBug = useCallback(
     (bug: Bug) => {
       removeBugById(bug.id);
       playPopSound();
       spawnPop(bug.x + 14, bug.y + 14);
       setSnapTrigger((prev) => prev + 1);
+      triggerEyeGlance(bug.x, bug.y);
       setCaughtBugs((prev) => {
         const next = prev + 1;
         caughtBugsRef.current = next;
@@ -383,7 +412,7 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
         return next;
       });
     },
-    [removeBugById, spawnPop],
+    [removeBugById, spawnPop, triggerEyeGlance],
   );
 
   useEffect(() => {
@@ -510,6 +539,11 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
     setPopEffects([]);
     setDustParticles([]);
     setSnapTrigger(0);
+    setEyeGlance({ x: 0, y: 0 });
+    if (eyeGlanceTimerRef.current !== null) {
+      window.clearTimeout(eyeGlanceTimerRef.current);
+      eyeGlanceTimerRef.current = null;
+    }
     successReportedRef.current = false;
   };
 
@@ -525,11 +559,29 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
     <div className="relative flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-emerald-700 bg-gradient-to-b from-emerald-950 via-green-950 to-emerald-950 p-6 shadow-[0_0_0_4px_#000]">
       <CornerLeaf position="top-left" />
       <CornerLeaf position="bottom-right" flip />
-      {/* Wing-flap keyframes */}
+      {/* Wing-flap + corner-leaf sway keyframes */}
       <style>{`
         @keyframes wing-flap {
           0% { transform: scaleY(1) rotate(-10deg); }
           100% { transform: scaleY(0.25) rotate(-10deg); }
+        }
+        @keyframes leaf-sway-tl {
+          0%, 100% { transform: rotate(0deg) translate(0, 0); }
+          50%      { transform: rotate(4deg) translate(1px, -0.5px); }
+        }
+        @keyframes leaf-sway-br {
+          0%, 100% { transform: rotate(0deg) translate(0, 0); }
+          50%      { transform: rotate(-3.5deg) translate(-1px, 0.5px); }
+        }
+        /* Tailwind doesn't ship vft-leaf-sway-* utilities, so apply directly: */
+        .vft-leaf-sway-tl {
+          animation: leaf-sway-tl 4.5s ease-in-out infinite;
+          will-change: transform;
+        }
+        .vft-leaf-sway-br {
+          animation: leaf-sway-br 5.2s ease-in-out infinite;
+          animation-delay: -1.7s;
+          will-change: transform;
         }
       `}</style>
 
@@ -555,6 +607,7 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
         nutrientLevel={nutrientPercent}
         isWilting={plantWilting}
         snapTrigger={snapTrigger}
+        eyeGlance={eyeGlance}
         className="h-64 w-48"
       />
 
