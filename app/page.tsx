@@ -731,7 +731,7 @@ export default function Home() {
                   <img
                     src={getAssetPath(src ?? '')}
                     alt=""
-                    className="pointer-events-none h-full w-full object-contain pixel-art drop-shadow-lg"
+                    className={`pointer-events-none h-full w-full object-contain pixel-art drop-shadow-lg${obj.id === 'OBJ_09' ? ' string-light-wobble' : ''}`}
                     style={(() => {
                       const base: React.CSSProperties = {};
                       if (!LIT_OBJECT_IDS.includes(obj.id)) {
@@ -739,7 +739,7 @@ export default function Home() {
                         base.transition = 'filter 700ms';
                       }
                       if (obj.id === 'OBJ_22') base.transform = 'rotate(-2deg)'; // bookshelf tilted counter-clockwise
-                      if (obj.id === 'OBJ_09') base.transform = 'rotate(2deg)';  // string lights tilted clockwise
+                      // OBJ_09 (string lights) uses a CSS animation class instead of inline transform
                       return Object.keys(base).length ? base : undefined;
                     })()}
                     ref={(el) => captureImageMeta(el, obj)}
