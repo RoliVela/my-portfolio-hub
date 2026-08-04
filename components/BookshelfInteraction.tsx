@@ -184,7 +184,7 @@ export default function BookshelfInteraction() {
       .send(
         EMAILJS_SERVICE_ID,
         EMAILJS_TEMPLATE_ID,
-        { message: `New book added to the shelf: "${title}" by ${author}` },
+        { message: `New book added to the shelf: “${title}” by ${author}` },
         { publicKey: EMAILJS_PUBLIC_KEY }
       )
       .catch(() => {

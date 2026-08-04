@@ -634,7 +634,7 @@ export default function Home() {
       )}
 
       <div
-        className="absolute inset-0 z-0 h-full w-full"
+        className="absolute inset-0 z-0 h-full w-full fade-in"
         onClick={handleBackgroundClick}
         onMouseMove={handleBackgroundMouseMove}
       >

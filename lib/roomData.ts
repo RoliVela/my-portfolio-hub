@@ -132,7 +132,7 @@ export const roomObjects: RoomObject[] = [
     skipPixelPerfectHitTest: true,
     imageSrc: '/assets/senecio.png',
     dialogue: {
-      free: [{ speaker: 'Snippy', text: 'Senecio Rowleyanus, *heheh*, it has the word anus in it. People usually call it the "String of Pearls" plant. You can water it if you\'d like; it\'s looking a little dry.' }],
+      free: [{ speaker: 'Snippy', text: 'Senecio Rowleyanus, *heheh*, it has the word anus in it. People usually call it the “String of Pearls” plant. You can water it if you\'d like; it\'s looking a little dry.' }],
       paid: 'N/A',
     },
     actionTarget: 'Toggle plant watering animation state',
@@ -162,7 +162,7 @@ export const roomObjects: RoomObject[] = [
     initialState: { input: '' },
     imageSrc: '/assets/calculator.png',
     dialogue: {
-      free: [{ speaker: 'Snippy', text: 'Just a normal calculator. Unless Roli gave you a code of some type... *psst, this is roli, feel free to message me for the code*' }],
+      free: [{ speaker: 'Snippy', text: 'Just a normal calculator. Unless Roli gave you a code of some type… *psst, this is roli, feel free to message me for the code*' }],
       paid: 'N/A',
     },
     actionTarget: 'Verifies hidden string input for Free bypass',
@@ -242,7 +242,7 @@ export const roomObjects: RoomObject[] = [
     altStateKey: 'isUnlocked',
     dialogue: {
       free: [{ speaker: 'Snippy', text: 'Aww shucks. You haven\'t paid yet, so we have no connection to Roli\'s programs. Well, at least we have the dinosaur game to play.' }],
-      paid: 'Nice! *in a hacker voice* We\'re in... Let\'s see what cool stuff we can find hidden away here.',
+      paid: 'Nice! *in a hacker voice* We\'re in… Let\'s see what cool stuff we can find hidden away here.',
     },
     actionTarget: 'Conditional branch overlay depending on Auth status',
     visualFeedback: 'Yellow highlight on hover',
@@ -314,7 +314,7 @@ export const roomObjects: RoomObject[] = [
     toggleKey: 'isInspected',
     imageSrc: '/assets/coffee-mug.png',
     dialogue: {
-      free: [{ speaker: 'Snippy', text: 'Careful, it\'s hot! Roli runs on 50% caffeine, 25% logic, and 25% imagination. I don\'t drink coffee myself... it tends to rust my pivot pin.' }],
+      free: [{ speaker: 'Snippy', text: 'Careful, it\'s hot! Roli runs on 50% caffeine, 25% logic, and 25% imagination. I don\'t drink coffee myself… it tends to rust my pivot pin.' }],
       paid: 'N/A',
     },
     actionTarget: 'Triggers localized steam particle burst animation',
@@ -419,7 +419,7 @@ export const roomObjects: RoomObject[] = [
     imageSrc: '/assets/sticky-note-code-obscured.png',
     zoomedImageSrc: '/assets/sticky-note-code.png',
     dialogue: {
-      free: [{ speaker: 'Snippy', text: "Ooh, a sticky note! Better take a closer look..." }],
+      free: [{ speaker: 'Snippy', text: "Ooh, a sticky note! Better take a closer look…" }],
       paid: 'N/A',
     },
     actionTarget: 'N/A — purely inspect/view',
