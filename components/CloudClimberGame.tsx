@@ -634,13 +634,16 @@ export default function CloudClimberGame() {
       if (charVyRef.current > 0) {
         const prevHeadY = prevCharYRef.current + CHAR_HEIGHT;
         const nextHeadY = charYRef.current + CHAR_HEIGHT;
-        // Falling (in-transit) blocks count too — jumping into one from below should
-      // bonk your head on it and drop you back down, not pass through it.
+      // Only landed blocks are solid ceilings. Falling blocks are excluded because
+      // they're not in resolveHorizontalMove — including them here lets the character
+      // slide into a falling block's footprint horizontally, then the cross-above test
+      // falsely triggers and teleports the character to the block's underside.
+      // The crush check (isCrushedByFallingBlock) handles lethal falling-block collisions.
       const ceiling = ceilingHeightAt(
         charXRef.current,
         charXRef.current + CHAR_WIDTH,
         prevHeadY,
-        [...landedRef.current, ...fallingRef.current]
+        landedRef.current
       );
         if (ceiling !== null && nextHeadY >= ceiling) {
           charYRef.current = ceiling - CHAR_HEIGHT;
