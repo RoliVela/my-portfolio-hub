@@ -30,8 +30,8 @@ body {
 }
 
 @keyframes string-light-wobble {
-  0%, 100% { transform: rotate(1deg); }
-  50%      { transform: rotate(7deg); }
+  0%, 100% { transform: rotate(2.5deg); }
+  50%      { transform: rotate(5.5deg); }
 }
 
 @keyframes neon-flicker {
@@ -60,6 +60,6 @@ body {
 }
 
 .string-light-wobble {
-  animation: string-light-wobble 4s ease-in-out infinite;
+  animation: string-light-wobble 8s ease-in-out infinite;
   transform-origin: top center;
 }
