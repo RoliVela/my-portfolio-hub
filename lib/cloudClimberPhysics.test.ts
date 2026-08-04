@@ -73,9 +73,53 @@ describe('surfaceHeightAt', () => {
     expect(surfaceHeightAt(47, 61, blocks)).toBe(50);
   });
 
+  it('ignores blocks with exactly 1px horizontal overlap (the threshold boundary)', () => {
+    const blocks: LandedBlock[] = [{ x: 50, y: 20, width: 60, height: 30, color: '#f472b6' }];
+    // Block spans [50, 110). Query [49, 51]: overlap = max(50,49) to min(110,51) = [50, 51] = 1px.
+    // 1 <= MIN_SURFACE_OVERLAP(1) → ignored
+    expect(surfaceHeightAt(49, 51, blocks)).toBe(0);
+  });
+
+  it('counts blocks with 2px horizontal overlap (just above threshold)', () => {
+    const blocks: LandedBlock[] = [{ x: 50, y: 20, width: 60, height: 30, color: '#f472b6' }];
+    // overlapRight - overlapLeft = 2px → 2 > MIN_SURFACE_OVERLAP(1) → counted
+    expect(surfaceHeightAt(48, 52, blocks)).toBe(50);
+  });
+
+  it('counts blocks with small horizontal overlaps that were previously ignored (MIN_SURFACE_OVERLAP was 10)', () => {
+    // Regression: the old threshold of 10 meant overlaps of 2-9px were ignored by
+    // surfaceHeightAt while resolveHorizontalMove saw them as real collisions.
+    // This mismatch caused corner fall-throughs and teleports.
+    const blocks: LandedBlock[] = [{ x: 100, y: 50, width: 80, height: 40, color: '#f472b6' }];
+    // 5px overlap from the left: query [95, 105] overlaps block [100, 180] by 5px
+    expect(surfaceHeightAt(95, 105, blocks)).toBe(90);
+    // 9px overlap from the left: query [91, 109] overlaps block [100, 180] by 9px
+    expect(surfaceHeightAt(91, 109, blocks)).toBe(90);
+    // 3px overlap from the right: query [177, 185] overlaps block [100, 180] by 3px
+    expect(surfaceHeightAt(177, 185, blocks)).toBe(90);
+  });
+
   it('still counts blocks with meaningful horizontal overlap', () => {
     const blocks: LandedBlock[] = [{ x: 50, y: 20, width: 60, height: 30, color: '#f472b6' }];
     expect(surfaceHeightAt(55, 90, blocks)).toBe(50);
+  });
+
+  it('surfaceHeightAt and resolveHorizontalMove agree on small overlaps (corner consistency)', () => {
+    // Regression: if surfaceHeightAt ignores a graze that resolveHorizontalMove allows,
+    // the character slides into a block's footprint then falls through its corner.
+    const block: LandedBlock = { x: 100, y: 50, width: 80, height: 40, color: '#f472b6' };
+    const charWidth = 28;
+    const charHeight = 28;
+    // Character standing on ground (feet at y=0), moving right, grazes 5px into block footprint.
+    // resolveHorizontalMove should allow the move (standing below, not overlapping vertically).
+    const rawX = 77; // right edge at 77+28=105, overlaps block [100,180] by 5px
+    const resolved = resolveHorizontalMove(72, rawX, 0, charWidth, charHeight, [block]);
+    // The character is below the block (feet at 0, head at 28, block bottom at 50),
+    // so resolveHorizontalMove should not block this — the block isn't a wall here.
+    expect(resolved).toBe(rawX);
+    // surfaceHeightAt must also see the 5px overlap and return the block's top
+    const ground = surfaceHeightAt(rawX, rawX + charWidth, [block]);
+    expect(ground).toBe(90); // y + height = 50 + 40
   });
 });
 
@@ -220,6 +264,25 @@ describe('ceilingHeightAt', () => {
     const blocks: LandedBlock[] = [{ x: 50, y: 100, width: 60, height: 30, color: '#f472b6' }];
     expect(ceilingHeightAt(49, 50, 0, blocks)).toBeNull();
     expect(ceilingHeightAt(47, 61, 0, blocks)).toBe(100);
+  });
+
+  it('ignores blocks with exactly 1px horizontal overlap', () => {
+    const blocks: LandedBlock[] = [{ x: 50, y: 100, width: 60, height: 30, color: '#f472b6' }];
+    // Block spans [50, 110). Query [49, 51]: overlap = [50, 51] = 1px → ignored
+    expect(ceilingHeightAt(49, 51, 0, blocks)).toBeNull();
+  });
+
+  it('counts blocks with 2px horizontal overlap (just above threshold)', () => {
+    const blocks: LandedBlock[] = [{ x: 50, y: 100, width: 60, height: 30, color: '#f472b6' }];
+    expect(ceilingHeightAt(48, 52, 0, blocks)).toBe(100);
+  });
+
+  it('counts blocks with small horizontal overlaps that were previously ignored', () => {
+    const blocks: LandedBlock[] = [{ x: 100, y: 200, width: 80, height: 40, color: '#f472b6' }];
+    // 5px overlap from the left
+    expect(ceilingHeightAt(95, 105, 0, blocks)).toBe(200);
+    // 9px overlap from the left
+    expect(ceilingHeightAt(91, 109, 0, blocks)).toBe(200);
   });
 });
 
