@@ -43,38 +43,23 @@ function InspectedItemImage({
 
 const STORAGE_KEY = 'room-object-state';
 
-function getInitialState(): ObjectState {
-  const defaults = initialRoomObjects.reduce((acc, obj) => {
-    acc[obj.id] = { ...obj.initialState };
-    return acc;
-  }, {} as ObjectState);
-
-  if (typeof window === 'undefined') return defaults;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaults;
-    const stored = JSON.parse(raw) as ObjectState;
-    const merged: ObjectState = {};
-    for (const id of Object.keys(defaults)) {
-      merged[id] = { ...defaults[id], ...(stored[id] ?? {}) };
-    }
-    return merged;
-  } catch {
-    return defaults;
-  }
-}
-
 export default function Home() {
   const [roomObjects, setRoomObjects] = useState<RoomObject[]>(initialRoomObjects);
   const [repositionMode, setRepositionMode] = useState(false);
-  const [objectState, setObjectState] = useState<ObjectState>(getInitialState);
-  const [activeObject, setActiveObject] = useState<RoomObject | null>(() => {
-    if (typeof window !== 'undefined' && window.sessionStorage.getItem('skip-intro-dialogue')) {
-      window.sessionStorage.removeItem('skip-intro-dialogue');
-      return null;
+  // Hydration-safe initial state: render pure defaults server-side, then load
+  // from storage after mount. Reading localStorage / sessionStorage during the
+  // initial render would cause a mismatch (server has no `window`) → React
+  // hydration error #418 in the live console.
+  const [objectState, setObjectState] = useState<ObjectState>(() => {
+    const defaults: ObjectState = {};
+    for (const obj of initialRoomObjects) {
+      defaults[obj.id] = { ...obj.initialState };
     }
-    return initialRoomObjects.find((obj) => obj.id === 'OBJ_01') ?? null;
+    return defaults;
   });
+  const [activeObject, setActiveObject] = useState<RoomObject | null>(
+    () => initialRoomObjects.find((obj) => obj.id === 'OBJ_01') ?? null
+  );
   const [inspectionPhase, setInspectionPhase] = useState<InspectionPhase>('closed');
   const [inspectedObject, setInspectedObject] = useState<RoomObject | null>(null);
 
@@ -94,10 +79,10 @@ export default function Home() {
   });
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Live clock state shared between the idle-room overlay and the clock interaction.
-  const [selectedTimezone, setSelectedTimezone] = useState<string>(() =>
-    Intl.DateTimeFormat().resolvedOptions().timeZone
-  );
+  // Live clock state shared between the idle-room overlay and the clock
+  // interaction. Default to a stable timezone label so SSR and client agree;
+  // the actual user timezone is resolved in a post-mount effect below.
+  const [selectedTimezone, setSelectedTimezone] = useState<string>('America/Chicago');
 
   // Aspect ratios keyed by object id
   const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
@@ -129,6 +114,55 @@ export default function Home() {
     // Read reposition query param after hydration to avoid server/client mismatch.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setRepositionMode(new URLSearchParams(window.location.search).has('reposition'));
+  }, []);
+
+  // Hydration follow-up #1: load persisted object state from localStorage after
+  // mount so the initial render matches the server output.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const stored = JSON.parse(raw) as ObjectState;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: hydrate from storage on mount
+      setObjectState((prev) => {
+        const merged: ObjectState = {};
+        for (const id of Object.keys(prev)) {
+          merged[id] = { ...prev[id], ...(stored[id] ?? {}) };
+        }
+        return merged;
+      });
+    } catch {
+      // Ignore storage errors (private browsing, quota, malformed JSON).
+    }
+  }, []);
+
+  // Hydration follow-up #2: respect the `?skip-intro-dialogue` session flag
+  // post-mount, mirroring what the old initializer used to do inline.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.sessionStorage.getItem('skip-intro-dialogue')) {
+      window.sessionStorage.removeItem('skip-intro-dialogue');
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: hydrate from storage on mount
+      setActiveObject(null);
+    }
+  }, []);
+
+  // Hydration follow-up #3: resolve the actual user timezone after mount so
+  // the SSR string `'America/Chicago'` (stable default) doesn't mismatch the
+  // browser's resolved zone.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz && tz !== selectedTimezone) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: hydrate from storage on mount
+        setSelectedTimezone(tz);
+      }
+    } catch {
+      // Older runtimes without full Intl support — keep the default.
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run once on mount
   }, []);
 
   useEffect(() => {
@@ -577,23 +611,25 @@ export default function Home() {
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* Speaker / music toggle */}
-      <button
-        type="button"
-        onClick={() => {
-          window.localStorage.clear();
-          window.sessionStorage.setItem('skip-intro-dialogue', 'true');
-          window.location.reload();
-        }}
-        aria-label="Reset saved progress"
-        title="Reset saved progress"
-        className="absolute top-4 left-16 z-50 rounded-full bg-black/70 p-2 text-white transition hover:bg-black/90"
-      >
-        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M3 12a9 9 0 1 0 3-6.7" />
-          <path d="M3 4v5h5" />
-        </svg>
-      </button>
+      {/* Reset — dev tool, only visible during reposition mode */}
+      {repositionMode && (
+        <button
+          type="button"
+          onClick={() => {
+            window.localStorage.clear();
+            window.sessionStorage.setItem('skip-intro-dialogue', 'true');
+            window.location.reload();
+          }}
+          aria-label="Reset saved progress"
+          title="Reset saved progress"
+          className="absolute top-4 left-16 z-50 rounded-full bg-black/70 p-2 text-white transition hover:bg-black/90"
+        >
+          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 3-6.7" />
+            <path d="M3 4v5h5" />
+          </svg>
+        </button>
+      )}
 
       <button
         type="button"
@@ -616,8 +652,8 @@ export default function Home() {
         )}
       </button>
 
-      {/* Completion tracker badge (non-reposition mode) */}
-      {!repositionMode && (
+      {/* Completion tracker badge (reposition mode only — was a debug counter for normal visitors) */}
+      {repositionMode && (
         <div className="absolute top-4 right-4 z-50 rounded-full bg-black/70 px-3 py-2 font-vt323 text-white">
           {completedCount}/{trackedObjects.length}
         </div>
