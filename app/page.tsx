@@ -7,6 +7,7 @@ import { getAssetPath } from '@/lib/assets';
 import { loadImageAlphaMap, isPixelVisible, AlphaMap } from '@/lib/hitbox';
 import { useInteractionSound } from '@/hooks/useInteractionSound';
 import { toggleMute, useIsMuted } from '@/lib/audioManager';
+import confetti from 'canvas-confetti';
 
 import DialogueBox from '@/components/DialogueBox';
 import SnippyCharacter from '@/components/SnippyCharacter';
@@ -78,6 +79,8 @@ export default function Home() {
     src: getAssetPath('/assets/bg-music.mp3'),
   });
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const hasCelebratedRef = useRef(false);
+  const lightConfettiIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Live clock state shared between the idle-room overlay and the clock
   // interaction. Default to a stable timezone label so SSR and client agree;
@@ -209,12 +212,15 @@ export default function Home() {
   }, [currentJukeboxTrack, musicOn, isMuted]);
 
   // One-time fallback: try to start music on the first user interaction if autoplay was blocked.
+  // Must respect `musicOn`/`isMuted` so muted users stay muted even when their
+  // first click happens on a room object.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!currentJukeboxTrack) return;
 
     const tryPlay = () => {
       if (!audioRef.current) return;
+      if (!musicOn || isMuted) return;
       if (audioRef.current.paused) {
         audioRef.current.play().catch((err) => {
           if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
@@ -240,7 +246,7 @@ export default function Home() {
       window.removeEventListener('keydown', handleFirstInteraction);
       window.removeEventListener('touchstart', handleFirstInteraction);
     };
-  }, [currentJukeboxTrack]);
+  }, [currentJukeboxTrack, musicOn, isMuted]);
 
   // Keyboard shortcut to toggle global mute.
   useEffect(() => {
@@ -589,6 +595,47 @@ export default function Home() {
   const completedCount = trackedObjects.filter(
     (o) => objectState[o.id]?.hasInteracted
   ).length;
+
+  // Celebration: heavy confetti rain for ~10s when the visitor first completes
+  // every trackable object, then fades to a light, ongoing trickle.
+  useEffect(() => {
+    if (completedCount < trackedObjects.length || trackedObjects.length === 0) return;
+    if (hasCelebratedRef.current) return;
+    hasCelebratedRef.current = true;
+
+    const end = Date.now() + 10_000;
+    const heavyInterval = setInterval(() => {
+      if (Date.now() > end) {
+        clearInterval(heavyInterval);
+        // Fade down to a light, ongoing trickle for the rest of the session.
+        lightConfettiIntervalRef.current = setInterval(() => {
+          confetti({
+            particleCount: 3,
+            startVelocity: 15,
+            spread: 60,
+            origin: { x: Math.random(), y: -0.05 },
+            gravity: 0.6,
+            scalar: 0.8,
+            zIndex: 60,
+          });
+        }, 1200);
+        return;
+      }
+      confetti({
+        particleCount: 40,
+        startVelocity: 25,
+        spread: 100,
+        origin: { x: Math.random(), y: -0.05 },
+        gravity: 0.7,
+        zIndex: 60,
+      });
+    }, 250);
+
+    return () => {
+      clearInterval(heavyInterval);
+      if (lightConfettiIntervalRef.current) clearInterval(lightConfettiIntervalRef.current);
+    };
+  }, [completedCount, trackedObjects.length]);
 
   // Lighting state — used by both the ambient overlay and per-object brightness
   const LIT_OBJECT_IDS = ['OBJ_07', 'OBJ_09', 'OBJ_10', 'OBJ_08'];
