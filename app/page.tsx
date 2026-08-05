@@ -185,7 +185,7 @@ export default function Home() {
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.loop = true;
-      audioRef.current.volume = 0.4;
+      audioRef.current.volume = 0.36;
     }
 
     const audio = audioRef.current;
