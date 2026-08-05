@@ -62,6 +62,10 @@ const TUTORIAL_ENTRIES: DialogueEntry[] = [
     speaker: 'Snippy',
     text: "To poke around, just click on things in the room. Most objects glow yellow when you hover — that's your invite to click.",
   },
+  {
+    speaker: 'Snippy',
+    text: "And hey — you can always click me again later if you forget what you haven't looked at yet. I'll give you a quick list.",
+  },
 ];
 
 export default function Home() {
