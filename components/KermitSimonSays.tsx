@@ -136,7 +136,7 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
     setInputIndex(0);
     setCelebrating(false);
 
-    let delay = 500;
+    let delay = 375;
     seq.forEach((dir, index) => {
       queueTimeout(() => {
         setBounceKey((prev) => prev + 1);
@@ -147,11 +147,11 @@ export default function KermitSimonSays({ onComplete }: KermitSimonSaysProps) {
             queueTimeout(() => {
               setPhase('input');
               setMessage('Your turn! Repeat the pattern.');
-            }, 250);
+            }, 188);
           }
-        }, 600);
+        }, 450);
       }, delay);
-      delay += 900;
+      delay += 675;
     });
   }, []);
 
