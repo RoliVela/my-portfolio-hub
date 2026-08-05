@@ -31,6 +31,8 @@ const JUMP_VELOCITY = 13;
 const MAX_FALL_SPEED = -14; // terminal velocity cap
 const BOUNCE_COEFFICIENT = 0.25; // 0.2–0.3 — minor elastic bounce on landing
 const WALL_SLIDE_SPEED = -2;
+const WALL_JUMP_PUSH = 8; // horizontal kick-off speed away from the wall — deliberately above MAX_MOVE_SPEED so it reads as a real kick, not just normal acceleration
+const WALL_JUMP_VY_BONUS = 2; // extra vertical velocity on a wall jump vs a normal jump
 const CAMERA_THRESHOLD_SCREEN_Y = CANVAS_HEIGHT * 0.5;
 const COYOTE_FRAMES = 8;
 const FEET_PER_WORLD = 0.25;
@@ -304,7 +306,12 @@ export default function CloudClimberGame({ onExit }: CloudClimberGameProps = {})
   const jump = useCallback(() => {
     if (gameStateRef.current !== 'playing' || showInstructions) return;
     if (groundedRef.current || coyoteTimeRef.current > 0) {
-      charVyRef.current = JUMP_VELOCITY;
+      const isWallJump = wallSideRef.current !== null;
+      charVyRef.current = isWallJump ? JUMP_VELOCITY + WALL_JUMP_VY_BONUS : JUMP_VELOCITY;
+      if (isWallJump) {
+        charVxRef.current = wallSideRef.current === 'right' ? -WALL_JUMP_PUSH : WALL_JUMP_PUSH;
+        wallSideRef.current = null;
+      }
       groundedRef.current = false;
       coyoteTimeRef.current = 0;
       squashRef.current = 1.25;

@@ -165,9 +165,10 @@ interface PhaseStepProps {
   done: boolean;
   Icon: FC<{ className?: string }>;
   accent: 'sky' | 'lime' | 'amber';
+  large?: boolean;
 }
 
-function PhaseStep({ active, done, Icon, accent }: PhaseStepProps) {
+function PhaseStep({ active, done, Icon, accent, large }: PhaseStepProps) {
   // Color ring + opacity reflects progress state.
   const ringActive = {
     sky: 'ring-sky-300 shadow-[0_0_18px_4px_rgba(56,189,248,0.45)]',
@@ -180,13 +181,16 @@ function PhaseStep({ active, done, Icon, accent }: PhaseStepProps) {
     amber: 'ring-amber-500/70',
   }[accent];
 
+  const boxSize = large ? 'h-16 w-16' : 'h-9 w-9';
+  const iconSize = large ? 'h-10 w-10' : 'h-6 w-6';
+
   return (
     <div
-      className={`flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-900/60 backdrop-blur-sm transition-all duration-300 ${
+      className={`flex ${boxSize} items-center justify-center rounded-lg bg-emerald-900/60 backdrop-blur-sm transition-all duration-300 ${
         active ? `${ringActive} scale-110` : done ? ringDone : 'ring-1 ring-emerald-700/40 opacity-40 grayscale'
       }`}
     >
-      <Icon className="h-6 w-6" />
+      <Icon className={iconSize} />
     </div>
   );
 }
@@ -555,6 +559,14 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
   const plantWilting = phase === 'water' && waterLevel < WATER_TARGET_MIN * 0.5;
   const plantWaterLevel = phase === 'water' ? waterLevel : waterQuality === 'just right' ? 60 : waterQuality === 'overflow' ? 100 : 20;
 
+  // Current phase's icon config — drives the single large icon next to the plant.
+  const phaseIconConfig = {
+    water: { Icon: DropletIcon, accent: 'sky' as const, done: waterQuality === 'just right' },
+    bugs: { Icon: FlyIcon, accent: 'lime' as const, done: caughtBugs >= TARGET_BUG_COUNT },
+    nutrients: { Icon: SproutIcon, accent: 'amber' as const, done: nutrientLevel >= NUTRIENT_TARGET },
+    result: { Icon: SproutIcon, accent: 'amber' as const, done: true },
+  }[phase];
+
   return (
     <div className="relative flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border-4 border-emerald-700 bg-gradient-to-b from-emerald-950 via-green-950 to-emerald-950 p-6 shadow-[0_0_0_4px_#000]">
       <CornerLeaf position="top-left" />
@@ -590,26 +602,26 @@ export default function VenusFlyTrapGame({ onComplete, onSuccess }: VenusFlyTrap
         Water it, catch some flies, and sprinkle nutrients to keep it happy.
       </p>
 
-      {/* Phase progress indicator */}
-      <div className="flex items-center gap-4 font-vt323 text-xl">
-        <PhaseStep active={phase === 'water'} done={waterQuality === 'just right'} Icon={DropletIcon} accent="sky" />
-        <span className="text-emerald-700 text-2xl leading-none">→</span>
-        <PhaseStep active={phase === 'bugs'} done={caughtBugs >= TARGET_BUG_COUNT} Icon={FlyIcon} accent="lime" />
-        <span className="text-emerald-700 text-2xl leading-none">→</span>
-        <PhaseStep active={phase === 'nutrients'} done={nutrientLevel >= NUTRIENT_TARGET} Icon={SproutIcon} accent="amber" />
+      {/* ===== Plant + current phase icon ===== */}
+      <div className="flex items-center gap-4">
+        <VenusFlyTrapSVG
+          trapOpen={trapOpen}
+          waterLevel={plantWaterLevel}
+          caughtBugs={caughtBugs}
+          nutrientLevel={nutrientPercent}
+          isWilting={plantWilting}
+          snapTrigger={snapTrigger}
+          eyeGlance={eyeGlance}
+          className="h-64 w-48"
+        />
+        <PhaseStep
+          active={phase !== 'result'}
+          done={phaseIconConfig.done}
+          Icon={phaseIconConfig.Icon}
+          accent={phaseIconConfig.accent}
+          large
+        />
       </div>
-
-      {/* ===== Plant ===== */}
-      <VenusFlyTrapSVG
-        trapOpen={trapOpen}
-        waterLevel={plantWaterLevel}
-        caughtBugs={caughtBugs}
-        nutrientLevel={nutrientPercent}
-        isWilting={plantWilting}
-        snapTrigger={snapTrigger}
-        eyeGlance={eyeGlance}
-        className="h-64 w-48"
-      />
 
       {/* ===== Water Phase ===== */}
       {phase === 'water' && (
