@@ -103,7 +103,7 @@ export default function DialogueBox({ entries, onClose, extraAction }: DialogueB
               e.stopPropagation();
               extraAction.onClick();
             }}
-            className="absolute right-4 top-4 rounded border-2 border-pink-300/60 bg-purple-900 px-3 py-1 font-vt323 text-sm text-pink-100 transition hover:border-pink-300 hover:bg-purple-800"
+            className="absolute right-4 bottom-4 rounded border-2 border-pink-300/60 bg-purple-900 px-3 py-1 font-vt323 text-sm text-pink-100 transition hover:border-pink-300 hover:bg-purple-800"
           >
             {extraAction.label}
           </button>
