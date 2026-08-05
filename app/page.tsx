@@ -44,6 +44,26 @@ function InspectedItemImage({
 
 const STORAGE_KEY = 'room-object-state';
 
+// Snippy's first-visit quick tour, shown to a player who is still at 0/21.
+// Covers how to use the sound button up top and how to interact with things
+// in the room. Prepended to the OBJ_01 welcome flow on every visit at 0/21 —
+// after the welcome closes, the same OBJ_01 dialogue reopens with these
+// entries alone.
+const TUTORIAL_ENTRIES: DialogueEntry[] = [
+  {
+    speaker: 'Snippy',
+    text: "Hey, welcome! Want the thirty-second tour of how everything works in here?",
+  },
+  {
+    speaker: 'Snippy',
+    text: "See that little speaker up in the top corner? Tap it any time to mute or unmute the music and my voice. (You can also hit the M key.)",
+  },
+  {
+    speaker: 'Snippy',
+    text: "To poke around, just click on things in the room. Most objects glow yellow when you hover — that's your invite to click.",
+  },
+];
+
 export default function Home() {
   const [roomObjects, setRoomObjects] = useState<RoomObject[]>(initialRoomObjects);
   const [repositionMode, setRepositionMode] = useState(false);
@@ -72,6 +92,13 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [panelCollapsed, setPanelCollapsed] = useState(false);
   const [showMissingList, setShowMissingList] = useState(false);
+  // First-visit quick-tour state machine:
+  //   idle     — default, OBJ_01 shows its regular welcome.
+  //   pending  — welcome just closed; a useEffect reopens OBJ_01 with the
+  //              tutorial entries only.
+  //   done     — tutorial closed; further OBJ_01 clicks at 0/21 show only
+  //              the welcome (no tutorial replay this session).
+  const [tutorialChainStep, setTutorialChainStep] = useState<'idle' | 'pending' | 'done'>('idle');
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [snippyToast, setSnippyToast] = useState<string | null>(null);
   const [musicOn, setMusicOn] = useState(true);
@@ -464,8 +491,28 @@ export default function Home() {
     copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
   };
 
+  // Completion tracker: count tracked objects that have been interacted with.
+  // Computed before getDialogue so the OBJ_01 first-visit tutorial can read it.
+  const trackedObjects = roomObjects.filter(
+    (o) => o.id !== 'OBJ_01' && o.id !== 'OBJ_02' && !o.decorative
+  );
+  const completedCount = trackedObjects.filter(
+    (o) => objectState[o.id]?.hasInteracted
+  ).length;
+  const missingObjectNames = trackedObjects
+    .filter((o) => !objectState[o.id]?.hasInteracted)
+    .map((o) => o.assetName);
+
+  // Player is still at 0/21 — every tracked object un-interacted. Drives the
+  // OBJ_01 first-visit quick tour.
+  const isFirstVisit = trackedObjects.length > 0 && completedCount === 0;
+
   const getDialogue = (obj: RoomObject): DialogueEntry[] => {
     const state = objectState[obj.id] ?? {};
+
+    if (obj.id === 'OBJ_01' && isFirstVisit) {
+      return tutorialChainStep === 'pending' ? TUTORIAL_ENTRIES : obj.dialogue.free;
+    }
 
     if (obj.id === 'OBJ_02') {
       const allOthersInteracted = roomObjects
@@ -588,17 +635,6 @@ export default function Home() {
       initialH: obj.position.height,
     });
   };
-
-  // Completion tracker: count tracked objects that have been interacted with
-  const trackedObjects = roomObjects.filter(
-    (o) => o.id !== 'OBJ_01' && o.id !== 'OBJ_02' && !o.decorative
-  );
-  const completedCount = trackedObjects.filter(
-    (o) => objectState[o.id]?.hasInteracted
-  ).length;
-  const missingObjectNames = trackedObjects
-    .filter((o) => !objectState[o.id]?.hasInteracted)
-    .map((o) => o.assetName);
 
   // Celebration: heavy confetti rain for ~10s when the visitor first completes
   // every trackable object, then fades to a light, ongoing trickle.
@@ -910,8 +946,25 @@ export default function Home() {
       {/* Snippy dialogue (bottom box) — only for OBJ_01/OBJ_02 */}
       {activeObject && !repositionMode && !isInspecting && (
         <DialogueBox
+          // Key includes tutorialChainStep so the chained tutorial phase forces
+          // a fresh mount (pageIndex resets to 0) instead of inheriting the
+          // pageIndex from the welcome dialog that just closed.
+          key={`${activeObject.id}-${tutorialChainStep}`}
           entries={getDialogue(activeObject)}
-          onClose={() => setActiveObject(null)}
+          onClose={() => {
+            // First-visit tutorial chain: when OBJ_01's welcome closes, queue
+            // the standalone tutorial for the same OBJ_01 slot to reopen.
+            if (activeObject.id === 'OBJ_01' && isFirstVisit && tutorialChainStep === 'idle') {
+              setTutorialChainStep('pending');
+              const snippy = roomObjects.find((o) => o.id === 'OBJ_01');
+              if (snippy) setActiveObject(snippy);
+              return;
+            }
+            if (activeObject.id === 'OBJ_01' && isFirstVisit && tutorialChainStep === 'pending') {
+              setTutorialChainStep('done');
+            }
+            setActiveObject(null);
+          }}
           extraAction={
             activeObject.id === 'OBJ_02' && missingObjectNames.length > 0
               ? { label: "What am I missing?", onClick: () => setShowMissingList(true) }
