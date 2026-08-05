@@ -12,6 +12,7 @@ interface SuggestionBoxInteractionProps {
 }
 
 export default function SuggestionBoxInteraction({ onComplete }: SuggestionBoxInteractionProps) {
+  const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -31,7 +32,7 @@ export default function SuggestionBoxInteraction({ onComplete }: SuggestionBoxIn
       await emailjs.send(
         EMAILJS_SERVICE_ID,
         EMAILJS_TEMPLATE_ID,
-        { message },
+        { message, name: name.trim() || 'Anonymous' },
         { publicKey: EMAILJS_PUBLIC_KEY }
       );
       setStatus('success');
@@ -58,6 +59,16 @@ export default function SuggestionBoxInteraction({ onComplete }: SuggestionBoxIn
       className="flex w-full max-w-lg flex-col items-center gap-4"
     >
       <p className="font-vt323 text-xl text-white/80">Drop a message in the box.</p>
+
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Your name (optional)"
+        maxLength={100}
+        disabled={status === 'sending'}
+        className="w-full rounded bg-white p-3 font-vt323 text-xl text-black focus:outline-none focus:ring-4 focus:ring-white/50 disabled:opacity-70"
+      />
 
       <div className="relative w-full">
         <span className="pointer-events-none absolute left-3 top-3 select-none font-vt323 text-xl text-black/60">

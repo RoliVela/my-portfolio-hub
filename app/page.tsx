@@ -71,6 +71,7 @@ export default function Home() {
   const clickLineRef = useRef<HTMLDivElement | null>(null);
   const [copied, setCopied] = useState(false);
   const [panelCollapsed, setPanelCollapsed] = useState(false);
+  const [showMissingList, setShowMissingList] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [snippyToast, setSnippyToast] = useState<string | null>(null);
   const [musicOn, setMusicOn] = useState(true);
@@ -595,6 +596,9 @@ export default function Home() {
   const completedCount = trackedObjects.filter(
     (o) => objectState[o.id]?.hasInteracted
   ).length;
+  const missingObjectNames = trackedObjects
+    .filter((o) => !objectState[o.id]?.hasInteracted)
+    .map((o) => o.assetName);
 
   // Celebration: heavy confetti rain for ~10s when the visitor first completes
   // every trackable object, then fades to a light, ongoing trickle.
@@ -908,7 +912,38 @@ export default function Home() {
         <DialogueBox
           entries={getDialogue(activeObject)}
           onClose={() => setActiveObject(null)}
+          extraAction={
+            activeObject.id === 'OBJ_02' && missingObjectNames.length > 0
+              ? { label: "What am I missing?", onClick: () => setShowMissingList(true) }
+              : undefined
+          }
         />
+      )}
+
+      {showMissingList && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setShowMissingList(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg border-4 border-pink-300 bg-purple-950 p-6 shadow-[0_0_0_4px_#000]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="mb-3 text-center font-vt323 text-2xl text-pink-200">Still to find:</p>
+            <ul className="mb-4 max-h-64 list-inside list-disc space-y-1 overflow-y-auto font-vt323 text-lg text-pink-100">
+              {missingObjectNames.map((name) => (
+                <li key={name}>{name}</li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setShowMissingList(false)}
+              className="w-full rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Inspected item dialogue */}

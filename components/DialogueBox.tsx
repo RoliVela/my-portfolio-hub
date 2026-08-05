@@ -8,6 +8,7 @@ import { registerDialogueAudio, playDialogue, getIsMuted } from '@/lib/audioMana
 interface DialogueBoxProps {
   entries: DialogueEntry[];
   onClose?: () => void;
+  extraAction?: { label: string; onClick: () => void };
 }
 
 const TYPEWRITER_SPEED_MS = 30;
@@ -71,7 +72,7 @@ function TypewriterText({ text, onFinish }: { text: string; onFinish?: () => voi
   );
 }
 
-export default function DialogueBox({ entries, onClose }: DialogueBoxProps) {
+export default function DialogueBox({ entries, onClose, extraAction }: DialogueBoxProps) {
   const [pageIndex, setPageIndex] = useState(0);
   const currentEntry = entries[pageIndex];
   const fullText = currentEntry?.text ?? '';
@@ -95,6 +96,18 @@ export default function DialogueBox({ entries, onClose }: DialogueBoxProps) {
         {currentEntry?.speaker}
       </div>
       <div className="relative w-full max-w-4xl cursor-pointer select-none rounded-lg border-4 border-white bg-black p-6 shadow-[0_0_0_4px_#000]">
+        {extraAction && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              extraAction.onClick();
+            }}
+            className="absolute right-4 top-4 rounded border-2 border-pink-300/60 bg-purple-900 px-3 py-1 font-vt323 text-sm text-pink-100 transition hover:border-pink-300 hover:bg-purple-800"
+          >
+            {extraAction.label}
+          </button>
+        )}
         {/* Dialogue text - key remounts TypewriterText on page change */}
         <TypewriterText key={pageIndex} text={fullText} />
       </div>

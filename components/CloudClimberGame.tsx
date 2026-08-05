@@ -859,7 +859,18 @@ export default function CloudClimberGame({ onExit }: CloudClimberGameProps = {})
 
   return (
     <div className="flex w-full max-w-2xl flex-col items-center gap-2 rounded-lg border-4 border-pink-300 bg-purple-950 px-6 pt-2 pb-6 shadow-[0_0_0_4px_#000]">
-      <h2 className="font-vt323 text-3xl text-pink-200">Cloud Climber</h2>
+      <div className="relative flex w-full items-center justify-center">
+        <h2 className="font-vt323 text-3xl text-pink-200">Cloud Climber</h2>
+        {onExit && (
+          <button
+            type="button"
+            onClick={onExit}
+            className="absolute right-0 top-1/2 -translate-y-1/2 min-h-[36px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-4 py-1 font-vt323 text-base text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
+          >
+            Exit
+          </button>
+        )}
+      </div>
 
       <div className="relative">
         <canvas
@@ -959,15 +970,6 @@ export default function CloudClimberGame({ onExit }: CloudClimberGameProps = {})
           >
             Restart (Space)
           </button>
-          {onExit && (
-            <button
-              type="button"
-              onClick={onExit}
-              className="min-h-[44px] min-w-[44px] select-none rounded border-2 border-pink-300/50 bg-purple-900 px-6 py-2 font-vt323 text-xl text-pink-100 transition hover:border-pink-300 hover:bg-purple-800 active:border-pink-300 active:bg-purple-800"
-            >
-              Exit
-            </button>
-          )}
         </div>
       )}
     </div>
