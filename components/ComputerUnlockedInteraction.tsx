@@ -6,6 +6,7 @@ const LINKS = [
   { label: 'LinkedIn', href: 'https://www.linkedin.com/in/rolivela' },
   { label: 'GitHub', href: 'https://github.com/RoliVela' },
   { label: 'Resume', href: getAssetPath('/assets/resume.pdf') },
+  { label: 'Resume Website', href: 'https://latex-resumes.vercel.app/' },
 ];
 
 export default function ComputerUnlockedInteraction() {
