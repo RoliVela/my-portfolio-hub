@@ -289,7 +289,10 @@ export default function CloudClimberGame({ onExit }: CloudClimberGameProps = {})
       ? charXRef.current + CHAR_WIDTH
       : charXRef.current;
     const sideY = charYRef.current + CHAR_HEIGHT * 0.5;
-    const outward = wallSideRef.current === 'right' ? 1 : -1;
+    // Dust drifts AWAY from the wall — opposite of the wall's side so puffs
+    // visually peel off the character into the open air rather than into the
+    // wall behind them. Matches the wall-jump push direction in jump().
+    const outward = wallSideRef.current === 'right' ? -1 : 1;
     for (let i = 0; i < 4; i += 1) {
       puffsRef.current.push({
         x: sideX + randomRange(-3, 3),
